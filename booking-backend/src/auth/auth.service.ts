@@ -15,7 +15,7 @@ const DEFAULT_USER_ROLE = 'user';
 export interface AuthPayload {
   userId: string;
   email: string;
-  name?: String;
+  name?: string;
   role: string;
 }
 

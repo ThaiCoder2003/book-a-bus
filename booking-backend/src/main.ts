@@ -9,16 +9,16 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe({
       // Strip properties that do not have any validation decorators
-      whitelist: true, 
+      whitelist: true,
       // Throw an error if extraneous properties are sent
-      forbidNonWhitelisted: true, 
+      forbidNonWhitelisted: true,
       // Automatically convert payloads to their DTO types (e.g., strings to numbers)
-      transform: true, 
+      transform: true,
     }),
   );
 
   // Set a global route prefix, e.g., /api/auth/login
-  app.setGlobalPrefix('api'); 
+  app.setGlobalPrefix('api');
 
   // Read port from environment variables, default to 3000
   const port = process.env.PORT || 3000;
