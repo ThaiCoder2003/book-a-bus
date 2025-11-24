@@ -1,19 +1,18 @@
-import jwt from "jsonwebtoken";
-import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm'; // <--- TypeORM Import
+import {
+  Injectable,
+  ConflictException,
+  UnauthorizedException,
+  ForbiddenException,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { User } from './entities/user.entity';
 import * as bcrypt from 'bcrypt';
 
-type UserWithoutHash = Omit<User, 'passwordHash'>;
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
-const JWT_EXPIRATION = "24h";
-const BCRYPT_ROUNDS = 10;
-const DEFAULT_USER_ROLE = 'user';
-
+// Định nghĩa lại Payload cho chuẩn xác
 export interface AuthPayload {
-  userId: string;
+  userId: string; // Token lưu ID dưới dạng string
   email: string;
   name?: string;
   role: string;
@@ -21,9 +20,11 @@ export interface AuthPayload {
 
 export interface TokenResponse {
   accessToken: string;
-  refreshToken?: string;
+  refreshToken: string;
   expiresIn: string;
 }
+
+const DEFAULT_USER_ROLE = 'user';
 
 @Injectable()
 export class AuthService {
@@ -31,103 +32,55 @@ export class AuthService {
     @InjectRepository(User) private usersRepository: Repository<User>,
     private readonly jwtService: JwtService,
   ) {}
-  
-  /**
-   * Hash a password using bcrypt
-   */
-  private async hashPassword(password: string): Promise<string> {
-    return bcrypt.hash(password, BCRYPT_ROUNDS);
+
+  // --- HELPER METHODS ---
+
+  private async hashData(data: string): Promise<string> {
+    return bcrypt.hash(data, 10);
   }
-  /**
-   * Compare password with hash
-   */
-  private async comparePassword(password: string, hash: string): Promise<boolean> {
-    return bcrypt.compare(password, hash);
+
+  private async comparePassword(data: string, hash: string): Promise<boolean> {
+    return bcrypt.compare(data, hash);
   }
 
   /**
-   * Generate JWT access token
+   * Helper tạo cả cặp Token (Access + Refresh)
    */
-  private generateAccessToken(payload: AuthPayload): TokenResponse {
-    const accessToken = jwt.sign(payload, JWT_SECRET, {
-      expiresIn: JWT_EXPIRATION,
-    });
+  private async generateTokens(payload: AuthPayload): Promise<TokenResponse> {
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(payload, { expiresIn: '24h' }), // Access Token
+      this.jwtService.signAsync(payload, { expiresIn: '7d' }), // Refresh Token
+    ]);
 
     return {
       accessToken,
-      expiresIn: JWT_EXPIRATION,
+      refreshToken,
+      expiresIn: '24h',
     };
   }
 
   /**
-   * Generate refresh token (longer expiration)
+   * Helper update Refresh Token Hash vào Database
    */
-  private generateRefreshToken(payload: AuthPayload): string {
-    return jwt.sign(payload, JWT_SECRET, {
-      expiresIn: "7d",
+  private async updateRefreshTokenInDB(userId: string, refreshToken: string) {
+    const hash = await this.hashData(refreshToken);
+    await this.usersRepository.update(userId, {
+      currentHashedRefreshToken: hash,
     });
   }
 
+  // --- MAIN FEATURES ---
 
-  /**
-   * Verify and decode JWT token
-   */
-  private verifyToken(token: string): AuthPayload | null {
-    try {
-      const decoded = jwt.verify(token, JWT_SECRET) as AuthPayload;
-      return decoded;
-    } catch {
-      return null;
-    }
-  }
-
-  /**
-   * Decode token without verification (for reading claims)
-   */
-  private decodeToken(token: string): AuthPayload | null {
-    try {
-      const decoded = jwt.decode(token) as AuthPayload | null;
-      return decoded;
-    } catch {
-      return null;
-    }
-  }
-
-  /**
-   * Extract Bearer token from Authorization header
-   */
-  static extractToken(authHeader: string | null): string | null {
-    if (!authHeader) return null;
-    const parts = authHeader.split(" ");
-    if (parts.length === 2 && parts[0].toLowerCase() === "bearer") {
-      return parts[1];
-    }
-    return null;
-  }
-
-  /**
-   * Validate password strength
-   */
-  static validatePassword(password: string): { valid: boolean; message?: string } {
-    if (password.length < 8) {
-      return { valid: false, message: "Password must be at least 8 characters" };
-    }
-    if (!/[A-Z]/.test(password)) {
-      return { valid: false, message: "Password must contain uppercase letter" };
-    }
-    if (!/[a-z]/.test(password)) {
-      return { valid: false, message: "Password must contain lowercase letter" };
-    }
-    if (!/[0-9]/.test(password)) {
-      return { valid: false, message: "Password must contain number" };
-    }
-
-    return { valid: true };
-  }
-
-  public async registerUser(registrationData: { email: string, password: string, name: string }): Promise<any> {
+  public async registerUser(registrationData: {
+    email: string;
+    password: string;
+    name: string;
+  }): Promise<any> {
     const { email, password, name } = registrationData;
-    const existingUser = await this.usersRepository.findOne({ where: { email } });
+
+    const existingUser = await this.usersRepository.findOne({
+      where: { email },
+    });
     if (existingUser) {
       throw new ConflictException('Email already in use');
     }
@@ -137,75 +90,151 @@ export class AuthService {
       throw new ConflictException(isPasswordValid.message);
     }
 
-    const passwordHash = await this.hashPassword(password);
+    const passwordHash = await this.hashData(password); // Tái sử dụng hàm hashData
     const newUser = this.usersRepository.create({
-       email, 
-       passwordHash, 
-       name, 
-       role: DEFAULT_USER_ROLE 
+      email,
+      passwordHash,
+      name,
+      role: DEFAULT_USER_ROLE,
     });
+
     const savedUser = await this.usersRepository.save(newUser);
     const { passwordHash: _, ...result } = savedUser;
     return result;
   }
 
-public async loginUser(login: { email: string, password: string }): Promise<{ user: UserWithoutHash, token: TokenResponse }> {
-    const { email, password } = login;
-    
-    // TypeORM: findOne with 'where' clause
-    const user = await this.usersRepository.findOne({ where: { email } });
-    if (!user) {
-      throw new UnauthorizedException('Invalid email or password');
-    }
+  public async loginUser(login: {
+    email: string;
+    password: string;
+  }): Promise<{ user: Omit<User, 'passwordHash'>; token: TokenResponse }> {
+    const { email, password } = login;
 
-    const isPasswordValid = await this.comparePassword(password, user.passwordHash);
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid email or password');
-    }
+    const user = await this.usersRepository.findOne({
+      where: { email },
+      select: ['id', 'email', 'name', 'role', 'passwordHash'], // Explicit select
+    });
 
-    const jwtPayload: AuthPayload = {
-      userId: user.id.toString(), // <--- Use 'id' for TypeORM/Postgres PK
-      email: user.email,
-      name: user.name,
-      role: user.role,
-    };
+    if (!user) throw new UnauthorizedException('Invalid email or password');
 
-    const token = this.generateAccessToken(jwtPayload);
-    const refreshToken = this.generateRefreshToken(jwtPayload);
+    const isPasswordValid = await this.comparePassword(
+      password,
+      user.passwordHash,
+    );
+    if (!isPasswordValid)
+      throw new UnauthorizedException('Invalid email or password');
 
-    token.refreshToken = refreshToken;
+    const payload: AuthPayload = {
+      userId: user.id.toString(),
+      email: user.email,
+      name: user.name,
+      role: user.role,
+    };
 
-    const { passwordHash: _, ...userWithoutHash } = user;
+    // 1. Tạo tokens
+    const tokens = await this.generateTokens(payload);
 
-    return {
-      user: userWithoutHash,
-      token: token,
-    }
-  }
+    // 2. Lưu hash của Refresh Token vào DB
+    await this.updateRefreshTokenInDB(user.id, tokens.refreshToken);
 
-public async refreshToken(currentRefreshToken: string): Promise<TokenResponse> {
-    const decoded = this.verifyToken(currentRefreshToken);
-    
-    if (!decoded || !decoded.userId) {
-      throw new UnauthorizedException('Invalid or expired refresh token.');
-    }
-    
-    // TypeORM: findOneBy with 'id'
-    const user = await this.usersRepository.findOneBy({ id: decoded.userId }); 
+    const { passwordHash: _, ...userWithoutHash } = user;
+    return {
+      user: userWithoutHash,
+      token: tokens,
+    };
+  }
 
-    if (!user) {
-      throw new UnauthorizedException('User no longer exists.');
-    }
-    
-    // Build new payload using the latest data from the database
-    const newPayload: AuthPayload = {
-      userId: user.id.toString(), // <--- Use 'id'
-      email: user.email,
-      name: user.name,
-      role: user.role
-    };
+  public async refreshToken(
+    currentRefreshToken: string,
+  ): Promise<TokenResponse> {
+    try {
+      // 1. Verify token chữ ký (nếu hết hạn sẽ throw lỗi ngay tại đây)
+      const decoded =
+        await this.jwtService.verifyAsync<AuthPayload>(currentRefreshToken);
 
-    return this.generateAccessToken(newPayload);
-  }
+      if (!decoded || !decoded.userId) {
+        throw new UnauthorizedException('Invalid token structure');
+      }
+
+      const userId = decoded.userId;
+
+      // 2. Lấy User + Hash Token trong DB
+      const user = await this.usersRepository.findOne({
+        where: { id: userId },
+        select: ['id', 'email', 'name', 'role', 'currentHashedRefreshToken'], // <--- QUAN TRỌNG
+      });
+
+      if (!user || !user.currentHashedRefreshToken) {
+        throw new ForbiddenException('Access Denied'); // Token bị thu hồi hoặc user ko tồn tại
+      }
+
+      // 3. So sánh token gửi lên vs token trong DB
+      const isRefreshTokenMatching = await bcrypt.compare(
+        currentRefreshToken,
+        user.currentHashedRefreshToken,
+      );
+
+      if (!isRefreshTokenMatching) {
+        throw new ForbiddenException('Invalid Refresh Token');
+      }
+
+      // 4. Token Rotation: Tạo cặp token MỚI hoàn toàn
+      const newPayload: AuthPayload = {
+        userId: user.id.toString(),
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      };
+
+      const newTokens = await this.generateTokens(newPayload);
+
+      // 5. Cập nhật hash MỚI vào DB (token cũ sẽ vô hiệu lực từ đây)
+      await this.updateRefreshTokenInDB(user.id, newTokens.refreshToken);
+
+      return newTokens;
+    } catch (e) {
+      // Bắt lỗi verify jwt hoặc lỗi DB
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
+  }
+
+  public async logout(userId: string): Promise<void> {
+    // Xóa hash token trong DB để chặn refresh
+    await this.usersRepository.update(userId, {
+      currentHashedRefreshToken: null,
+    });
+  }
+
+  // --- UTILS ---
+  static extractToken(authHeader: string | null): string | null {
+    if (!authHeader) return null;
+    const parts = authHeader.split(' ');
+    if (parts.length === 2 && parts[0].toLowerCase() === 'bearer') {
+      return parts[1];
+    }
+    return null;
+  }
+
+  static validatePassword(password: string): {
+    valid: boolean;
+    message?: string;
+  } {
+    if (password.length < 8)
+      return {
+        valid: false,
+        message: 'Password must be at least 8 characters',
+      };
+    if (!/[A-Z]/.test(password))
+      return {
+        valid: false,
+        message: 'Password must contain uppercase letter',
+      };
+    if (!/[a-z]/.test(password))
+      return {
+        valid: false,
+        message: 'Password must contain lowercase letter',
+      };
+    if (!/[0-9]/.test(password))
+      return { valid: false, message: 'Password must contain number' };
+    return { valid: true };
+  }
 }
-

@@ -19,6 +19,7 @@ async function bootstrap() {
 
   // Set a global route prefix, e.g., /api/auth/login
   app.setGlobalPrefix('api');
+  app.enableCors(); // Mặc định cho phép tất cả các nguồn
 
   // Read port from environment variables, default to 3000
   const port = process.env.PORT || 3000;

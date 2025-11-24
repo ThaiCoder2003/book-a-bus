@@ -1,83 +1,162 @@
-import { useState } from "react";
-import type { FC } from "react"; 
+import authAction from '@/actions/authAction'
+import authService from '@/services/authService'
+import { useState } from 'react'
+import type { FC } from 'react'
+import { toast } from 'react-toastify'
 
+const AuthPage: FC = () => {
+    const [isLogin, setIsLogin] = useState(true)
+    const [name, setName] = useState('')
+    const [email, setEmail] = useState('')
+    const [password, setPassword] = useState('')
+    const [confirmPassword, setConfirmPassword] = useState('')
 
-const AuthPage: FC = () => { 
-  const [isLogin, setIsLogin] = useState(true);
+    // handle submit
+    const handleRegisterSubmit = async () => {
+        try {
+            const res = await authService.register({ name, email, password })
 
-  return (
-    // CONTAINER CHÍNH:
-    <div className="min-h-screen w-screen flex items-center justify-center bg-gradient-to-b from-[#e6eef7] to-white">
-      
-      <div className="bg-white shadow-xl rounded-2xl p-10 w-[500px]"> 
+            if (res && res.data.id) {
+                toast.success('Đăng kí tài khoản thành công')
+            }
+        } catch (error: any) {
+            const message = error.response?.data?.message
 
-        {/* Tabs */}
-        <div className="flex mb-6 border-b">
-          <button
-            onClick={() => setIsLogin(true)}
-            className={`flex-1 pb-2 text-lg font-semibold transition-all ${
-              isLogin ? "border-b-4 border-orange-500 text-orange-600" : "text-gray-500 hover:text-orange-500"
-            }`}
-          >
-            Đăng nhập
-          </button>
-          <button
-            onClick={() => setIsLogin(false)}
-            className={`flex-1 pb-2 text-lg font-semibold transition-all ${
-              !isLogin ? "border-b-4 border-orange-500 text-orange-600" : "text-gray-500 hover:text-orange-500"
-            }`}
-          >
-            Đăng kí
-          </button>
-        </div>
+            const finalMessage = Array.isArray(message)
+                ? message.join(', ') // Nếu là mảng lỗi (Validation) -> Nối lại thành câu
+                : message ||
+                  error.message ||
+                  'Có lỗi xảy ra trong quá trình đăng nhập'
 
-        {/* Title (Căn giữa tiêu đề) */}
-        <div className="text-center">
-            <h1 className="text-3xl font-bold mb-1">
-              {isLogin ? "Đăng nhập" : "Đăng kí"}
-            </h1>
-            <p className="text-sm text-gray-500 mb-6">
-              Bus Booking {isLogin ? "Access" : "Registration"}
-            </p>
-        </div>
+            console.error(finalMessage)
+            toast.error(finalMessage)
+        }
+    }
 
+    const handleLoginSubmit = async () => {
+        try {
+            const res = await authService.login({ email, password })
+            console.log(res)
 
-        {/* Email */}
-        <div className="mb-4">
-          <input
-            type="email"
-            placeholder="Email"
-            className="w-full border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500" 
-          />
-        </div>
+            if (res && res?.data?.token) {
+                const tokens = res.data.token
 
-        {/* Password */}
-        <div className="mb-4">
-          <input
-            type="password"
-            placeholder="Mật khẩu"
-            className="w-full border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500"
-          />
-        </div>
+                authAction.setToken(tokens.accessToken, tokens.refreshToken)
+                toast.success('Đăng nhập thành công')
+                window.location.replace('/dashboard')
+            }
+        } catch (error: any) {
+            const message = error.response?.data?.message
 
-        {/* Confirmation (only visible when sign up) */}
-        {!isLogin && (
-          <div className="mb-4">
-            <input
-              type="password"
-              placeholder="Nhập lại mật khẩu" 
-              className="w-full border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500"
-            />
-          </div>
-        )}
+            const finalMessage = Array.isArray(message)
+                ? message.join(', ') // Nếu là mảng lỗi (Validation) -> Nối lại thành câu
+                : message ||
+                  error.message ||
+                  'Có lỗi xảy ra trong quá trình đăng kí'
 
-        {/* Button */}
-        <button className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-xl font-semibold transition-colors">
-          {isLogin ? "Đăng nhập" : "Đăng kí"}
-        </button>
-      </div>
-    </div>
-  );
+            console.error(finalMessage)
+            toast.error(finalMessage)
+        }
+    }
+
+    return (
+        // CONTAINER CHÍNH:
+        <div className="min-h-screen w-screen flex items-center justify-center bg-linear-to-b from-[#e6eef7] to-white">
+            <div className="bg-white shadow-xl rounded-2xl p-10 w-[500px]">
+                <div className="flex mb-6 border-b">
+                    <button
+                        onClick={() => {
+                            setEmail('')
+                            setPassword('')
+                            setIsLogin(true)
+                        }}
+                        className={`flex-1 pb-2 text-lg font-semibold transition-all ${
+                            isLogin
+                                ? 'border-b-4 border-orange-500 text-orange-600'
+                                : 'text-gray-500 hover:text-orange-500'
+                        }`}
+                    >
+                        Đăng nhập
+                    </button>
+                    <button
+                        onClick={() => {
+                            setEmail('')
+                            setPassword('')
+                            setConfirmPassword('')
+                            setIsLogin(false)
+                        }}
+                        className={`flex-1 pb-2 text-lg font-semibold transition-all ${
+                            !isLogin
+                                ? 'border-b-4 border-orange-500 text-orange-600'
+                                : 'text-gray-500 hover:text-orange-500'
+                        }`}
+                    >
+                        Đăng kí
+                    </button>
+                </div>
+                {/* Title (Căn giữa tiêu đề) */}
+                <div className="text-center">
+                    <h1 className="text-3xl font-bold mb-1">
+                        {isLogin ? 'Đăng nhập' : 'Đăng kí'}
+                    </h1>
+                    <p className="text-sm text-gray-500 mb-6">
+                        Bus Booking {isLogin ? 'Access' : 'Registration'}
+                    </p>
+                </div>
+                {/* Username (only visible when sign up) */}
+                {!isLogin && (
+                    <div className="mb-4">
+                        <input
+                            type="text"
+                            placeholder="Tên người dùng"
+                            className="w-full border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                        />
+                    </div>
+                )}
+                {/* Email */}
+                <div className="mb-4">
+                    <input
+                        type="email"
+                        placeholder="Email"
+                        className="w-full border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                    />
+                </div>
+                {/* Password */}
+                <div className="mb-4">
+                    <input
+                        type="password"
+                        placeholder="Mật khẩu"
+                        className="w-full border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                    />
+                </div>
+                {/* Confirmation (only visible when sign up) */}
+                {!isLogin && (
+                    <div className="mb-4">
+                        <input
+                            type="password"
+                            placeholder="Nhập lại mật khẩu"
+                            className="w-full border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                        />
+                    </div>
+                )}
+                {/* Button */}
+                <button
+                    className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-xl mt-4 font-semibold transition-colors"
+                    onClick={isLogin ? handleLoginSubmit : handleRegisterSubmit}
+                >
+                    {isLogin ? 'Đăng nhập' : 'Đăng kí'}
+                </button>
+            </div>
+        </div>
+    )
 }
 
-export default AuthPage; 
+export default AuthPage

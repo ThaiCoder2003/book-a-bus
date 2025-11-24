@@ -1,21 +1,40 @@
-// src/App.tsx
-import { Routes, Route } from 'react-router-dom'; 
+import { Routes, Route } from 'react-router-dom'
+import { ToastContainer } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css' // ⚠️ Quan trọng: Không có dòng này toast sẽ bị vỡ giao diện
 
-import UserDashboardPage from './pages/UserDashboardPage';
-import AuthPage from './pages/AuthPage'; 
+import UserDashboardPage from './pages/UserDashboardPage'
+import AuthPage from './pages/AuthPage'
+import PrivateRoute from './routes/PrivateRoute'
 
 function App() {
     return (
-        <Routes>
+        <>
+            <Routes>
+                <Route path="/auth" element={<AuthPage />} />
 
-            <Route path="/auth" element={<AuthPage />} />
-            
-            <Route path="/dashboard" element={<UserDashboardPage />} />
+                <Route element={<PrivateRoute />}>
+                    <Route path="/dashboard" element={<UserDashboardPage />} />
+                    <Route path="/" element={<UserDashboardPage />} />
 
-            <Route path="/" element={<AuthPage />} /> 
+                    {/* <Route path="/profile" element={<Profile />} />
+                    <Route path="/settings" element={<Settings />} /> */}
+                </Route>
+            </Routes>
 
-        </Routes>
-    );
+            <ToastContainer
+                position="top-right"
+                autoClose={3000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="light"
+            />
+        </>
+    )
 }
 
-export default App;
+export default App

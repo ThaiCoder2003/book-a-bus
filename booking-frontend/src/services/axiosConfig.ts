@@ -1,7 +1,8 @@
+import authAction from '@/actions/authAction'
 import axios, { AxiosError } from 'axios'
 import type { InternalAxiosRequestConfig } from 'axios'
 
-const BASE_URL = 'http://localhost:4000'
+const BASE_URL = 'http://localhost:3000/api'
 
 const axiosClient = axios.create({
     baseURL: BASE_URL,
@@ -11,28 +12,10 @@ const axiosClient = axios.create({
     timeout: 10000, // 10 giây
 })
 
-// auth actions
-const getToken = async () => {
-    return localStorage.getItem('accessToken')
-}
-
-const getRefreshToken = async () => {
-    return localStorage.getItem('refreshToken')
-}
-
-const setToken = async (accessToken: string, refreshToken: string) => {
-    localStorage.setItem('accessToken', accessToken)
-    localStorage.setItem('refreshToken', refreshToken)
-}
-
-const clearToken = async () => {
-    localStorage.clear()
-}
-
 // request interceptors
 axiosClient.interceptors.request.use(
     async (config: InternalAxiosRequestConfig) => {
-        const token = await getToken()
+        const token = await authAction.getToken()
         if (token && config.headers) {
             config.headers.Authorization = `Bearer ${token}`
         }
@@ -55,11 +38,11 @@ axiosClient.interceptors.response.use(
             originalRequest._retry = true // Đánh dấu để tránh lặp vô tận
 
             try {
-                const refreshToken = await getRefreshToken()
+                const refreshToken = await authAction.getRefreshToken()
 
                 if (!refreshToken) {
-                    await clearToken()
-                    window.location.href = '/login'
+                    await authAction.clearToken()
+                    window.location.replace('/auth')
                     return Promise.reject(error)
                 }
 
@@ -72,7 +55,7 @@ axiosClient.interceptors.response.use(
                     response.data
 
                 // Lưu token mới
-                await setToken(accessToken, newRefreshToken)
+                await authAction.setToken(accessToken, newRefreshToken)
 
                 // Cập nhật token cho request bị lỗi lúc nãy
                 if (originalRequest.headers) {
@@ -82,8 +65,8 @@ axiosClient.interceptors.response.use(
                 // Gọi lại request ban đầu với token mới
                 return axiosClient(originalRequest)
             } catch (refreshError) {
-                await clearToken()
-                window.location.href = '/login'
+                await authAction.clearToken()
+                window.location.replace('/auth')
                 return Promise.reject(refreshError)
             }
         }

@@ -15,11 +15,11 @@ export class User {
   // Store the hashed password. Note the { select: false } decorator,
   // which prevents this column from being returned by default when fetching users,
   // enhancing security.
-  @Column({ name: 'password_hash', select: false }) 
+  @Column({ name: 'password_hash', select: false })
   passwordHash!: string;
 
   // The role column for Authorization (RBAC)
-  @Column({ default: 'user' }) 
+  @Column({ default: 'user' })
   role!: string;
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
@@ -27,4 +27,7 @@ export class User {
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   updatedAt!: Date;
+
+  @Column({ type: 'text', nullable: true, select: false })
+  currentHashedRefreshToken?: string | null;
 }
