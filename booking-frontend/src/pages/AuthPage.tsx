@@ -18,6 +18,10 @@ const AuthPage: FC = () => {
 
             if (res && res.data.id) {
                 toast.success('Đăng kí tài khoản thành công')
+                setName('')
+                setEmail('')
+                setPassword('')
+                setConfirmPassword('')
             }
         } catch (error: any) {
             const message = error.response?.data?.message
