@@ -8,13 +8,117 @@ datasource db {
 }
 
 model User {
-  id                        String   @id @default(uuid()) // UUID giống PrimaryGeneratedColumn('uuid')
+  id                        String   @id @default(uuid())
   email                     String   @unique
   name                      String
   passwordHash              String
   role                      String   @default("user")
-  currentHashedRefreshToken String?  // Nullable
-  
+  currentHashedRefreshToken String?
   createdAt                 DateTime @default(now())
   updatedAt                 DateTime @updatedAt
+  bookings                  Booking[]
+}
+
+// Enum giữ nguyên
+enum SeatType {
+  SEAT
+  SINGLE_BED
+  DOUBLE_BED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+model Bus {
+  id          String   @id @default(uuid())
+  
+  plateNumber String   
+  
+  name        String?
+  totalSeats  Int      @default(0)
+
+  type        SeatType 
+
+  seats       Seat[]
+  trips       Trip[]
+
+  // Một biển số xe + một loại ghế chỉ được xuất hiện 1 lần.
+  // Ví dụ: Xe 29A-12345 (SINGLE_BED) và Xe 29A-12345 (SEAT) có thể cùng tồn tại.
+  @@unique([plateNumber, type])
+}
+
+model Seat {
+  id       String   @id @default(uuid())
+  busId    String
+  
+  label    String   
+  
+  floor    Int      
+  row      Int      
+  col      Int      
+  isActive Boolean  @default(true)
+  
+  bus      Bus      @relation(fields: [busId], references: [id], onDelete: Cascade)
+  tickets  Ticket[]
+
+  @@unique([busId, label])
+}
+
+// Các model Station, Trip, Booking, Ticket giữ nguyên logic cũ
+model Station {
+  id             String   @id @default(uuid())
+  name           String   
+  address        String?  
+  province       String   
+  departingTrips Trip[]   @relation("OriginStation")
+  arrivingTrips  Trip[]   @relation("DestinationStation")
+}
+
+model Trip {
+  id              String    @id @default(uuid())
+  busId           String
+  originStationId String
+  destStationId   String
+  departureTime   DateTime
+  arrivalTime     DateTime?
+  basePrice       Decimal
+  
+  originStation   Station   @relation("OriginStation", fields: [originStationId], references: [id])
+  destStation     Station   @relation("DestinationStation", fields: [destStationId], references: [id])
+  bus             Bus       @relation(fields: [busId], references: [id])
+
+  bookings        Booking[]
+  tickets         Ticket[]
+}
+
+model Booking {
+  id          String        @id @default(uuid())
+  tripId      String
+  userId      String
+  userName    String
+  userPhone   String
+  totalAmount Decimal
+  status      BookingStatus @default(PENDING)
+  createdAt   DateTime      @default(now())
+  
+  user        User          @relation(fields: [userId], references: [id])
+  trip        Trip          @relation(fields: [tripId], references: [id])
+  tickets     Ticket[]
+}
+
+model Ticket {
+  id        String  @id @default(uuid())
+  bookingId String
+  tripId    String
+  seatId    String
+  price     Decimal
+  
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  seat      Seat    @relation(fields: [seatId], references: [id])
+  trip      Trip    @relation(fields: [tripId], references: [id])
+
+  @@unique([tripId, seatId])
 }

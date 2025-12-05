@@ -2,9 +2,8 @@ import authAction from '@/actions/authAction'
 import axios, { AxiosError } from 'axios'
 import type { InternalAxiosRequestConfig } from 'axios'
 
-// const BASE_URL = 'http://localhost:3000/api'
-const BASE_URL = 'https://book-a-bus-backend-7p28.onrender.com/api'
-
+const BASE_URL = 'http://localhost:3000/api'
+// const BASE_URL = 'https://book-a-bus-backend-7p28.onrender.com/api'
 
 const axiosClient = axios.create({
     baseURL: BASE_URL,
@@ -33,6 +32,13 @@ axiosClient.interceptors.response.use(
     async (error: AxiosError) => {
         const originalRequest = error.config as InternalAxiosRequestConfig & {
             _retry?: boolean
+        }
+
+        if (
+            originalRequest.url?.includes('/auth/login') ||
+            originalRequest.url?.includes('/auth/register')
+        ) {
+            return Promise.reject(error)
         }
 
         // Nếu lỗi là 401 (Hết hạn token)

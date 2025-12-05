@@ -1,15 +1,5 @@
 const authService = require('../services/authService')
-
-// Helper xử lý lỗi (Private function trong module, không cần export)
-const handleError = (res, error) => {
-    if (error.message.startsWith('Conflict'))
-        return res.status(409).json({ message: error.message })
-    if (error.message.startsWith('Unauthorized'))
-        return res.status(401).json({ message: error.message })
-    if (error.message.startsWith('Forbidden'))
-        return res.status(403).json({ message: error.message })
-    return res.status(500).json({ message: 'Internal Server Error' })
-}
+const handleError = require('../utils/handleError')
 
 const authController = {
     register: async (req, res) => {

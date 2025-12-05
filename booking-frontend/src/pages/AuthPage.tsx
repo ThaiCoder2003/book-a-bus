@@ -1,7 +1,7 @@
 import authAction from '@/actions/authAction'
 import authService from '@/services/authService'
 import { useState } from 'react'
-import type { FC } from 'react'
+import type { FC, FormEvent } from 'react'
 import { toast } from 'react-toastify'
 
 const AuthPage: FC = () => {
@@ -12,8 +12,10 @@ const AuthPage: FC = () => {
     const [confirmPassword, setConfirmPassword] = useState('')
 
     // handle submit
-    const handleRegisterSubmit = async () => {
+    const handleRegisterSubmit = async (e?: FormEvent) => {
         try {
+            if (e) e.preventDefault()
+
             const res = await authService.register({ name, email, password })
 
             if (res && res.data.id) {
@@ -37,10 +39,11 @@ const AuthPage: FC = () => {
         }
     }
 
-    const handleLoginSubmit = async () => {
+    const handleLoginSubmit = async (e?: FormEvent) => {
         try {
+            if (e) e.preventDefault()
+
             const res = await authService.login({ email, password })
-            console.log(res)
 
             if (res && res?.data?.token) {
                 const tokens = res.data.token
@@ -60,6 +63,15 @@ const AuthPage: FC = () => {
 
             console.error(finalMessage)
             toast.error(finalMessage)
+        }
+    }
+
+    const onFormSubmit = (e: FormEvent) => {
+        e.preventDefault()
+        if (isLogin) {
+            handleLoginSubmit()
+        } else {
+            handleRegisterSubmit()
         }
     }
 
@@ -98,66 +110,71 @@ const AuthPage: FC = () => {
                         Đăng kí
                     </button>
                 </div>
-                {/* Title (Căn giữa tiêu đề) */}
-                <div className="text-center">
-                    <h1 className="text-3xl font-bold mb-1">
-                        {isLogin ? 'Đăng nhập' : 'Đăng kí'}
-                    </h1>
-                    <p className="text-sm text-gray-500 mb-6">
-                        Bus Booking {isLogin ? 'Access' : 'Registration'}
-                    </p>
-                </div>
-                {/* Username (only visible when sign up) */}
-                {!isLogin && (
+
+                <form onSubmit={onFormSubmit}>
+                    {/* Title (Căn giữa tiêu đề) */}
+                    <div className="text-center">
+                        <h1 className="text-3xl font-bold mb-1">
+                            {isLogin ? 'Đăng nhập' : 'Đăng kí'}
+                        </h1>
+                        <p className="text-sm text-gray-500 mb-6">
+                            Bus Booking {isLogin ? 'Access' : 'Registration'}
+                        </p>
+                    </div>
+                    {/* Username (only visible when sign up) */}
+                    {!isLogin && (
+                        <div className="mb-4">
+                            <input
+                                type="text"
+                                placeholder="Tên người dùng"
+                                className="w-full border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                            />
+                        </div>
+                    )}
+                    {/* Email */}
                     <div className="mb-4">
                         <input
-                            type="text"
-                            placeholder="Tên người dùng"
+                            type="email"
+                            placeholder="Email"
                             className="w-full border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
                         />
                     </div>
-                )}
-                {/* Email */}
-                <div className="mb-4">
-                    <input
-                        type="email"
-                        placeholder="Email"
-                        className="w-full border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                    />
-                </div>
-                {/* Password */}
-                <div className="mb-4">
-                    <input
-                        type="password"
-                        placeholder="Mật khẩu"
-                        className="w-full border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                    />
-                </div>
-                {/* Confirmation (only visible when sign up) */}
-                {!isLogin && (
+                    {/* Password */}
                     <div className="mb-4">
                         <input
                             type="password"
-                            placeholder="Nhập lại mật khẩu"
+                            placeholder="Mật khẩu"
                             className="w-full border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
                         />
                     </div>
-                )}
-                {/* Button */}
-                <button
-                    className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-xl mt-4 font-semibold transition-colors"
-                    onClick={isLogin ? handleLoginSubmit : handleRegisterSubmit}
-                >
-                    {isLogin ? 'Đăng nhập' : 'Đăng kí'}
-                </button>
+                    {/* Confirmation (only visible when sign up) */}
+                    {!isLogin && (
+                        <div className="mb-4">
+                            <input
+                                type="password"
+                                placeholder="Nhập lại mật khẩu"
+                                className="w-full border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                value={confirmPassword}
+                                onChange={(e) =>
+                                    setConfirmPassword(e.target.value)
+                                }
+                            />
+                        </div>
+                    )}
+                    {/* Button */}
+                    <button
+                        className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-xl mt-4 font-semibold transition-colors"
+                        type="submit"
+                    >
+                        {isLogin ? 'Đăng nhập' : 'Đăng kí'}
+                    </button>
+                </form>
             </div>
         </div>
     )

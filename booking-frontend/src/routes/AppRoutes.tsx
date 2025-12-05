@@ -2,8 +2,8 @@ import PersistLogin from '@/components/helpers/PersistLogin'
 import AuthPage from '@/pages/AuthPage'
 import { Routes, Route } from 'react-router-dom'
 import PrivateRoute from './PrivateRoute'
-import UserDashboardPage from '@/pages/UserDashboardPage'
-
+import DashboardPage from '@/pages/DashboardPage'
+import SchedulePage from '@/pages/SchedulePage'
 
 const AppRoutes = () => {
     return (
@@ -12,11 +12,9 @@ const AppRoutes = () => {
 
             <Route element={<PersistLogin />}>
                 <Route element={<PrivateRoute />}>
-                    <Route path="/dashboard" element={<UserDashboardPage />} />
-                    <Route path="/" element={<UserDashboardPage />} />
-
-                    {/* <Route path="/profile" element={<Profile />} />
-                    <Route path="/settings" element={<Settings />} /> */}
+                    <Route path="/dashboard" element={<DashboardPage />} />
+                    <Route path="/" element={<DashboardPage />} />
+                    <Route path="/schedule" element={<SchedulePage />} />
                 </Route>
             </Route>
         </Routes>

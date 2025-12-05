@@ -9,19 +9,19 @@ Prerequisites
 - npm or yarn
 - PostgreSQL (or supported DB) running locally / reachable
 
-Quick start (typical monorepo with `backend/` and `frontend/`)
+Quick start (typical monorepo with `booking-backend/` and `booking-frontend/`)
 1. Clone repository and install deps
     - git clone <repo>
     - cd book-a-bus
 2. Backend
-    - cd backend
+    - cd booking-backend
     - cp .env.example .env and set environment variables (see below)
     - npm install
     - run migrations (example): npm run migrate
     - npm run dev
     - Backend should be available at http://localhost:4000 (or configured port)
 3. Frontend
-    - cd ../frontend
+    - cd ../booking-frontend
     - cp .env.example .env (set NEXT_PUBLIC_API_URL to backend)
     - npm install
     - npm run dev

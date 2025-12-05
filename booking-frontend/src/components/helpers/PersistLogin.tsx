@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import authService from '@/services/authService'
+import { jwtDecode } from 'jwt-decode'
 
 const PersistLogin = () => {
     const [isLoading, setIsLoading] = useState(true)
@@ -10,26 +11,40 @@ const PersistLogin = () => {
             const accessToken = localStorage.getItem('accessToken')
             const refreshToken = localStorage.getItem('refreshToken')
 
-            if (!accessToken && refreshToken) {
+            if (!refreshToken) return setIsLoading(false)
+
+            let isExpired = true
+            if (accessToken) {
+                try {
+                    const decoded: any = jwtDecode(accessToken)
+                    const currentTime = Date.now() / 1000
+                    console.log(decoded)
+
+                    if (decoded.exp > currentTime) {
+                        isExpired = false
+                    }
+                } catch (e) {
+                    isExpired = true // Token lỗi coi như hết hạn
+                }
+            }
+
+            if (isExpired) {
                 try {
                     const response = await authService.refreshToken(
                         refreshToken,
                     )
 
-                    localStorage.setItem(
-                        'accessToken',
-                        response.data.accessToken,
-                    )
+                    const newAccessToken = response.data.accessToken
+                    const newRefreshToken = response.data.refreshToken
 
-                    if (response.data.refreshToken) {
-                        localStorage.setItem(
-                            'refreshToken',
-                            response.data.refreshToken,
-                        )
+                    if (newAccessToken && newRefreshToken) {
+                        localStorage.setItem('accessToken', newAccessToken)
+                        localStorage.setItem('refreshToken', newRefreshToken)
                     }
                 } catch (err) {
                     console.error('Refresh token failed:', err)
                     localStorage.clear()
+                    window.location.replace('/auth')
                 } finally {
                     setIsLoading(false)
                 }

@@ -1,12 +1,16 @@
 import { Bell, Menu, Ticket } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useLocation } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 
 export default function UserHeader() {
+    const location = useLocation()
+    const isHomeActive =
+        location.pathname === '/' || location.pathname === '/dashboard'
+
     return (
-        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
             <div className="container mx-auto flex h-16 items-center justify-between px-4">
                 <Link to="/" className="flex items-center gap-2 cursor-pointer">
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
@@ -19,17 +23,14 @@ export default function UserHeader() {
 
                 <nav className="hidden md:flex items-center gap-10">
                     <NavLink
-                        to="/"
+                        to="/dashboard"
                         end
-                        className={({ isActive }) =>
-                            cn(
-                                'font-medium transition-colors',
-
-                                isActive
-                                    ? 'text-primary font-bold'
-                                    : 'text-muted-foreground hover:text-primary',
-                            )
-                        }
+                        className={cn(
+                            'font-medium transition-colors',
+                            isHomeActive
+                                ? 'text-primary font-bold'
+                                : 'text-muted-foreground hover:text-primary',
+                        )}
                     >
                         Trang chủ
                     </NavLink>
