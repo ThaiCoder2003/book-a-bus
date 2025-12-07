@@ -19,6 +19,12 @@ model User {
   bookings                  Booking[]
 }
 
+enum SeatStatus {
+  AVAILABLE
+  RESERVED
+  PENDING
+}
+
 // Enum giữ nguyên
 enum SeatType {
   SEAT
@@ -63,7 +69,8 @@ model Seat {
   
   bus      Bus      @relation(fields: [busId], references: [id], onDelete: Cascade)
   tickets  Ticket[]
-
+  status   SeatStatus @default(AVAILABLE)
+  
   @@unique([busId, label])
 }
 
@@ -121,4 +128,15 @@ model Ticket {
   trip      Trip    @relation(fields: [tripId], references: [id])
 
   @@unique([tripId, seatId])
+}
+
+model SeatLock {
+  id        String   @id @default(uuid())
+  seatId    String
+  userId    String? // or sessionId if guest users
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([seatId])
+  @@index([expiresAt])
 }
