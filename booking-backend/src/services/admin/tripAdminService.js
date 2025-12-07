@@ -1,5 +1,4 @@
 const tripAction  = require('../../actions/tripAction')
-const prisma = require('../../configs/db')
 const { validateTripPayload } = require('../../utils/validate')
 
 const tripAdminService = {

@@ -91,3 +91,81 @@ module.exports.validateTripPayload = async (data, options = { requireAll: true, 
 
     return true
 }
+
+module.exports.validateBusPayload = async (data, options = { requireAll: true, existingBus: null }) => {
+    const {
+        plateNumber,
+        name,
+        totalSeats,
+        type
+    } = data;
+
+    const existing = options.existingBus;
+
+    //
+    // 0. Required field enforcement
+    //
+    if (options.requireAll) {
+        if (!plateNumber || !type || totalSeats === undefined) {
+            throwError('Bad Request: Missing required bus fields', 400);
+        }
+    }
+
+    //
+    // 1. Validate plateNumber
+    //
+    if (plateNumber) {
+        // Basic format check (very flexible — adjust if needed)
+        const plateRegex = /^[A-Za-z0-9\-\.]{4,20}$/;
+        if (!plateRegex.test(plateNumber)) {
+            throwError('Bad Request: Invalid plate number format', 400);
+        }
+
+        // Uniqueness: (plateNumber + type) must be unique
+        const conflict = await prisma.bus.findFirst({
+            where: {
+                plateNumber,
+                type,
+                // exclude current bus on update
+                NOT: existing ? { id: existing.id } : undefined
+            }
+        });
+
+        if (conflict) {
+            throwError('Conflict: Bus with same plate number and type already exists', 409);
+        }
+    }
+
+    //
+    // 2. Validate type
+    //
+    if (type) {
+        const validTypes = ['SEAT', 'SINGLE_BED', 'DOUBLE_BED'];
+        if (!validTypes.includes(type)) {
+            throwError('Bad Request: Invalid bus seat type', 400);
+        }
+    }
+
+    //
+    // 3. Validate totalSeats
+    //
+    if (totalSeats !== undefined) {
+        if (!Number.isInteger(totalSeats) || totalSeats < 0) {
+            throwError('Bad Request: totalSeats must be a non-negative integer', 400);
+        }
+    }
+
+    //
+    // 4. Validate name (optional)
+    //
+    if (name !== undefined && name !== null) {
+        if (typeof name !== 'string' || name.trim().length === 0) {
+            throwError('Bad Request: Bus name must be a non-empty string', 400);
+        }
+        if (name.length > 50) {
+            throwError('Bad Request: Bus name is too long (max 50 characters)', 400);
+        }
+    }
+
+    return true;
+};
