@@ -70,14 +70,14 @@ export default function TripCard({ trip }: { trip: Trip }) {
 
                     {/* Route and Time */}
                     <div className="flex items-center gap-8 mb-3">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-3">
                             <Clock className="w-4 h-4 text-muted-foreground" />
                             <div>
                                 <div className="font-semibold text-foreground">
-                                    {originTime.day + '  '}
-                                    <div className='text-primary-foreground'>
+                                    {originTime.day}
+                                    <span className='text-primary ml-2'>
                                         {originTime.time}
-                                    </div>
+                                    </span>
                                 </div>
                                 <div className="text-xs text-muted-foreground">
                                     {trip.originStation?.province}
@@ -97,13 +97,13 @@ export default function TripCard({ trip }: { trip: Trip }) {
                             <div className="w-full border-t border-border"></div>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-3">
                             <div className="text-right">
                                 <div className="font-semibold text-foreground">
-                                    <div className='text-primary-foreground'>
+                                    <span className='text-primary mr-2'>
                                         {destTime.time}
-                                    </div>
-                                    {'  ' + destTime.day}
+                                    </span>
+                                    {destTime.day}
                                 </div>
                                 <div className="text-xs text-muted-foreground">
                                     {trip.destStation?.province}
