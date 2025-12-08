@@ -2,7 +2,6 @@ import { Button } from '@/components/ui/button'
 import type { Trip } from '@/types/trip.type'
 import { MapPin, Clock } from 'lucide-react'
 import { format } from 'date-fns'
-import { useEffect } from 'react'
 
 const convertTime = (isoString?: string | null) => {
     if (!isoString) return { time: '--:--', day: '' }
