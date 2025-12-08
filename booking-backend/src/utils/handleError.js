@@ -29,7 +29,7 @@ const handleError = (res, error) => {
         })
     }
 
-    // 4. XỬ LÝ LỖI DỰA TRÊN MESSAGE (Cách cũ của bạn - Dự phòng)
+    // 4. XỬ LÝ LỖI DỰA TRÊN MESSAGE
     if (error.message.startsWith('Conflict'))
         return res.status(409).json({ success: false, message: error.message })
     if (error.message.startsWith('Unauthorized'))
