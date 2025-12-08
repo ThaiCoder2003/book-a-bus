@@ -133,7 +133,7 @@ model Ticket {
 model SeatLock {
   id        String   @id @default(uuid())
   seatId    String
-  userId    String? // or sessionId if guest users
+  userId    String?
   expiresAt DateTime
   createdAt DateTime @default(now())
 

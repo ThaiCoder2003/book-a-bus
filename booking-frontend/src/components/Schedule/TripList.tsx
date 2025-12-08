@@ -1,11 +1,13 @@
 import { Button } from '@/components/ui/button'
 import TripCard from './TripCard'
+import type { Dispatch, SetStateAction } from 'react'
+import type { Trip } from '@/types/trip.type'
 
 interface TripResultsProps {
-    trips: any[]
+    trips: Trip[]
     currentPage: number
     totalPages: number
-    onPageChange: (page: number) => void
+    onPageChange: Dispatch<SetStateAction<number>>
     totalResults: number
 }
 

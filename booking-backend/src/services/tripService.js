@@ -62,7 +62,6 @@ const tripService = {
             const tripsWithDuration = trips.map((trip) => {
                 let hours = 0
                 let minutes = 0
-                let durationString = 'Chưa xác định'
 
                 if (trip.arrivalTime && trip.departureTime) {
                     // Trừ 2 mốc thời gian (kết quả ra milliseconds)
@@ -75,7 +74,6 @@ const tripService = {
                         minutes = Math.floor(
                             (diffMs % (1000 * 60 * 60)) / (1000 * 60),
                         )
-                        durationString = `${hours}h ${minutes}p`
                     }
                 }
 
@@ -83,7 +81,6 @@ const tripService = {
                     ...trip,
                     hoursTime: hours,
                     minutesTime: minutes,
-                    duration: durationString,
                 }
             })
 

@@ -1,19 +1,15 @@
-'use client'
-
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import type { Dispatch, SetStateAction } from 'react'
+import type { FilterSchedule } from '@/types/filterSchedule'
 
 interface SearchHeaderProps {
-    searchParams: {
-        origin: string
-        destination: string
-        date: string
-    }
-    onSearchChange: (params: any) => void
+    filters: FilterSchedule
+    onSearchChange: Dispatch<SetStateAction<FilterSchedule>>
 }
 
 export default function SearchHeader({
-    searchParams,
+    filters,
     onSearchChange,
 }: SearchHeaderProps) {
     return (
@@ -26,10 +22,10 @@ export default function SearchHeader({
                         </label>
                         <Input
                             placeholder="Nhập điểm đi"
-                            value={searchParams.origin}
+                            value={filters.origin}
                             onChange={(e) =>
                                 onSearchChange({
-                                    ...searchParams,
+                                    ...filters,
                                     origin: e.target.value,
                                 })
                             }
@@ -43,10 +39,10 @@ export default function SearchHeader({
                         </label>
                         <Input
                             placeholder="Nhập điểm đến"
-                            value={searchParams.destination}
+                            value={filters.destination}
                             onChange={(e) =>
                                 onSearchChange({
-                                    ...searchParams,
+                                    ...filters,
                                     destination: e.target.value,
                                 })
                             }
@@ -60,10 +56,10 @@ export default function SearchHeader({
                         </label>
                         <Input
                             type="date"
-                            value={searchParams.date}
+                            value={filters.date}
                             onChange={(e) =>
                                 onSearchChange({
-                                    ...searchParams,
+                                    ...filters,
                                     date: e.target.value,
                                 })
                             }

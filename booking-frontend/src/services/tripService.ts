@@ -1,12 +1,12 @@
+import type { FilterSchedule } from '@/types/filterSchedule'
 import axiosClient from './axiosConfig'
 
 const tripService = {
-    getAll: async (departureDay?: string, from?: string, to?: string) => {
+    getAll: async (data: FilterSchedule, page: number) => {
         return await axiosClient.get('/trips/getAll', {
             params: {
-                from,
-                to,
-                departureDay,
+                ...data,
+                page: page,
             },
         })
     },

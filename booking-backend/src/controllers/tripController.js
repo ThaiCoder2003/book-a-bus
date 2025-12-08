@@ -5,12 +5,15 @@ const tripController = {
     getAllTrips: async (req, res) => {
         try {
             const { departureDay, from, to } = req.query
-            const response = await tripService.getAllTrips(
+            const result = await tripService.getAllTrips(
                 departureDay,
                 from,
                 to,
             )
-            res.status(200).json(response)
+            res.status(200).json({
+                message: 'Get trips list successfully',
+                data: result
+            })
         } catch (error) {
             handleError(res, error)
         }

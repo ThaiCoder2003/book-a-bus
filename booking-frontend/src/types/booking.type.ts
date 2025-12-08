@@ -1,7 +1,23 @@
-import type { BookingBase, UserBase, TripBase } from './base.type'
+import type { BookingStatus } from "./enum"
+import type { Ticket } from "./ticket.type"
+import type { Trip } from "./trip.type"
+import type { User } from "./user.type"
 
-// Booking chi tiết bao gồm thông tin User và Trip
-export interface BookingDetail extends BookingBase {
-    user: UserBase // Chỉ lấy thông tin cơ bản của user
-    trip: TripBase
+export interface Booking {
+    id: string
+    tripId: string
+    userId: string
+
+    // Thông tin người đi (có thể khác người đặt)
+    userName: string
+    userPhone: string
+
+    totalAmount: number // Decimal -> Number
+    status: BookingStatus
+    createdAt: string // ISO Date String
+
+    // Relations (Optional)
+    user?: User
+    trip?: Trip
+    tickets?: Ticket[]
 }

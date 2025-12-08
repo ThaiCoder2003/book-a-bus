@@ -1,6 +1,14 @@
-import type { UserBase, BookingBase } from './base.type'
+import type { Booking } from './booking.type'
+import type { UserRole } from './enum'
 
-// User đầy đủ bao gồm danh sách booking
-export interface UserProfile extends UserBase {
-    bookings: BookingBase[] // Chỉ lấy thông tin cơ bản của booking
+export interface User {
+    id: string
+    email: string
+    name: string
+    role: UserRole | string
+    createdAt: string // ISO Date String
+    updatedAt: string // ISO Date String
+
+    // Relations (Optional)
+    bookings?: Booking[]
 }

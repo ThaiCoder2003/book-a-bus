@@ -1,5 +1,8 @@
 export interface FilterSchedule {
+    origin: string
+    destination: string
+    date: string
     busType: string[]
-    priceRange: [number, number]
     departureTime: string[]
+    sortBy: string
 }
