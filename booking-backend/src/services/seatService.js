@@ -44,3 +44,5 @@ const seatService = {
         return true
     },
 }
+
+module.exports = seatService

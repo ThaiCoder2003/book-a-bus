@@ -1,4 +1,3 @@
-const tripService = require('../actions/tripService')
 const prisma = require('../configs/db')
 const { startOfDay, endOfDay } = require('date-fns')
 const validatePayload = require('../utils/validate')
