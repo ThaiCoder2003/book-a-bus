@@ -1,7 +1,7 @@
 const validatePayload = require('../utils/validate')
 const prisma = require('../configs/db')
 
-const busAdminService = {
+const busService = {
     getBuses: async (filters) => {
         const { name, ...rest } = filters
         return prisma.bus.findMany({
@@ -65,4 +65,4 @@ const busAdminService = {
     },
 }
 
-module.exports = busAdminService
+module.exports = busService
