@@ -74,7 +74,10 @@ export default function TripCard({ trip }: { trip: Trip }) {
                             <Clock className="w-4 h-4 text-muted-foreground" />
                             <div>
                                 <div className="font-semibold text-foreground">
-                                    {originTime.day + ' ' + originTime.time}
+                                    {originTime.day + '  '}
+                                    <div className='text-primary-foreground'>
+                                        {originTime.time}
+                                    </div>
                                 </div>
                                 <div className="text-xs text-muted-foreground">
                                     {trip.originStation?.province}
@@ -97,7 +100,10 @@ export default function TripCard({ trip }: { trip: Trip }) {
                         <div className="flex items-center gap-2">
                             <div className="text-right">
                                 <div className="font-semibold text-foreground">
-                                    {destTime.time + ' ' + destTime.day}
+                                    <div className='text-primary-foreground'>
+                                        {destTime.time}
+                                    </div>
+                                    {'  ' + destTime.day}
                                 </div>
                                 <div className="text-xs text-muted-foreground">
                                     {trip.destStation?.province}
