@@ -1,17 +1,17 @@
-const busService = require('../services/busService')
+const stationService = require('../services/stationService')
 const handleError = require('../utils/handleError')
 
-const busController = {
-    getAllBuses: async (req, res) => {
+const stationController = {
+    getAllStations: async (req, res) => {
         try {
-            const { type, page, limit } = req.query
-            const result = await busService.getBuses(
-                type,
+            const { province, page, limit } = req.query
+            const result = await stationService.getStations(
+                province,
                 page,
                 limit
             )
             res.status(200).json({
-                message: 'Get bus list successfully',
+                message: 'Get station list successfully',
                 data: result
             })
         } catch (error) {
@@ -19,10 +19,10 @@ const busController = {
         }
     },
 
-    getTripById: async (req, res) => {
+    getStationById: async (req, res) => {
         try {
             const { id } = req.params
-            const result = await busService.getBusById(id)
+            const result = await stationService.getStationById(id)
 
             res.status(200).json({
                 data: result
@@ -32,25 +32,26 @@ const busController = {
         }
     },
 
-    registerNewBus: async (req, res) => {
+    registerNewStation: async (req, res) => {
         try {
-            const newBus = await busService.registerNewBus(req.body)
+            const data = req.body
+            const newTrip = await stationService.registerNewStation(data)
             return res.status(201).json({
-                message: 'Bus created successfully',
-                bus: newBus,
+                message: 'Station created successfully',
+                trip: newTrip,
             })
         } catch (error) {
             handleError(res, error)
         }
     },
 
-    updateBus: async (req, res) => {
+    updateStation: async (req, res) => {
         try {
             const { id } = req.params
-            const updated = await busService.editBusInfo(id, req.body)
+            const updated = await stationService.updateStation(id, req.body)
             return res.status(200).json({
                 success: true,
-                message: 'Bus updated successfully',
+                message: 'Station updated successfully',
                 data: updated,
             })
         } catch (error) {
@@ -58,13 +59,13 @@ const busController = {
         }
     },
 
-    deleteBus: async (req, res) => {
+    deleteStation: async (req, res) => {
         try {
             const { id } = req.params
-            await busService.deleteBus(id)
+            await stationService.deleteStation(id)
             return res.status(200).json({
                 success: true,
-                message: 'Bus deleted successfully',
+                message: 'Station deleted successfully',
             })
         } catch (error) {
             handleError(res, error)
@@ -72,4 +73,4 @@ const busController = {
     },
 }
 
-module.exports = busController
+module.exports = stationController

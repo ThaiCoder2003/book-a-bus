@@ -1,17 +1,33 @@
+const { data } = require('react-router-dom')
 const tripService = require('../services/tripService')
 const handleError = require('../utils/handleError')
 
 const tripController = {
     getAllTrips: async (req, res) => {
         try {
-            const { departureDay, from, to } = req.query
+            const { departureDay, from, to, page, limit } = req.query
             const result = await tripService.getAllTrips(
                 departureDay,
                 from,
                 to,
+                page,
+                limit
             )
             res.status(200).json({
                 message: 'Get trips list successfully',
+                data: result
+            })
+        } catch (error) {
+            handleError(res, error)
+        }
+    },
+
+    getTripById: async (req, res) => {
+        try {
+            const { id } = req.params
+            const result = await tripService.getTripById(id)
+
+            res.status(200).json({
                 data: result
             })
         } catch (error) {

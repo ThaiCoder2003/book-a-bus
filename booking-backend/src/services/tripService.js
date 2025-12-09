@@ -112,18 +112,17 @@ const tripService = {
 
     registerNewTrip: async (data) => {
         await validatePayload.validateTripPayload(data, { requireAll: true })
-        return prisma.trip.create({
-            data: data,
-        })
+        return prisma.trip.create({ data })
     },
 
     editTripInfo: async (id, data) => {
-        const exists = await tripService.getTripById(id)
+        const exists = await prisma.trip.findUnique({ where: { id } })
         if (!exists) {
             const err = new Error('Not found: Trip not found')
             err.statusCode = 404
             throw err
         }
+
 
         await validateTripPayload(data, {
             requireAll: false,
@@ -137,7 +136,13 @@ const tripService = {
     },
 
     deleteTrip: async (tripId) => {
-        const exists = await tripService.getTripById(tripId)
+        const exists = await prisma.trip.findUnique({ where: { id } })
+        if (!exists) {
+            const err = new Error('Not found: Trip not found')
+            err.statusCode = 404
+            throw err
+        }
+
         if (!exists) {
             const err = new Error('Not found: Trip not found')
             err.statusCode = 404
