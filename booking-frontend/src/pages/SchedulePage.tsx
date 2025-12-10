@@ -6,6 +6,7 @@ import tripService from '@/services/tripService'
 
 import type { FilterSchedule } from '@/types/filterSchedule'
 import type { Trip } from '@/types/trip.type'
+import { Loader2 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { toast } from 'react-toastify'
 
@@ -17,14 +18,16 @@ export default function SchedulePage() {
         date: '',
         busType: [],
         departureTime: [],
-        sortBy: 'duration',
+        sortBy: 'departure-time',
     })
     const [currentPage, setCurrentPage] = useState<number>(1)
     const [totalPages, setTotalPage] = useState<number>(1)
     const [totalItems, setTotalItems] = useState<number>(0)
+    const [isLoading, setIsLoading] = useState<boolean>(false)
 
     useEffect(() => {
         const getTripList = async () => {
+            setIsLoading(true)
             try {
                 const response = await tripService.getAll(filters, currentPage)
 
@@ -39,10 +42,12 @@ export default function SchedulePage() {
                 const message = error.response?.data?.message
                 console.error(message)
                 toast.error(message)
+            } finally {
+                setIsLoading(false)
             }
         }
         getTripList()
-    }, [currentPage])
+    }, [currentPage, filters])
 
     // const mockTrips = [
     //     {
@@ -360,13 +365,23 @@ export default function SchedulePage() {
                         onFiltersChange={setFilters}
                     />
 
-                    <TripList
-                        trips={tripList}
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        onPageChange={setCurrentPage}
-                        totalResults={totalItems}
-                    />
+                    {isLoading ? (
+                        // Giao diện khi đang tải
+                        <div className="flex flex-col items-center justify-center py-10 w-full h-64">
+                            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                            <p className="text-muted-foreground mt-2 text-sm">
+                                Đang tìm chuyến xe...
+                            </p>
+                        </div>
+                    ) : (
+                        <TripList
+                            trips={tripList}
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={setCurrentPage}
+                            totalResults={totalItems}
+                        />
+                    )}
                 </div>
             </div>
         </>

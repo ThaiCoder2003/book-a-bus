@@ -1,18 +1,48 @@
 const tripService = require('../services/tripService')
 const handleError = require('../utils/handleError')
 
+const isValidDate = (dateString) => {
+    if (typeof dateString !== 'string') return false
+
+    const date = new Date(dateString)
+
+    return !isNaN(date.getTime())
+}
+
 const tripController = {
     getAllTrips: async (req, res) => {
         try {
-            const { departureDay, from, to } = req.query
-            const result = await tripService.getAllTrips(
-                departureDay,
-                from,
-                to,
-            )
+            const {
+                origin,
+                destination,
+                date,
+                busType,
+                departureTime,
+                sortBy,
+                page,
+            } = req.query
+
+            if (date && !isValidDate(date)) {
+                return res.status(400).json({
+                    message: 'Ngày khởi hành không hợp lệ.',
+                    data: null
+                })
+            }
+
+            const filter = {
+                from: origin,
+                to: destination,
+                departureDay: date,
+                busType,
+                departureTime,
+                sortBy,
+            }
+
+            const result = await tripService.getAllTrips(filter, page)
+
             res.status(200).json({
                 message: 'Get trips list successfully',
-                data: result
+                data: result,
             })
         } catch (error) {
             handleError(res, error)

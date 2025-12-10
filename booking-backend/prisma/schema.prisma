@@ -25,7 +25,6 @@ enum SeatStatus {
   PENDING
 }
 
-// Enum giữ nguyên
 enum SeatType {
   SEAT
   SINGLE_BED

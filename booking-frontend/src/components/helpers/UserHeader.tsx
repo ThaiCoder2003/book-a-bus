@@ -46,7 +46,7 @@ export default function UserHeader() {
                             )
                         }
                     >
-                        Lịch trình
+                        Chuyến xe
                     </NavLink>
                     <NavLink
                         to="/sales"
