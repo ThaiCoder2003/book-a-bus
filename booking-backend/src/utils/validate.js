@@ -1,4 +1,5 @@
 const prisma = require('../configs/db')
+const provinces = require('./provinces')
 
 function throwError(message, statusCode) {
     const err = new Error(message)
@@ -169,6 +170,54 @@ const validatePayload = {
         }
     
         return true;
+    },
+
+    validateStationPayload: async (data, options = { requireAll: true, existingStation: null }) => {
+        const {
+            name,
+            province,
+            address
+        } = data;
+
+        const existingStation = await prisma.station.findFirst({
+            where: { 
+                name: name, 
+                province: province 
+            }
+        });
+
+        if (existingStation && (!options.existingBus || existingStation.id !== options.existingBus.id)) {
+            throwError('Station already exists in this province', 409);
+        }
+
+        if (requireAll) {
+            if (!name || !province) {
+                throwError('Bad Request: Missing required station fields', 400);
+            }
+        }
+
+        if (name) {
+            if (name.trim().length < 3) {
+                throwError('Bad Request: Station name is too short', 400);
+            }
+
+            if (!/^[\p{L}\p{N}\s.,-]+$/u.test(name)) {
+                throwError('Bad Request: Station name contains invalid characters', 400);
+            }
+        }
+
+        if (province) {
+            if (!provinces.includes(province)) {
+                throwError('Invalid province name', 400);
+            }
+        }
+
+        
+        if (address) {
+            if (address.trim().length < 3) {
+                throwError('Bad Request: Station name is too short', 400);
+            }
+        }
     }
 }
 
