@@ -19,12 +19,25 @@ export default function FilterSidebar({
     filters,
     onFiltersChange,
 }: FilterSidebarProps) {
-    const busTypes = ['Ghế ngồi', 'Giường đơn', 'Giường đôi']
+    const busTypes = [
+        {
+            key: 'SEAT',
+            value: 'Ghế ngồi',
+        },
+        {
+            key: 'SINGLE_BED',
+            value: 'Giường đơn',
+        },
+        {
+            key: 'DOUBLE_BED',
+            value: 'Giường đôi',
+        },
+    ]
     const timeRanges = [
-        { id: 'morning', label: 'Sáng (6:00 - 12:00)' },
-        { id: 'afternoon', label: 'Chiều (12:00 - 18:00)' },
-        { id: 'evening', label: 'Tối (18:00 - 00:00)' },
-        { id: 'night', label: 'Đêm (00:00 - 6:00)' },
+        { id: 'morning', label: 'Sáng (6:00 - 11:59)' },
+        { id: 'afternoon', label: 'Chiều (12:00 - 17:59)' },
+        { id: 'evening', label: 'Tối (18:00 - 23:59)' },
+        { id: 'night', label: 'Đêm (00:00 - 5:59)' },
     ]
 
     const handleBusTypeChange = (type: string) => {
@@ -64,14 +77,17 @@ export default function FilterSidebar({
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
+                            <SelectItem value="departure-time">
+                                Xuất phát sớm nhất
+                            </SelectItem>
+                            <SelectItem value="arrival-time">
+                                Đến nơi sớm nhất
+                            </SelectItem>
                             <SelectItem value="price-low">
-                                Giá thấp nhất
+                                Giá tăng dần
                             </SelectItem>
                             <SelectItem value="price-high">
-                                Giá cao nhất
-                            </SelectItem>
-                            <SelectItem value="duration">
-                                Thời gian ngắn nhất
+                                Giá giảm dần
                             </SelectItem>
                         </SelectContent>
                     </Select>
@@ -84,19 +100,19 @@ export default function FilterSidebar({
                     </h3>
                     <div className="space-y-3">
                         {busTypes.map((type) => (
-                            <div key={type} className="flex items-center gap-2">
+                            <div key={type.key} className="flex items-center gap-2">
                                 <Checkbox
-                                    id={type}
-                                    checked={filters.busType.includes(type)}
+                                    id={type.key}
+                                    checked={filters.busType.includes(type.key)}
                                     onCheckedChange={() =>
-                                        handleBusTypeChange(type)
+                                        handleBusTypeChange(type.key)
                                     }
                                 />
                                 <label
-                                    htmlFor={type}
+                                    htmlFor={type.key}
                                     className="text-sm text-foreground cursor-pointer"
                                 >
-                                    {type}
+                                    {type.value}
                                 </label>
                             </div>
                         ))}
@@ -105,32 +121,50 @@ export default function FilterSidebar({
 
                 {/* Departure Time Filter */}
                 <div className="mb-6 pb-6 border-b border-border">
-                    <h3 className="font-semibold text-foreground mb-3">
-                        Thời gian khởi hành
-                    </h3>
-                    <div className="space-y-3">
-                        {timeRanges.map((range) => (
-                            <div
-                                key={range.id}
-                                className="flex items-center gap-2"
-                            >
-                                <Checkbox
-                                    id={range.id}
-                                    checked={filters.departureTime.includes(
-                                        range.id,
-                                    )}
-                                    onCheckedChange={() =>
-                                        handleTimeChange(range.id)
-                                    }
-                                />
-                                <label
-                                    htmlFor={range.id}
-                                    className="text-sm text-foreground cursor-pointer"
+                    {/* 1. Logic hiển thị cảnh báo: Nếu chưa có ngày thì hiện chữ đỏ */}
+                    {!filters.date && (
+                        <p className="text-red-500 text-sm mb-2 italic">
+                            * Vui lòng chọn ngày đi trước
+                        </p>
+                    )}
+
+                    {/* 2. Logic làm mờ và chặn click: Nếu chưa có ngày thì thêm class */}
+                    <div
+                        className={
+                            !filters.date
+                                ? 'opacity-50 pointer-events-none select-none'
+                                : ''
+                        }
+                    >
+                        <h3 className="font-semibold text-foreground mb-3">
+                            Thời gian khởi hành
+                        </h3>
+                        <div className="space-y-3">
+                            {timeRanges.map((range) => (
+                                <div
+                                    key={range.id}
+                                    className="flex items-center gap-2"
                                 >
-                                    {range.label}
-                                </label>
-                            </div>
-                        ))}
+                                    <Checkbox
+                                        id={range.id}
+                                        // Best practice: Disable luôn input gốc để tránh dùng phím Tab focus vào được
+                                        disabled={!filters.date}
+                                        checked={filters.departureTime.includes(
+                                            range.id,
+                                        )}
+                                        onCheckedChange={() =>
+                                            handleTimeChange(range.id)
+                                        }
+                                    />
+                                    <label
+                                        htmlFor={range.id}
+                                        className="text-sm text-foreground cursor-pointer"
+                                    >
+                                        {range.label}
+                                    </label>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
@@ -145,7 +179,7 @@ export default function FilterSidebar({
                             date: '',
                             busType: [],
                             departureTime: [],
-                            sortBy: 'duration',
+                            sortBy: 'arrival-time',
                         })
                     }}
                 >

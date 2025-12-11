@@ -3,13 +3,24 @@ const { startOfDay, endOfDay } = require('date-fns')
 const validatePayload = require('../utils/validate')
 
 const tripService = {
-    getAllTrips: async (departureDay, from, to, page = 1, limit = 10) => {
+    getAllTrips: async (
+        { from, to, departureDay, busType, departureTime, sortBy },
+        page = 1,
+        limit = 10,
+    ) => {
+        console.log({ from, to, departureDay, busType, departureTime, sortBy })
         const whereCondition = {}
+        const timeRangesMap = {
+            morning: { start: 6, end: 12 },
+            afternoon: { start: 12, end: 18 },
+            evening: { start: 18, end: 24 },
+            night: { start: 0, end: 6 },
+        }
 
         if (departureDay) {
             const date = new Date(departureDay)
 
-            if (!isNaN(date)) {
+            if (!isNaN(date.getTime())) {
                 whereCondition.departureTime = {
                     gte: startOfDay(date),
                     lte: endOfDay(date),
@@ -35,9 +46,71 @@ const tripService = {
             }
         }
 
+        if (busType && busType.length > 0) {
+            const types = Array.isArray(busType) ? busType : [busType]
+            whereCondition.bus = {
+                type: {
+                    in: types,
+                },
+            }
+        }
+
+        if (departureDay && departureTime && departureTime.length > 0) {
+            const timeConditions = departureTime
+                .map((rangeId) => {
+                    const range = timeRangesMap[rangeId]
+
+                    if (!range) return null
+
+                    // Tạo mốc thời gian Bắt đầu
+                    const startDate = new Date(departureDay)
+                    startDate.setHours(range.start, 0, 0, 0)
+
+                    // Tạo mốc thời gian Kết thúc
+                    const endDate = new Date(departureDay)
+                    endDate.setHours(range.end, 0, 0, 0)
+
+                    // Trả về object điều kiện của Prisma
+                    return {
+                        departureTime: {
+                            gte: startDate.toISOString(), // Lớn hơn hoặc bằng giờ bắt đầu
+                            lt: endDate.toISOString(), // Nhỏ hơn giờ kết thúc
+                        },
+                    }
+                })
+                .filter(Boolean) // Loại bỏ các giá trị null nếu có id rác
+
+            whereCondition.AND = [
+                ...(whereCondition.AND || []), // Giữ lại các điều kiện AND cũ nếu có
+                {
+                    OR: timeConditions,
+                },
+            ]
+        }
+
         const pageNumber = parseInt(page) || 1
         const pageSize = parseInt(limit) || 10
         const skip = (pageNumber - 1) * pageSize
+
+        let orderBy = { departureTime: 'asc' }
+
+        switch (sortBy) {
+            case 'departure-time':
+                orderBy = { departureTime: 'asc' }
+                break
+            case 'arrival-time':
+                orderBy = { arrivalTime: 'asc' }
+                break
+            case 'price-low': // Giá thấp nhất
+                orderBy = { basePrice: 'asc' }
+                break
+            case 'price-high': // Giá cao nhất
+                orderBy = { basePrice: 'desc' }
+                break
+            default:
+                orderBy = { departureTime: 'asc' }
+                break
+        }
 
         try {
             const [trips, total] = await Promise.all([
@@ -48,9 +121,7 @@ const tripService = {
                         destStation: true,
                         bus: true,
                     },
-                    orderBy: {
-                        departureTime: 'asc',
-                    },
+                    orderBy: orderBy,
                     skip: skip, // Bỏ qua số lượng bản ghi
                     take: pageSize, // Lấy số lượng bản ghi giới hạn
                 }),

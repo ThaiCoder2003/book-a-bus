@@ -53,14 +53,14 @@ export default function DashboardPage() {
                     </section>
 
                     {/* Secondary Widgets */}
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-                        <div className="md:col-span-5 lg:col-span-4">
+                    {/* <div className="grid grid-cols-1 md:grid-cols-12 gap-6"> */}
+                        {/* <div className="md:col-span-5 lg:col-span-4">
                             <SearchTrip />
-                        </div>
+                        </div> */}
                         <div className="md:col-span-7 lg:col-span-8">
                             <BookingHistory />
                         </div>
-                    </div>
+                    {/* </div> */}
                 </main>
             </div>
         </>

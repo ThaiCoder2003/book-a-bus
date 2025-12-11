@@ -1,7 +1,7 @@
 export type SeatStatus = 'AVAILABLE' | 'RESERVED' | 'PENDING'
 export type SeatType = 'SEAT' | 'SINGLE_BED' | 'DOUBLE_BED'
 export type BookingStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED'
-export type UserRole = 'user' | 'admin' | 'driver'
+export type UserRole = 'user' | 'admin'
 
 /**
  * Model SeatLock (Khóa ghế tạm thời)

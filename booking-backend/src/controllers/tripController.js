@@ -2,33 +2,48 @@ const { data } = require('react-router-dom')
 const tripService = require('../services/tripService')
 const handleError = require('../utils/handleError')
 
+const isValidDate = (dateString) => {
+    if (typeof dateString !== 'string') return false
+
+    const date = new Date(dateString)
+
+    return !isNaN(date.getTime())
+}
+
 const tripController = {
     getAllTrips: async (req, res) => {
         try {
-            const { departureDay, from, to, page, limit } = req.query
-            const result = await tripService.getAllTrips(
-                departureDay,
-                from,
-                to,
+            const {
+                origin,
+                destination,
+                date,
+                busType,
+                departureTime,
+                sortBy,
                 page,
-                limit
-            )
+            } = req.query
+
+            if (date && !isValidDate(date)) {
+                return res.status(400).json({
+                    message: 'Ngày khởi hành không hợp lệ.',
+                    data: null
+                })
+            }
+
+            const filter = {
+                from: origin,
+                to: destination,
+                departureDay: date,
+                busType,
+                departureTime,
+                sortBy,
+            }
+
+            const result = await tripService.getAllTrips(filter, page)
+
             res.status(200).json({
                 message: 'Get trips list successfully',
-                data: result
-            })
-        } catch (error) {
-            handleError(res, error)
-        }
-    },
-
-    getTripById: async (req, res) => {
-        try {
-            const { id } = req.params
-            const result = await tripService.getTripById(id)
-
-            res.status(200).json({
-                data: result
+                data: result,
             })
         } catch (error) {
             handleError(res, error)
