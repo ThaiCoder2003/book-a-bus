@@ -1,4 +1,3 @@
-const { data } = require('react-router-dom')
 const tripService = require('../services/tripService')
 const handleError = require('../utils/handleError')
 
