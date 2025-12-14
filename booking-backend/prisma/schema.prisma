@@ -19,6 +19,7 @@ model User {
   bookings                  Booking[]
 }
 
+// enum
 enum SeatStatus {
   AVAILABLE
   RESERVED
@@ -127,15 +128,4 @@ model Ticket {
   trip      Trip    @relation(fields: [tripId], references: [id])
 
   @@unique([tripId, seatId])
-}
-
-model SeatLock {
-  id        String   @id @default(uuid())
-  seatId    String
-  userId    String?
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-
-  @@index([seatId])
-  @@index([expiresAt])
 }

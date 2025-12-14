@@ -19,7 +19,7 @@ const busController = {
         }
     },
 
-    getTripById: async (req, res) => {
+    getBusById: async (req, res) => {
         try {
             const { id } = req.params
             const result = await busService.getBusById(id)
