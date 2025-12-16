@@ -19,6 +19,7 @@ model User {
   bookings                  Booking[]
 }
 
+// enum
 enum SeatStatus {
   AVAILABLE
   RESERVED

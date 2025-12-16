@@ -8,30 +8,18 @@ const seatService = {
         return seat
     },
 
-    getSeatsByBus: async (busId) => {
-        const seats = await prisma.seat.findMany({
-            where: { busId },
-        })
-        return seats
-    },
+    getSeatsByBusId: async (busId) => {
+        try {
+            const seats = await prisma.seat.findMany({
+                where: { busId },
+                orderBy: [{ floor: 'asc' }, { row: 'asc' }, { col: 'asc' }],
+            })
 
-    lockSeat: async (seatId, userId) => {
-        const seat = await prisma.seat.findUnique({
-            where: { id: seatId },
-        })
-
-        if (!seat) {
-            throw new Error('Seat not found')
+            return seats
+        } catch (error) {
+            console.error(error)
+            throw new Error('Lỗi xảy ra khi lấy danh sách ghế của xe.')
         }
-
-        const lockedSeat = await prisma.seatLock.create({
-            data: {
-                seatId: seatId,
-                userId: userId,
-                lockedAt: new Date(),
-            },
-        })
-        return lockedSeat
     },
 
     validateAvailability: async (seatId) => {

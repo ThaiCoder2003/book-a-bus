@@ -1,4 +1,3 @@
-const { data } = require('react-router-dom')
 const tripService = require('../services/tripService')
 const handleError = require('../utils/handleError')
 
@@ -26,7 +25,7 @@ const tripController = {
             if (date && !isValidDate(date)) {
                 return res.status(400).json({
                     message: 'Ngày khởi hành không hợp lệ.',
-                    data: null
+                    data: null,
                 })
             }
 
@@ -41,10 +40,28 @@ const tripController = {
 
             const result = await tripService.getAllTrips(filter, page)
 
-            res.status(200).json({
+            return res.status(200).json({
                 message: 'Get trips list successfully',
                 data: result,
             })
+        } catch (error) {
+            handleError(res, error)
+        }
+    },
+
+    getTripById: async (res, req) => {
+        try {
+            const id = req.params.id
+            const result = await tripService.getTripById(id)
+
+            if (result) {
+                return res.status(200).json({
+                    message: 'Lấy dữ liệu thành công',
+                    data: result,
+                })
+            } else {
+                throw new Error('Không thể lấy dữ liệu chuyến đi này.')
+            }
         } catch (error) {
             handleError(res, error)
         }

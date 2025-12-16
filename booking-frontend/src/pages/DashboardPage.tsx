@@ -1,6 +1,6 @@
 import BookingHistory from '@/components/Dashboard/BookingHistory'
 import NextTripCard from '@/components/Dashboard/NextTripCard'
-import SearchTrip from '@/components/Dashboard/SearchTrip'
+// import SearchTrip from '@/components/Dashboard/SearchTrip'
 import UserHeader from '@/components/helpers/UserHeader'
 import { jwtDecode } from 'jwt-decode'
 import { useEffect, useState } from 'react'
