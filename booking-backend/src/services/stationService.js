@@ -22,9 +22,9 @@ const stationService = {
                     departingTrips: true,
                 },
                 skip,
-                take
+                take: size
             }),
-            prisma.trip.count({
+            prisma.station.count({
                 where, // Đếm dựa trên cùng điều kiện lọc
             }),
         ])
