@@ -1,12 +1,12 @@
 // src/pages/FleetManagementPage.tsx
 import React, { useState } from "react";
 import { Plus, Search } from "lucide-react";
-import StatisticCard from "../components/fleets/StatisticCard";
-import VehicleCard from "../components/fleets/VehicleCard";
-import VehicleModal from "../components/fleets/VehicleModal";
-import SeatConfigModal from "../components/fleets/SeatConfigModal";
-import type { Vehicle, Seat } from "../types/fleet";
-import { mockFleet } from "../data/fleetMock";
+import StatisticCard from "../../components/Admin/fleets/StatisticCard";
+import VehicleCard from "../../components/Admin/fleets/VehicleCard";
+import VehicleModal from "../../components/Admin/fleets/VehicleModal";
+import SeatConfigModal from "../../components/Admin/fleets/SeatConfigModal";
+import type { Vehicle, Seat } from "../../types/admin/fleet";
+import { mockFleet } from "../../data/fleetMock";
 
 const FleetManagementPage: React.FC = () => {
   const [fleet, setFleet] = useState<Vehicle[]>(mockFleet);

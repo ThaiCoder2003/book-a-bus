@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import type { Trip, TripFilter } from "../types/trip";
-import { mockTrips } from "../data/tripMock";
-import { TripFilterPanel } from "../components/trips/TripFilterPanel";
-import { TripManagementTable } from "../components/trips/TripManagementTable";
-import { TripFormModal } from "../components/trips/TripFormModal";
+import type { Trip, TripFilter } from "../../types/admin/trip";
+import { mockTrips } from "../../data/tripMock";
+import { TripFilterPanel } from "../../components/Admin/trips/TripFilterPanel";
+import { TripManagementTable } from "../../components/Admin/trips/TripManagementTable";
+import { TripFormModal } from "../../components/Admin/trips/TripFormModal";
 import { Plus } from "lucide-react";
 
 export function TripManagementPage() {

@@ -1,7 +1,7 @@
 import { useState } from "react";
-import BookingTable from "../components/bookings/BookingTable";
-import FilterSection from "../components/bookings/FilterSection";
-import BookingDetailModal from "../components/bookings/BookingDetailModal";
+import BookingTable from "../../components/Admin/bookings/BookingTable";
+import FilterSection from "../../components/Admin/bookings/FilterSection";
+import BookingDetailModal from "../../components/Admin/bookings/BookingDetailModal";
 import { Search, FileSpreadsheet } from "lucide-react"; // ⬅ icon lucide-react
 
 // Định nghĩa kiểu dữ liệu

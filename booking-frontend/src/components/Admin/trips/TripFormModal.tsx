@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { X, AlertTriangle } from "lucide-react";
-import type { Trip, TripStatus } from "../../types/trip";
-import { mockRoutes } from "../../types/route";
-import { mockTrips } from "../../data/tripMock";
-import { mockFleet } from "../../data/fleetMock"; // ✅ Thêm dòng này để lấy dữ liệu đội xe
+import type { Trip, TripStatus } from "../../../types/admin/trip";
+import { mockRoutes } from "../../../types/admin/route";
+import { mockTrips } from "../../../data/tripMock";
+import { mockFleet } from "../../../data/fleetMock"; // ✅ Thêm dòng này để lấy dữ liệu đội xe
 
 interface TripFormModalProps {
   open: boolean;

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import BookingTableRow from "./BookingTableRow";
 import BookingDetailModal from "../bookings/BookingDetailModal"; // ⬅ import modal
-import type { Booking } from "../../types/booking";
+import type { Booking } from "../../../types/admin/booking";
 
 interface BookingTableProps {
   bookings: Booking[];

@@ -1,5 +1,5 @@
 import { Edit2, Trash2, Calendar, Clock } from "lucide-react";
-import type { Trip, TripStatus } from "../../types/trip";
+import type { Trip, TripStatus } from "../../../types/admin/trip";
 
 interface TripManagementTableProps {
   trips: Trip[];

@@ -1,6 +1,6 @@
-import MetricCard from "../components/dashboard/MetricCard";
-import WeeklyChart from "../components/dashboard/WeeklyChart";
-import TransactionFeed from "../components/dashboard/TransactionFeed";
+import MetricCard from "../../components/Admin/dashboard/MetricCard";
+import WeeklyChart from "../../components/Admin/dashboard/WeeklyChart";
+import TransactionFeed from "../../components/Admin/dashboard/TransactionFeed";
 
 export default function DashboardPage() {
   return (

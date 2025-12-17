@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { X } from "lucide-react";
-import type { Vehicle } from "../../types/fleet";
+import type { Vehicle } from "../../../types/admin/fleet";
 
 interface VehicleModalProps {
   isOpen: boolean;

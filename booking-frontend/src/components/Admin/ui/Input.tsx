@@ -1,6 +1,6 @@
 import * as React from "react";
 // Import ReactNode để chấp nhận các icon/component JSX
-import { cn } from "../../lib/utils"; 
+import { cn } from "../../../lib/utils";
 
 // 1. ĐỊNH NGHĨA PROPS MỚI
 export interface InputProps extends React.ComponentPropsWithoutRef<"input"> {
@@ -23,11 +23,11 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
             // 3. THÊM PADDING BÊN TRÁI NẾU CÓ ICON
             icon ? "pl-10" : "pl-3",
-            className
+            className,
           )}
           {...props}
         />
-        
+
         {/* 4. HIỂN THỊ ICON VÀ CĂN CHỈNH */}
         {icon && (
           <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
@@ -36,7 +36,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         )}
       </div>
     );
-  }
+  },
 );
 
 Input.displayName = "Input";

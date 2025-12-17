@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import RouteSearchBar from "../components/routesManagement/RouteSearchBar";
-import CreateRouteButton from "../components/routesManagement/CreateRouteButton";
-import RouteTable from "../components/routesManagement/RouteTable";
-import StopsModal from "../components/routesManagement/StopsModal";
-import CreateRouteModal from "../components/routesManagement/CreateRouteModal";
+import RouteSearchBar from "../../components/Admin/routesManagement/RouteSearchBar";
+import CreateRouteButton from "../../components/Admin/routesManagement/CreateRouteButton";
+import RouteTable from "../../components/Admin/routesManagement/RouteTable";
+import StopsModal from "../../components/Admin/routesManagement/StopsModal";
+import CreateRouteModal from "../../components/Admin/routesManagement/CreateRouteModal";
 
-import type { Stop } from "../types/stop";
+import type { Stop } from "../../types/admin/stop";
 
 interface RouteDetails {
   id: string | number;

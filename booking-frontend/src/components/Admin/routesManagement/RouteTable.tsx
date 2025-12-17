@@ -1,5 +1,5 @@
 import RouteTableRow from "./RouteTableRow";
-import { mockRoutes } from "../../types/route";
+import { mockRoutes } from "../../../types/admin/route";
 
 interface RouteTableProps {
   onViewDetails: (routeId: string | number) => void;

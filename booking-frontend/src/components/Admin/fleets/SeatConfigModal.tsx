@@ -1,6 +1,6 @@
 // src/components/SeatConfigModal.tsx
 import React, { useState, useMemo } from "react";
-import type { Vehicle, Seat, SeatType } from "../../types/fleet";
+import type { Vehicle, Seat, SeatType } from "../../../types/admin/fleet";
 import { X, Check } from "lucide-react";
 
 interface SeatConfigModalProps {

@@ -1,5 +1,5 @@
 import React from "react";
-import type { Booking } from "../../types/booking";
+import type { Booking } from "../../../types/admin/booking";
 import { Info } from "lucide-react";
 
 interface BookingTableRowProps {

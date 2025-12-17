@@ -1,6 +1,6 @@
 import React, { useState, forwardRef } from "react";
 import { ChevronUp, ChevronDown, Calendar } from "lucide-react";
-import InputMask from "react-input-mask";
+import InputMask from "react-input-mask-next";
 import ReactDatePicker from "react-datepicker";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";

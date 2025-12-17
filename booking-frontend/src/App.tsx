@@ -1,11 +1,11 @@
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css"; // ⚠️ Quan trọng: Không có dòng này toast sẽ bị vỡ giao diện
-import AppRoutes from "./routes/UserRoutes";
+import RootRoutes from "./routes";
 
 function App() {
   return (
     <>
-      <AppRoutes />
+      <RootRoutes />
 
       <ToastContainer
         position="top-right"

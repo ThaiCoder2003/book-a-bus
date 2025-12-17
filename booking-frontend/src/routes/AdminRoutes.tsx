@@ -1,21 +1,24 @@
 import { Routes, Route } from "react-router-dom";
-import MainLayout from "@/components/layout/MainLayout";
-import DashboardPage from "@/pages/DashboardPage";
-import FleetManagementPage from "@/pages/FleetManagementPage";
-import BookingManagementPage from "@/pages/BookingManagementPage";
-import { TripManagementPage } from "@/pages/TripManagementPage";
-import RoutesPage from "@/pages/RoutesPage";
+import MainLayout from "@/components/Admin/layout/MainLayout";
+import DashboardPage from "@/pages/Admin/DashboardPage";
+import FleetManagementPage from "@/pages/Admin/FleetManagementPage";
+import BookingManagementPage from "@/pages/Admin/BookingManagementPage";
+import { TripManagementPage } from "@/pages/Admin/TripManagementPage";
+import RoutesPage from "@/pages/Admin/RoutesPage";
 
 export default function AdminRoutes() {
   return (
-    <MainLayout>
-      <Routes>
-        <Route path="/admin" element={<DashboardPage />} />
-        <Route path="/admin/fleets" element={<FleetManagementPage />} />
-        <Route path="/admin/trips" element={<TripManagementPage />} />
-        <Route path="/admin/bookings" element={<BookingManagementPage />} />
-        <Route path="/admin/routes" element={<RoutesPage />} />
-      </Routes>
-    </MainLayout>
+    <Routes>
+      <Route element={<MainLayout />}>
+        <Route index element={<DashboardPage />} /> {/* /admin */}
+        <Route path="fleets" element={<FleetManagementPage />} />{" "}
+        {/* /admin/fleets */}
+        <Route path="trips" element={<TripManagementPage />} />{" "}
+        {/* /admin/trips */}
+        <Route path="bookings" element={<BookingManagementPage />} />{" "}
+        {/* /admin/bookings */}
+        <Route path="routes" element={<RoutesPage />} /> {/* /admin/routes */}
+      </Route>
+    </Routes>
   );
 }

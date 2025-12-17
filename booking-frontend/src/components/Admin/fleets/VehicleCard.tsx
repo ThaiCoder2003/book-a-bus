@@ -1,6 +1,6 @@
 import React from "react";
 import { Truck, Wifi, Usb, Bed, Car, Settings, Trash2 } from "lucide-react";
-import type { Vehicle } from "../../types/fleet";
+import type { Vehicle } from "../../../types/admin/fleet";
 
 interface VehicleCardProps {
   vehicle: Vehicle;

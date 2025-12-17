@@ -1,8 +1,14 @@
 import React from "react";
-import { cn } from "../../lib/utils";
+import { cn } from "../../../lib/utils";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "default" | "outline" | "secondary" | "destructive" | "ghost" | "link";
+  variant?:
+    | "default"
+    | "outline"
+    | "secondary"
+    | "destructive"
+    | "ghost"
+    | "link";
   size?: "default" | "sm" | "lg" | "icon";
 }
 

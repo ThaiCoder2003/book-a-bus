@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import UpdatePaymentSection from "./UpdatePaymentSection";
-import type { Booking } from "../../types/booking";
+import type { Booking } from "../../../types/admin/booking";
 import { X, Send, Pencil, XCircle } from "lucide-react";
 
 const getStatusBadgeClass = (

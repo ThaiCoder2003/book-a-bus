@@ -1,5 +1,5 @@
 import { Search } from "lucide-react";
-import type { TripFilter, TripStatus } from "../../types/trip";
+import type { TripFilter, TripStatus } from "../../../types/admin/trip";
 
 interface TripFilterPanelProps {
   filter: TripFilter;

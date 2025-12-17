@@ -1,7 +1,6 @@
 // src/components/trips/StopTimelineItem.tsx
-import type { Stop } from "../../types/stop"; // dùng relative path
+import type { Stop } from "../../../types/admin/stop"; // dùng relative path
 import { Clock, MapPin } from "lucide-react";
-
 
 interface StopItemProps {
   stop: Stop;
@@ -22,7 +21,11 @@ export default function StopTimelineItem({ stop, isLast }: StopItemProps) {
       {/* Number Circle */}
       <div
         className={`z-10 w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-sm font-semibold
-          ${isStart || isEnd ? "bg-blue-600 text-white" : "bg-white text-gray-800 border-2 border-blue-400"}
+          ${
+            isStart || isEnd
+              ? "bg-blue-600 text-white"
+              : "bg-white text-gray-800 border-2 border-blue-400"
+          }
         `}
       >
         {stop.order}
@@ -60,7 +63,11 @@ export default function StopTimelineItem({ stop, isLast }: StopItemProps) {
         {(isStart || isEnd) && (
           <span
             className={`inline-block text-xs font-medium px-2 py-0.5 rounded-md mt-1
-              ${isStart ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}
+              ${
+                isStart
+                  ? "bg-green-100 text-green-700"
+                  : "bg-red-100 text-red-700"
+              }
             `}
           >
             {isStart ? "Điểm khởi hành" : "Điểm kết thúc"}

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import type { Booking } from "../../types/booking";
+import type { Booking } from "../../../types/admin/booking";
 import { Send, Trash2, Check, X } from "lucide-react";
 
 interface UpdatePaymentSectionProps {

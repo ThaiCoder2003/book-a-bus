@@ -1,8 +1,7 @@
 // src/components/trips/StopsModal.tsx
-import type { Stop } from "../../types/stop"; // dùng relative path
+import type { Stop } from "../../../types/admin/stop"; // dùng relative path
 import { X } from "lucide-react";
 import StopTimelineItem from "./StopTimelineItem";
-
 
 interface StopsModalProps {
   routeName: string;
@@ -20,7 +19,6 @@ export default function StopsModal({
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
       <div className="bg-white w-full max-w-xl h-[90vh] rounded-2xl shadow-xl flex flex-col overflow-hidden">
-        
         {/* HEADER */}
         <div className="px-6 py-5 border-b bg-white flex justify-between items-start sticky top-0 z-20">
           <div>
