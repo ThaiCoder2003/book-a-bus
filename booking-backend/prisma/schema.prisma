@@ -8,25 +8,32 @@ datasource db {
 }
 
 model User {
-  id                        String   @id @default(uuid())
-  email                     String   @unique
+  id                        String    @id @default(uuid())
+  email                     String    @unique
   name                      String
   passwordHash              String
-  role                      String   @default("user")
+  role                      String    @default("user")
   currentHashedRefreshToken String?
-  createdAt                 DateTime @default(now())
-  updatedAt                 DateTime @updatedAt
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
   bookings                  Booking[]
 }
 
+// enum
 enum SeatStatus {
   AVAILABLE
   RESERVED
   PENDING
 }
 
+enum BusType {
+  SEAT
+  BED
+}
+
 enum SeatType {
   SEAT
+  VIP
   SINGLE_BED
   DOUBLE_BED
 }
@@ -37,18 +44,24 @@ enum BookingStatus {
   CANCELLED
 }
 
+enum BusStatus {
+  RUNNING
+  MAINTENANCE
+}
+
 model Bus {
-  id          String   @id @default(uuid())
-  
-  plateNumber String   
-  
-  name        String?
-  totalSeats  Int      @default(0)
+  id String @id @default(uuid())
 
-  type        SeatType 
+  plateNumber String
 
-  seats       Seat[]
-  trips       Trip[]
+  name       String?
+  totalSeats Int     @default(0)
+
+  type      BusType
+  busStatus BusStatus
+
+  seats Seat[]
+  trips Trip[]
 
   // Một biển số xe + một loại ghế chỉ được xuất hiện 1 lần.
   // Ví dụ: Xe 29A-12345 (SINGLE_BED) và Xe 29A-12345 (SEAT) có thể cùng tồn tại.
@@ -56,48 +69,56 @@ model Bus {
 }
 
 model Seat {
-  id       String   @id @default(uuid())
-  busId    String
-  
-  label    String   
-  
-  floor    Int      
-  row      Int      
-  col      Int      
-  isActive Boolean  @default(true)
-  
-  bus      Bus      @relation(fields: [busId], references: [id], onDelete: Cascade)
-  tickets  Ticket[]
-  status   SeatStatus @default(AVAILABLE)
-  
+  id    String @id @default(uuid())
+  busId String
+
+  label String
+
+  type  SeatType
+
+  floor    Int
+  row      Int
+  col      Int
+  isActive Boolean @default(true)
+
+  bus       Bus        @relation(fields: [busId], references: [id], onDelete: Cascade)
+  tickets   Ticket[]
+  status    SeatStatus @default(AVAILABLE)
+  seatLocks SeatLock[]
+
   @@unique([busId, label])
 }
 
 // Các model Station, Trip, Booking, Ticket giữ nguyên logic cũ
 model Station {
-  id             String   @id @default(uuid())
-  name           String   
-  address        String?  
-  province       String   
-  departingTrips Trip[]   @relation("OriginStation")
-  arrivingTrips  Trip[]   @relation("DestinationStation")
+  id             String      @id @default(uuid())
+  name           String
+  address        String?
+  province       String
+  departingTrips Trip[]      @relation("OriginStation")
+  arrivingTrips  Trip[]      @relation("DestinationStation")
+  RouteStop      RouteStop[]
 }
 
 model Trip {
-  id              String    @id @default(uuid())
+  id String @id @default(uuid())
+
   busId           String
   originStationId String
   destStationId   String
-  departureTime   DateTime
-  arrivalTime     DateTime?
-  basePrice       Decimal
-  
-  originStation   Station   @relation("OriginStation", fields: [originStationId], references: [id])
-  destStation     Station   @relation("DestinationStation", fields: [destStationId], references: [id])
-  bus             Bus       @relation(fields: [busId], references: [id])
+  routeId         String
 
-  bookings        Booking[]
-  tickets         Ticket[]
+  departureTime DateTime
+  arrivalTime   DateTime?
+  basePrice     Decimal
+
+  originStation Station @relation("OriginStation", fields: [originStationId], references: [id])
+  destStation   Station @relation("DestinationStation", fields: [destStationId], references: [id])
+  bus           Bus     @relation(fields: [busId], references: [id])
+  route         Route   @relation(fields: [routeId], references: [id])
+
+  bookings Booking[]
+  tickets  Ticket[]
 }
 
 model Booking {
@@ -109,10 +130,10 @@ model Booking {
   totalAmount Decimal
   status      BookingStatus @default(PENDING)
   createdAt   DateTime      @default(now())
-  
-  user        User          @relation(fields: [userId], references: [id])
-  trip        Trip          @relation(fields: [tripId], references: [id])
-  tickets     Ticket[]
+
+  user    User     @relation(fields: [userId], references: [id])
+  trip    Trip     @relation(fields: [tripId], references: [id])
+  tickets Ticket[]
 }
 
 model Ticket {
@@ -121,10 +142,10 @@ model Ticket {
   tripId    String
   seatId    String
   price     Decimal
-  
-  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  seat      Seat    @relation(fields: [seatId], references: [id])
-  trip      Trip    @relation(fields: [tripId], references: [id])
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  seat    Seat    @relation(fields: [seatId], references: [id])
+  trip    Trip    @relation(fields: [tripId], references: [id])
 
   @@unique([tripId, seatId])
 }
@@ -132,10 +153,42 @@ model Ticket {
 model SeatLock {
   id        String   @id @default(uuid())
   seatId    String
+  seat      Seat?    @relation(fields: [seatId], references: [id])
   userId    String?
   expiresAt DateTime
   createdAt DateTime @default(now())
 
   @@index([seatId])
   @@index([expiresAt])
+}
+
+model Route {
+  id                String  @id @default(uuid())
+  code              String  @unique
+  name              String?
+  originProvince    String
+  destProvince      String
+  estimatedDuration Int?
+  isActive          Boolean @default(true)
+
+  // Liên kết list Stop
+  stops RouteStop[]
+  trips Trip[]
+}
+
+model RouteStop {
+  id            String    @id @default(uuid())
+  order         Int
+  arrivalTime   DateTime?
+  departureTime DateTime?
+
+  // FK → Station
+  stationId String
+  station   Station @relation(fields: [stationId], references: [id])
+
+  // FK → Route
+  routeId String
+  route   Route  @relation(fields: [routeId], references: [id])
+
+  @@unique([routeId, order]) // mỗi route không được trùng thứ tự điểm dừng
 }

@@ -19,7 +19,7 @@ const busController = {
         }
     },
 
-    getTripById: async (req, res) => {
+    getBusById: async (req, res) => {
         try {
             const { id } = req.params
             const result = await busService.getBusById(id)
@@ -38,6 +38,34 @@ const busController = {
             return res.status(201).json({
                 message: 'Bus created successfully',
                 bus: newBus,
+            })
+        } catch (error) {
+            handleError(res, error)
+        }
+    },
+
+    seatConfig: async (req, res) => {
+        try {
+            const { busId } = req.params
+            const { seats } = req.body
+
+            if (!busId) {
+                return res.status(400).json({
+                    message: 'Missing busId',
+                })
+            }
+
+            if (!Array.isArray(seats) || seats.length === 0) {
+                return res.status(400).json({
+                    message: 'Seat layout is empty',
+                })
+            }
+
+            const result = await busService.saveSeatLayout(busId, seats)
+
+            return res.status(200).json({
+                message: 'Seat layout saved successfully',
+                ...result,
             })
         } catch (error) {
             handleError(res, error)

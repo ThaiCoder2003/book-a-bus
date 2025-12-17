@@ -15,13 +15,14 @@ const validatePayload = {
             destStationId,
             departureTime,
             arrivalTime,
-            price
+            price,
+            routeId
         } = data
     
         const existing = options.existingTrip;
     
         if (options.requireAll) {
-            if (!busId || !originStationId || !destStationId || !departureTime || !arrivalTime || price === undefined) {
+            if (!busId || !originStationId || !destStationId || !departureTime || !arrivalTime || !routeId || price === undefined) {
                 throwError('Bad Request: Missing required trip fields', 400);
             }
         }
@@ -81,6 +82,13 @@ const validatePayload = {
     
             if (arr <= dep) {
                 throwError('Bad Request: Arrival time must be after departure time', 400)
+            }
+        }
+
+        if (routeId) {
+            const exists = prisma.route.findUnique({ where: { id: routeId } })
+            if (!exists) {
+                throwError('Bad Request: This route does not exist', 400)
             }
         }
     
@@ -179,6 +187,8 @@ const validatePayload = {
             address
         } = data;
 
+        const { requireAll } = options
+
         const existingStation = await prisma.station.findFirst({
             where: { 
                 name: name, 
@@ -186,7 +196,7 @@ const validatePayload = {
             }
         });
 
-        if (existingStation && (!options.existingBus || existingStation.id !== options.existingBus.id)) {
+        if (existingStation && (!options.existingStation || existingStation.id !== options.existingStation.id)) {
             throwError('Station already exists in this province', 409);
         }
 
@@ -216,6 +226,67 @@ const validatePayload = {
         if (address) {
             if (address.trim().length < 3) {
                 throwError('Bad Request: Station name is too short', 400);
+            }
+        }
+    },
+
+    validateRoutePayload: async (data, options = { requireAll: true, existingRoute: null }) => {
+        const {
+            code,
+            name,
+            originProvince,
+            destProvince,
+            estimatedDuration,
+        } = data;
+
+        const { requireAll, existingRoute } = options
+
+        // 1️⃣ Check required
+        if (requireAll) {
+            if (!code || !originProvince || !destProvince) {
+            throwError('Bad Request: Missing required route fields', 400)
+            }
+        }
+
+          // 2️⃣ Code unique
+        if (code) {
+            const existing = await prisma.route.findUnique({ where: { code } })
+            if (existing && (!existingRoute || existing.id !== existingRoute.id)) {
+            throwError('Route code already exists', 409)
+            }
+        }
+
+
+        // 3️⃣ Origin ≠ Destination
+        if (originProvince && destProvince) {
+            if (originProvince === destProvince) {
+            throwError('Origin and destination cannot be the same', 400)
+            }
+        }
+
+        // 4️⃣ Province hợp lệ
+        if (originProvince && !provinces.includes(originProvince)) {
+            throwError('Invalid origin province', 400)
+        }
+
+        if (destProvince && !provinces.includes(destProvince)) {
+            throwError('Invalid destination province', 400)
+        }
+
+        if (name) {
+            if (name.trim().length < 3) {
+                throwError('Bad Request: Station name is too short', 400);
+            }
+
+            if (!/^[\p{L}\p{N}\s.,-]+$/u.test(name)) {
+                throwError('Bad Request: Station name contains invalid characters', 400);
+            }
+        }
+
+
+        if (estimatedDuration !== undefined) {
+            if (estimatedDuration <= 0) {
+                throwError('Estimated duration must be greater than 0', 400)
             }
         }
     }

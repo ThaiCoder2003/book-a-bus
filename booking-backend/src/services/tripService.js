@@ -1,14 +1,28 @@
 const prisma = require('../configs/db')
 const { startOfDay, endOfDay } = require('date-fns')
-const validatePayload = require('../utils/validate')
+const { validateTripPayload } = require('../utils/validate')
 
 const tripService = {
+    calDuration: (departureTime, arrivalTime) => {
+        let hours = 0
+        let minutes = 0
+
+        // Trừ 2 mốc thời gian (kết quả ra milliseconds)
+        const diffMs = new Date(arrivalTime) - new Date(departureTime)
+
+        if (diffMs > 0) {
+            hours = Math.floor(diffMs / (1000 * 60 * 60))
+            minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
+        }
+
+        return { hours, minutes }
+    },
+
     getAllTrips: async (
-        { from, to, departureDay, busType, departureTime, sortBy },
+        { from, to, departureDay, busType, departureTime, routeId, sortBy },
         page = 1,
         limit = 10,
     ) => {
-        console.log({ from, to, departureDay, busType, departureTime, sortBy })
         const whereCondition = {}
         const timeRangesMap = {
             morning: { start: 6, end: 12 },
@@ -88,6 +102,10 @@ const tripService = {
             ]
         }
 
+        if (routeId) {
+            whereCondition.routeId = routeId
+        }
+
         const pageNumber = parseInt(page) || 1
         const pageSize = parseInt(limit) || 10
         const skip = (pageNumber - 1) * pageSize
@@ -120,6 +138,7 @@ const tripService = {
                         originStation: true,
                         destStation: true,
                         bus: true,
+                        route: true
                     },
                     orderBy: orderBy,
                     skip: skip, // Bỏ qua số lượng bản ghi
@@ -131,27 +150,22 @@ const tripService = {
             ])
 
             const tripsWithDuration = trips.map((trip) => {
-                let hours = 0
-                let minutes = 0
+                let duration = {
+                    hours: 0,
+                    minutes: 0,
+                }
 
                 if (trip.arrivalTime && trip.departureTime) {
-                    // Trừ 2 mốc thời gian (kết quả ra milliseconds)
-                    const diffMs =
-                        new Date(trip.arrivalTime) -
-                        new Date(trip.departureTime)
-
-                    if (diffMs > 0) {
-                        hours = Math.floor(diffMs / (1000 * 60 * 60))
-                        minutes = Math.floor(
-                            (diffMs % (1000 * 60 * 60)) / (1000 * 60),
-                        )
-                    }
+                    duration = tripService.calDuration(
+                        trip.departureTime,
+                        trip.arrivalTime,
+                    )
                 }
 
                 return {
                     ...trip,
-                    hoursTime: hours,
-                    minutesTime: minutes,
+                    hoursTime: duration.hours,
+                    minutesTime: duration.minutes,
                 }
             })
 
@@ -171,18 +185,39 @@ const tripService = {
     },
 
     getTripById: async (id) => {
-        return prisma.trip.findUnique({
-            where: { id },
-            include: {
-                originStation: true,
-                destStation: true,
-                bus: true,
-            },
-        })
+        try {
+            const trip = await prisma.trip.findUnique({
+                where: { id },
+                include: {
+                    originStation: true,
+                    destStation: true,
+                    bus: true,
+                },
+            })
+
+            let duration = {
+                hours: 0,
+                minutes: 0,
+            }
+
+            duration = tripService.calDuration(
+                trip.departureTime,
+                trip.arrivalTime,
+            )
+
+            return {
+                ...trip,
+                hoursTime: duration.hours,
+                minutesTime: duration.minutes,
+            }
+        } catch (error) {
+            console.error('Lỗi khi lấy thông tin chuyến xe:', error)
+            throw error
+        }
     },
 
     registerNewTrip: async (data) => {
-        await validatePayload.validateTripPayload(data, { requireAll: true })
+        await validateTripPayload(data, { requireAll: true })
         return prisma.trip.create({ data })
     },
 
@@ -193,7 +228,6 @@ const tripService = {
             err.statusCode = 404
             throw err
         }
-
 
         await validateTripPayload(data, {
             requireAll: false,
