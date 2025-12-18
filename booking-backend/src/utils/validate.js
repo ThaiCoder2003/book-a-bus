@@ -218,6 +218,33 @@ const validatePayload = {
                 throwError('Bad Request: Station name is too short', 400);
             }
         }
+    },
+
+        validateRoutePayload: async (data, options = { requireAll: true }) => {
+        const {
+            name
+        } = data;
+
+        const { requireAll } = options
+
+        // 1️⃣ Check required
+        if (requireAll) {
+            if (!name) {
+                throwError('Bad Request: Missing required route fields', 400)
+            }
+        }
+
+        if (name) {
+            // 2️⃣ Check length
+            if (name.trim().length < 3) {
+                throwError('Bad Request: Route name is too short', 400)
+            }
+
+            // 3️⃣ Check valid characters
+            if (!/^[\p{L}\p{N}\s.,-]+$/u.test(name)) {
+                throwError('Bad Request: Route name contains invalid characters', 400)
+            }
+        }
     }
 }
 

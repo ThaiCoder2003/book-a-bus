@@ -22,15 +22,63 @@ const seatService = {
         }
     },
 
-    validateAvailability: async (seatId) => {
-        const seat = await prisma.seat.findUnique({
-            where: { id: seatId },
+    saveSeatLayout: async (busId, seats) => {
+        return prisma.$transaction(async (tx) => {
+
+            // 1. Check bus tồn tại
+            const bus = await tx.bus.findUnique({ where: { id: busId } })
+            if (!bus) throwError('Bus not found', 404)
+
+            // 2. Update hàng loạt
+            const updates = seats.map(seat =>
+                tx.seat.update({
+                    where: { id: seat.id },
+                    data: {
+                    ...(seat.type && { type: seat.type }),
+                    ...(seat.row !== undefined && { row: seat.row }),
+                    ...(seat.col !== undefined && { col: seat.col }),
+                    ...(seat.floor !== undefined && { floor: seat.floor }),
+                    ...(seat.isActive !== undefined && { isActive: seat.isActive }),
+                    }
+                })
+            )
+
+            await Promise.all(updates)
+
+            // 3. Recalculate totalSeats
+            const totalSeats = await tx.seat.count({
+                where: { busId }
+            })
+
+            await tx.bus.update({
+                where: { id: busId },
+                data: { totalSeats }
+            })
+
+            return { success: true }
         })
-        if (seat.status !== 'AVAILABLE') {
-            throw new Error('Seat is not available')
-        }
-        return true
     },
+
+    checkSeatOverlap: async(tripId, seatId, fromOrder, toOrder) => {
+        if (fromOrder >= toOrder) {
+            throw new Error('Invalid stop range')
+        }
+
+        const conflict = await prisma.ticket.findFirst({
+            where: {
+                tripId,
+                seatId,
+                NOT: {
+                    OR: [
+                        { toOrder: { lte: fromOrder } },
+                        { fromOrder: { gte: toOrder } },
+                    ]
+                }
+            }
+        })
+
+        return !!conflict
+    }
 }
 
 module.exports = seatService
