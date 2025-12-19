@@ -1,6 +1,6 @@
 const prisma = require('../configs/db')
 const { startOfDay, endOfDay } = require('date-fns')
-const validatePayload = require('../utils/validate')
+const { validateTripPayload } = require('../utils/validate')
 
 const tripService = {
     calDuration: (departureTime, arrivalTime) => {
@@ -19,7 +19,7 @@ const tripService = {
     },
 
     getAllTrips: async (
-        { from, to, departureDay, busType, departureTime, sortBy },
+        { from, to, departureDay, busType, departureTime, routeId, sortBy },
         page = 1,
         limit = 10,
     ) => {
@@ -102,6 +102,10 @@ const tripService = {
             ]
         }
 
+        if (routeId) {
+            whereCondition.routeId = routeId
+        }
+
         const pageNumber = parseInt(page) || 1
         const pageSize = parseInt(limit) || 10
         const skip = (pageNumber - 1) * pageSize
@@ -134,6 +138,7 @@ const tripService = {
                         originStation: true,
                         destStation: true,
                         bus: true,
+                        route: true
                     },
                     orderBy: orderBy,
                     skip: skip, // Bỏ qua số lượng bản ghi
@@ -212,7 +217,7 @@ const tripService = {
     },
 
     registerNewTrip: async (data) => {
-        await validatePayload.validateTripPayload(data, { requireAll: true })
+        await validateTripPayload(data, { requireAll: true })
         return prisma.trip.create({ data })
     },
 
