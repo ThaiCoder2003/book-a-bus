@@ -1,6 +1,6 @@
-import type { Booking } from "./booking.type"
-import type { Seat } from "./seat.type"
-import type { Trip } from "./trip.type"
+import type { Booking } from './booking.type'
+import type { Seat } from './seat.type'
+import type { Trip } from './trip.type'
 
 export interface Ticket {
     id: string
@@ -8,6 +8,8 @@ export interface Ticket {
     tripId: string
     seatId: string
     price: number // Giá vé tại thời điểm đặt
+    passengerName?: string
+    passengerPhone?: string
 
     // Relations (Optional)
     booking?: Booking

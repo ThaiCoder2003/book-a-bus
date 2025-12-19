@@ -2,13 +2,13 @@ const seatService = require('../services/seatService')
 const handleError = require('../utils/handleError')
 
 const seatController = {
-    getAllSeat: async (req, res) => {
-        // get all seat by bus
+    getAll: async (req, res) => {
+        // get all seat by trip
         try {
-            const busId = req.params.busId
+            const tripId = req.params.tripId
 
             if (busId) {
-                const results = await seatService.getSeatsByBusId(busId)
+                const results = await seatService.getSeatByTrip(tripId)
 
                 if (results) {
                     return res.status(200).json({
@@ -16,10 +16,10 @@ const seatController = {
                         data: results,
                     })
                 } else {
-                    throw new Error('Không lấy được danh sách ghế theo xe.')
+                    throw new Error('Không lấy được danh sách ghế theo chuyến đi.')
                 }
             } else {
-                throw new Error('Không tìm được id của xe.')
+                throw new Error('Không tìm được id của chuyến đi.')
             }
         } catch (error) {
             handleError(res, error)

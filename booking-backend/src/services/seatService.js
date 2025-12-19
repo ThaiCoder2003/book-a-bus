@@ -8,28 +8,30 @@ const seatService = {
         return seat
     },
 
-    getSeatsByBusId: async (busId) => {
-        try {
-            const seats = await prisma.seat.findMany({
-                where: { busId },
-                orderBy: [{ floor: 'asc' }, { row: 'asc' }, { col: 'asc' }],
-            })
-
-            return seats
-        } catch (error) {
-            console.error(error)
-            throw new Error('Lỗi xảy ra khi lấy danh sách ghế của xe.')
-        }
-    },
-
-    validateAvailability: async (seatId) => {
-        const seat = await prisma.seat.findUnique({
-            where: { id: seatId },
+    getSeatByTrip: async (tripId) => {
+        const seats = await prisma.seat.findMany({
+            // lấy tất cả ghế của xe chạy chuyến này
+            where: {
+                bus: { trips: { some: { id: tripId } } },
+            },
+            orderBy: [{ floor: 'asc' }, { row: 'asc' }, { col: 'asc' }],
+            // kèm theo thông tin Vé (Ticket)
+            include: {
+                tickets: {
+                    where: {
+                        tripId: tripId, // Chỉ xét vé của chuyến này
+                        booking: {
+                            // 3. Quan trọng: Lấy cả PENDING (đang giữ) và CONFIRMED (đã bán)
+                            status: {
+                                in: ['PENDING', 'CONFIRMED'],
+                            },
+                        },
+                    },
+                },
+            },
         })
-        if (seat.status !== 'AVAILABLE') {
-            throw new Error('Seat is not available')
-        }
-        return true
+
+        return seats
     },
 }
 

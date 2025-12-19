@@ -49,7 +49,7 @@ const tripController = {
         }
     },
 
-    getTripById: async (res, req) => {
+    getTripById: async (req, res) => {
         try {
             const id = req.params.id
             const result = await tripService.getTripById(id)
