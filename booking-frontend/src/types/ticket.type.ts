@@ -5,13 +5,14 @@ import type { Trip } from './trip.type'
 export interface Ticket {
     id: string
     bookingId: string
-    tripId: string
     seatId: string
-    price: number // Giá vé tại thời điểm đặt
-    passengerName?: string
-    passengerPhone?: string
+    tripId: string
 
-    // Relations (Optional)
+    // Denormalization fields
+    fromOrder: number
+    toOrder: number
+
+    // Relations
     booking?: Booking
     seat?: Seat
     trip?: Trip

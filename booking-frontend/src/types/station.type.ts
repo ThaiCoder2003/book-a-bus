@@ -1,12 +1,14 @@
-import type { Trip } from "./trip.type"
+import type { Booking } from './booking.type'
+import type { RouteStop } from './routeStop.type'
 
 export interface Station {
     id: string
     name: string
-    address: string | null
+    address: string
     province: string
 
-    // Relations (Optional)
-    departingTrips?: Trip[]
-    arrivingTrips?: Trip[]
+    // Relations
+    bookingDepartures?: Booking[]
+    bookingArrivals?: Booking[]
+    routeStops?: RouteStop[]
 }

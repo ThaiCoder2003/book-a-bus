@@ -2,23 +2,26 @@ import type { BookingStatus } from './enum'
 import type { Ticket } from './ticket.type'
 import type { Trip } from './trip.type'
 import type { User } from './user.type'
+import type { Station } from './station.type'
 
 export interface Booking {
     id: string
-    tripId: string
     userId: string
-
-    // Thông tin người đi (có thể khác người đặt)
-    userName: string
-    userPhone: string
-
-    totalAmount: number // Decimal -> Number
+    tripId: string
     status: BookingStatus
-    createdAt: string // ISO Date String
-    expiredAt: string // ISO Date String
+    totalAmount: number // Decimal mapped to number
 
-    // Relations (Optional)
-    user?: User
+    departureStationId: string
+    arrivalStationId: string
+
+    createdAt: string // ISO Date String
+    updatedAt: string // ISO Date String
+    expiredAt?: string | null // ISO Date String
+
+    // Relations
+    user?: User // Muốn lấy tên/sđt người đặt thì lấy từ đây: booking.user.name
     trip?: Trip
+    departureStation?: Station
+    arrivalStation?: Station
     tickets?: Ticket[]
 }
