@@ -1,6 +1,6 @@
 # book-a-bus
 
-A web app comprising a Next.js backend and a React frontend for booking bus rides.
+A web app comprising a Nest.js backend and a React frontend for booking bus rides.
 
 ## Running locally
 
