@@ -1,40 +1,63 @@
-'use client'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Armchair } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import seatService from '@/services/seatService'
+import { toast } from 'react-toastify'
+import type { Seat } from '@/types/seat.type'
+import LoadingSpin from '../helpers/LoadingSpin'
 
-export function SeatSelector({
-    tripId,
-    busId,
-}: {
-    tripId: string
-    busId: string
-}) {
-    const handleSeatClick = (seatId, currentStatus) => {
-        if (currentStatus === 'occupied') return
+export function SeatSelector({ tripId }: { tripId: string }) {
+    const [seatList, setSeatList] = useState<Seat[]>([])
+    const [occupiedSeats, setOccupiedSeats] = useState<string[]>([])
+    const [mySelectedSeats, setMySelectedSeats] = useState<string[]>([])
+    const [loadingSeatId, setLoadingSeatId] = useState(null)
 
-        if (selectedSeats.includes(seatId)) {
-            onSeatSelect(selectedSeats.filter((id) => id !== seatId))
-        } else {
-            onSeatSelect([...selectedSeats, seatId])
+    const [isLoading, setIsLoading] = useState<boolean>(false)
+
+    useEffect(() => {
+        const getSeatByTrip = async () => {
+            setIsLoading(true)
+            try {
+                const response = await seatService.getByTrip(tripId)
+
+                if (response && response.data) {
+                    setSeatList(response.data)
+                }
+            } catch (error: any) {
+                const message = error.response?.data?.message
+                console.error(message)
+                toast.error(message)
+            } finally {
+                setIsLoading(false)
+            }
         }
+
+        getSeatByTrip()
+    }, [])
+
+    const handleSeatClick = async (seatId: string) => {
+        if (occupiedSeats.includes(seatId) || loadingSeatId) return;
     }
 
-    const getSeatStatus = (seat) => {
-        if (seat.status === 'occupied') return 'occupied'
-        return selectedSeats.includes(seat.id) ? 'selected' : 'available'
-    }
+    const seatListByFloor = seatList.reduce<Seat[][]>((acc, seat) => {
+        const floorNumber = seat.floor
+        if (!acc[floorNumber - 1]) {
+            acc[floorNumber - 1] = []
+        }
+        acc[floorNumber - 1].push(seat)
 
-    const lowerFloorSeats = seats.filter((s) => s.floor === 1)
-    const upperFloorSeats = seats.filter((s) => s.floor === 2)
+        return acc
+    }, [])
 
-    const maxRow = Math.max(...seats.map((s) => s.row))
-    const maxCol = Math.max(...seats.map((s) => s.column))
+    const maxRow = Math.max(...seatList.map((s) => s.row))
+    const maxCol = Math.max(...seatList.map((s) => s.col))
 
-    const renderSeatGrid = (floorSeats, floorLabel) => {
+    const renderSeatGrid = (floorSeats: Seat[], floorLabel: string) => {
         // Tạo ma trận ghế
-        const seatMatrix = Array.from({ length: maxRow }, () =>
-            Array.from({ length: maxCol }, () => null),
+        const seatMatrix: (Seat | null)[][] = Array.from(
+            { length: maxRow },
+            () => Array.from({ length: maxCol }, () => null),
         )
 
         // Điền ghế vào ma trận theo vị trí
@@ -42,10 +65,10 @@ export function SeatSelector({
             if (
                 seat.row > 0 &&
                 seat.row <= maxRow &&
-                seat.column > 0 &&
-                seat.column <= maxCol
+                seat.col > 0 &&
+                seat.col <= maxCol
             ) {
-                seatMatrix[seat.row - 1][seat.column - 1] = seat
+                seatMatrix[seat.row - 1][seat.col - 1] = seat
             }
         })
 
@@ -80,21 +103,18 @@ export function SeatSelector({
                                     return (
                                         <div
                                             key={`empty-${rowIdx}-${colIdx}`}
-                                            className="aspect-square min-h-[36px]"
+                                            className="aspect-square min-h-9"
                                         />
                                     )
                                 }
 
-                                const status = getSeatStatus(seat)
                                 return (
                                     <button
                                         key={seat.id}
-                                        onClick={() =>
-                                            handleSeatClick(seat.id, status)
-                                        }
-                                        disabled={status === 'occupied'}
+                                        onClick={() => handleSeatClick(seat.id)}
+                                        disabled={seat.tickets?.length !== 0}
                                         className={cn(
-                                            'aspect-square rounded border-2 flex flex-col items-center justify-center transition-all hover:scale-105 disabled:cursor-not-allowed disabled:hover:scale-100 min-h-[36px]',
+                                            'aspect-square rounded border-2 flex flex-col items-center justify-center transition-all hover:scale-105 disabled:cursor-not-allowed disabled:hover:scale-100 min-h-9',
                                             status === 'available' &&
                                                 'border-border bg-card hover:border-primary/50',
                                             status === 'selected' &&
@@ -105,7 +125,7 @@ export function SeatSelector({
                                     >
                                         <Armchair className="h-3 w-3 mb-0.5" />
                                         <span className="text-[9px] font-semibold">
-                                            {seat.id}
+                                            {seat.label}
                                         </span>
                                     </button>
                                 )
@@ -142,13 +162,17 @@ export function SeatSelector({
             </div>
 
             {/* Seat Map */}
-            <div className="grid md:grid-cols-2 gap-4">
-                {lowerFloorSeats.length > 0 &&
-                    renderSeatGrid(lowerFloorSeats, 'Tầng dưới')}
-
-                {upperFloorSeats.length > 0 &&
-                    renderSeatGrid(upperFloorSeats, 'Tầng trên')}
-            </div>
+            {isLoading ? (
+                <LoadingSpin content="Đang tải danh sách ghế" />
+            ) : (
+                <div className="grid md:grid-cols-2 gap-4">
+                    {seatListByFloor.map((seatList, i) => {
+                        if (seatList && seatList.length > 0) {
+                            return renderSeatGrid(seatList, `Tầng ${i + 1}`)
+                        }
+                    })}
+                </div>
+            )}
         </div>
     )
 }
