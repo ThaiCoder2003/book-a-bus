@@ -73,9 +73,9 @@ model Station {
   province String
 
   // Relation cho Booking (Khách lên/xuống ở đâu)
-  bookingDepartures Booking[]   @relation("BookingDep")
-  bookingArrivals   Booking[]   @relation("BookingArr")
-  routeStops        RouteStop[]
+  bookingDepartures Booking[]       @relation("BookingDep")
+  bookingArrivals   Booking[]       @relation("BookingArr")
+  route_station     Route_Station[]
 }
 
 model Trip {
@@ -96,11 +96,11 @@ model Route {
   name String
   // basePrice Decimal // giá tiền giữa 2 điểm dừng gần kề // thay đổi cần họp
 
-  stops RouteStop[]
-  trips Trip[]
+  route_station Route_Station[]
+  trips         Trip[]
 }
 
-model RouteStop {
+model Route_Station {
   id                String  @id @default(uuid())
   routeId           String
   stationId         String
