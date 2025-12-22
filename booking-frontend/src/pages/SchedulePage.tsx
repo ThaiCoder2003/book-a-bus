@@ -6,19 +6,19 @@ import TripList from '@/components/Schedule/TripList'
 import tripService from '@/services/tripService'
 
 import type { FilterSchedule } from '@/types/filterSchedule'
-import type { Trip } from '@/types/trip.type'
+import type { TripInTripList } from '@/types/tripInTripList.type'
 import { useState, useEffect } from 'react'
 import { toast } from 'react-toastify'
 
 export default function SchedulePage() {
-    const [tripList, setTripList] = useState<Trip[]>([])
+    const [tripList, setTripList] = useState<TripInTripList[]>([])
     const [filters, setFilters] = useState<FilterSchedule>({
         origin: '',
         destination: '',
         date: '',
-        busType: [],
-        departureTime: [],
-        sortBy: 'departure-time',
+        seatType: 'ALL',
+        departureTime: 'all',
+        sortBy: 'pickupTime_desc',
     })
     const [currentPage, setCurrentPage] = useState<number>(1)
     const [totalPages, setTotalPage] = useState<number>(1)
@@ -36,7 +36,7 @@ export default function SchedulePage() {
                     setTripList(result.data)
                     setCurrentPage(result.pagination?.page)
                     setTotalPage(result.pagination?.totalPages)
-                    setTotalItems(result.pagination?.totalItems)
+                    setTotalItems(result.pagination?.total)
                 }
             } catch (error: any) {
                 const message = error.response?.data?.message

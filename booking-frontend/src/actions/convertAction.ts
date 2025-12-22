@@ -12,10 +12,23 @@ const convertAction = {
         return { day, time }
     },
 
+    parseDuration: (totalMinutes: number) => {
+        if (totalMinutes <= 0) {
+            return { hours: 0, minutes: 0 }
+        }
+
+        const hours = Math.floor(totalMinutes / 60) // Lấy phần nguyên (giờ)
+        const minutes = totalMinutes % 60 // Lấy phần dư (phút)
+
+        return { hours, minutes }
+    },
+
     mappingBusType: (busType?: SeatType | null) => {
         switch (busType) {
             case 'SEAT':
                 return 'Ghế ngồi'
+            case 'VIP':
+                return 'Ghế ngồi VIP'
             case 'DOUBLE_BED':
                 return 'Giường đôi'
             case 'SINGLE_BED':
@@ -24,6 +37,13 @@ const convertAction = {
                 return ''
         }
     },
+
+    formatCurrency: (amount: number) => {
+    return new Intl.NumberFormat('vi-VN', {
+        style: 'currency',
+        currency: 'VND',
+    }).format(amount)
+}
 }
 
 export default convertAction

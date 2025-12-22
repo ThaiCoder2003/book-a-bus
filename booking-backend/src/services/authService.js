@@ -8,14 +8,14 @@ const REFRESH_TOKEN_SECRET =
     process.env.REFRESH_TOKEN_SECRET || 'refresh_secret'
 
 const authService = {
-    registerUser: async ({ email, password, name }) => {
+    registerUser: async ({ email, password, name, phone }) => {
         const existingUser = await prisma.user.findUnique({ where: { email } })
         if (existingUser) throw new Error('Conflict: Email already in use')
 
         const passwordHash = await authAction.hashPassword(password)
 
         const newUser = await prisma.user.create({
-            data: { email, passwordHash, name, role: 'user' },
+            data: { email, passwordHash, name, role: 'USER', phone },
         })
 
         const { passwordHash: _, ...result } = newUser

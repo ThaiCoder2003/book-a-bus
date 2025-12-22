@@ -1,6 +1,6 @@
-import { Button } from '@/components/ui/button'
+// import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import type { Dispatch, SetStateAction } from 'react'
+import { useEffect, useState, type Dispatch, type SetStateAction } from 'react'
 import type { FilterSchedule } from '@/types/filterSchedule'
 
 interface SearchHeaderProps {
@@ -12,6 +12,28 @@ export default function SearchHeader({
     filters,
     onSearchChange,
 }: SearchHeaderProps) {
+    const [localFilters, setLocalFilters] = useState<FilterSchedule>(filters)
+
+    useEffect(() => {
+        setLocalFilters(filters)
+    }, [filters])
+
+    useEffect(() => {
+        // debounce 1s
+        const timer = setTimeout(() => {
+            if (
+                localFilters.origin !== filters.origin ||
+                localFilters.destination !== filters.destination ||
+                localFilters.date !== filters.date
+            ) {
+                onSearchChange(localFilters)
+            }
+        }, 1000)
+
+        // Cleanup function: Xóa timer cũ nếu người dùng gõ tiếp trước khi hết 500ms
+        return () => clearTimeout(timer)
+    }, [localFilters, onSearchChange, filters])
+
     return (
         <header className="bg-white border-b border-border">
             <div className="max-w-7xl mx-auto px-4 py-6">
@@ -22,10 +44,10 @@ export default function SearchHeader({
                         </label>
                         <Input
                             placeholder="Nhập điểm đi"
-                            value={filters.origin}
+                            value={localFilters.origin}
                             onChange={(e) =>
-                                onSearchChange({
-                                    ...filters,
+                                setLocalFilters({
+                                    ...localFilters,
                                     origin: e.target.value,
                                 })
                             }
@@ -39,10 +61,10 @@ export default function SearchHeader({
                         </label>
                         <Input
                             placeholder="Nhập điểm đến"
-                            value={filters.destination}
+                            value={localFilters.destination}
                             onChange={(e) =>
-                                onSearchChange({
-                                    ...filters,
+                                setLocalFilters({
+                                    ...localFilters,
                                     destination: e.target.value,
                                 })
                             }
@@ -56,10 +78,10 @@ export default function SearchHeader({
                         </label>
                         <Input
                             type="date"
-                            value={filters.date}
+                            value={localFilters.date}
                             onChange={(e) =>
-                                onSearchChange({
-                                    ...filters,
+                                setLocalFilters({
+                                    ...localFilters,
                                     date: e.target.value,
                                 })
                             }
@@ -67,11 +89,11 @@ export default function SearchHeader({
                         />
                     </div>
 
-                    <div className="flex items-end">
+                    {/* <div className="flex items-end">
                         <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
                             Tìm kiếm
                         </Button>
-                    </div>
+                    </div> */}
                 </div>
             </div>
         </header>

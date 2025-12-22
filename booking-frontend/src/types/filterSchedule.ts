@@ -2,7 +2,7 @@ export interface FilterSchedule {
     origin: string
     destination: string
     date: string
-    busType: string[]
-    departureTime: string[]
+    seatType: string
+    departureTime: string
     sortBy: string
 }

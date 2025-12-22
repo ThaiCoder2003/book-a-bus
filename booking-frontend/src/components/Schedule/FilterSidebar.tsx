@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
+// Đã xóa import Checkbox vì không dùng nữa
 import {
     Select,
     SelectContent,
@@ -19,46 +19,37 @@ export default function FilterSidebar({
     filters,
     onFiltersChange,
 }: FilterSidebarProps) {
-    const busTypes = [
-        {
-            key: 'SEAT',
-            value: 'Ghế ngồi',
-        },
-        {
-            key: 'SINGLE_BED',
-            value: 'Giường đơn',
-        },
-        {
-            key: 'DOUBLE_BED',
-            value: 'Giường đôi',
-        },
+    const seatTypes = [
+        { key: 'SEAT', value: 'Ghế ngồi' },
+        { key: 'VIP', value: 'Ghế ngồi VIP' },
+        { key: 'SINGLE_BED', value: 'Giường đơn' },
+        { key: 'DOUBLE_BED', value: 'Giường đôi' },
+        { key: 'ALL', value: 'Tất cả' }
     ]
+
     const timeRanges = [
         { id: 'morning', label: 'Sáng (6:00 - 11:59)' },
         { id: 'afternoon', label: 'Chiều (12:00 - 17:59)' },
         { id: 'evening', label: 'Tối (18:00 - 23:59)' },
         { id: 'night', label: 'Đêm (00:00 - 5:59)' },
+        { id: 'all', label: 'Cả ngày' },
     ]
 
+    // Xử lý chọn loại xe (String)
     const handleBusTypeChange = (type: string) => {
-        const newBusTypes = filters.busType.includes(type)
-            ? filters.busType.filter((t) => t !== type)
-            : [...filters.busType, type]
-        onFiltersChange({ ...filters, busType: newBusTypes })
+        // Nếu đang chọn cái này rồi thì bỏ chọn (thành rỗng), ngược lại thì chọn nó
+        const newValue = filters.seatType === type ? '' : type
+        onFiltersChange({ ...filters, seatType: newValue })
     }
 
+    // Xử lý chọn giờ (String)
     const handleTimeChange = (time: string) => {
-        const newTimes = filters.departureTime.includes(time)
-            ? filters.departureTime.filter((t) => t !== time)
-            : [...filters.departureTime, time]
-        onFiltersChange({ ...filters, departureTime: newTimes })
+        const newValue = filters.departureTime === time ? '' : time
+        onFiltersChange({ ...filters, departureTime: newValue })
     }
 
     const handleSortChange = (sortBy: string) => {
-        onFiltersChange({
-            ...filters,
-            sortBy: sortBy,
-        })
+        onFiltersChange({ ...filters, sortBy })
     }
 
     return (
@@ -77,58 +68,60 @@ export default function FilterSidebar({
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="departure-time">
+                            <SelectItem value="pickupTime_desc">
                                 Xuất phát sớm nhất
                             </SelectItem>
-                            <SelectItem value="arrival-time">
+                            <SelectItem value="arrivalTime_desc">
                                 Đến nơi sớm nhất
                             </SelectItem>
-                            <SelectItem value="price-low">
+                            <SelectItem value="price_asc">
                                 Giá tăng dần
                             </SelectItem>
-                            <SelectItem value="price-high">
+                            <SelectItem value="price_desc">
                                 Giá giảm dần
                             </SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
 
-                {/* Bus Type Filter */}
+                {/* Bus Type Filter (Radio Logic) */}
                 <div className="mb-6 pb-6 border-b border-border">
                     <h3 className="font-semibold text-foreground mb-3">
                         Loại xe
                     </h3>
                     <div className="space-y-3">
-                        {busTypes.map((type) => (
-                            <div key={type.key} className="flex items-center gap-2">
-                                <Checkbox
-                                    id={type.key}
-                                    checked={filters.busType.includes(type.key)}
-                                    onCheckedChange={() =>
+                        {seatTypes.map((type) => (
+                            <label
+                                key={type.key}
+                                className="flex items-center gap-2 cursor-pointer group"
+                            >
+                                <input
+                                    type="radio"
+                                    name="seatType" // Group radio lại với nhau
+                                    className="w-4 h-4 accent-primary cursor-pointer"
+                                    checked={filters.seatType === type.key}
+                                    // Dùng onClick để có thể xử lý logic toggle (bỏ chọn)
+                                    onClick={() =>
                                         handleBusTypeChange(type.key)
                                     }
+                                    readOnly // Tránh warning của React khi dùng checked mà không có onChange (đã xử lý ở onClick)
                                 />
-                                <label
-                                    htmlFor={type.key}
-                                    className="text-sm text-foreground cursor-pointer"
-                                >
+                                <span className="text-sm text-foreground group-hover:text-primary transition-colors">
                                     {type.value}
-                                </label>
-                            </div>
+                                </span>
+                            </label>
                         ))}
                     </div>
                 </div>
 
-                {/* Departure Time Filter */}
+                {/* Departure Time Filter (Radio Logic) */}
                 <div className="mb-6 pb-6 border-b border-border">
-                    {/* 1. Logic hiển thị cảnh báo: Nếu chưa có ngày thì hiện chữ đỏ */}
                     {!filters.date && (
                         <p className="text-red-500 text-sm mb-2 italic">
                             * Vui lòng chọn ngày đi trước
                         </p>
                     )}
 
-                    {/* 2. Logic làm mờ và chặn click: Nếu chưa có ngày thì thêm class */}
                     <div
                         className={
                             !filters.date
@@ -141,28 +134,27 @@ export default function FilterSidebar({
                         </h3>
                         <div className="space-y-3">
                             {timeRanges.map((range) => (
-                                <div
+                                <label
                                     key={range.id}
-                                    className="flex items-center gap-2"
+                                    className="flex items-center gap-2 cursor-pointer group"
                                 >
-                                    <Checkbox
-                                        id={range.id}
-                                        // Best practice: Disable luôn input gốc để tránh dùng phím Tab focus vào được
+                                    <input
+                                        type="radio"
+                                        name="departureTime" // Group radio
+                                        className="w-4 h-4 accent-primary cursor-pointer"
                                         disabled={!filters.date}
-                                        checked={filters.departureTime.includes(
-                                            range.id,
-                                        )}
-                                        onCheckedChange={() =>
+                                        checked={
+                                            filters.departureTime === range.id
+                                        }
+                                        onClick={() =>
                                             handleTimeChange(range.id)
                                         }
+                                        readOnly
                                     />
-                                    <label
-                                        htmlFor={range.id}
-                                        className="text-sm text-foreground cursor-pointer"
-                                    >
+                                    <span className="text-sm text-foreground group-hover:text-primary transition-colors">
                                         {range.label}
-                                    </label>
-                                </div>
+                                    </span>
+                                </label>
                             ))}
                         </div>
                     </div>
@@ -176,9 +168,9 @@ export default function FilterSidebar({
                         onFiltersChange({
                             origin: '',
                             destination: '',
-                            date: '',
-                            busType: [],
-                            departureTime: [],
+                            date: '', // Cẩn thận chỗ này nếu bạn muốn giữ lại ngày đang chọn
+                            seatType: '', // Reset về string rỗng
+                            departureTime: '', // Reset về string rỗng
                             sortBy: 'arrival-time',
                         })
                     }}
