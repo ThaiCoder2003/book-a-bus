@@ -6,13 +6,11 @@ import {
   CalendarDays,
   BookOpen,
   Users,
-  BarChart4,
   MessageSquareText,
   Settings,
   CreditCard,
   Bell,
   Bot,
-  Shield,
 } from "lucide-react";
 
 // -----------------------------------------------------------
@@ -40,10 +38,6 @@ const getLucideIcon = (name) => {
       return <Bell className="h-5 w-5" />;
     case "Trợ lý ảo (AI Assistant)":
       return <Bot className="h-5 w-5" />;
-    case "Phân quyền & Vai trò":
-      return <Shield className="h-5 w-5" />;
-    case "Báo cáo Doanh thu":
-      return <BarChart4 className="h-5 w-5" />;
     case "Cài đặt Hệ thống":
       return <Settings className="h-5 w-5" />;
     default:
@@ -82,9 +76,7 @@ const AdminMenus = [
   {
     title: "Phân tích & Hệ thống",
     items: [
-      { name: "Báo cáo Doanh thu", path: "/admin/analytics" },
       { name: "Trợ lý ảo (AI Assistant)", path: "/admin/assistant" },
-      { name: "Phân quyền & Vai trò", path: "/admin/roles" },
       { name: "Cài đặt Hệ thống", path: "/admin/settings" },
     ],
   },
