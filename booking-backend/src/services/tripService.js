@@ -1,29 +1,20 @@
 const prisma = require('../configs/db')
-const { startOfDay, endOfDay } = require('date-fns')
 const { validateTripPayload } = require('../utils/validate')
+const stationService = require('./stationService')
 
 const tripService = {
-    calDuration: (departureTime, arrivalTime) => {
-        let hours = 0
-        let minutes = 0
-
-        // Trừ 2 mốc thời gian (kết quả ra milliseconds)
-        const diffMs = new Date(arrivalTime) - new Date(departureTime)
-
-        if (diffMs > 0) {
-            hours = Math.floor(diffMs / (1000 * 60 * 60))
-            minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
-        }
-
-        return { hours, minutes }
-    },
-
     getAllTrips: async (
-        { from, to, departureDay, busType, departureTime, sortBy },
+        {
+            from,
+            to,
+            departureDay,
+            seatType = 'ALL',
+            departureTime = 'all',
+            sortBy = 'pickupTime_desc',
+        },
         page = 1,
         limit = 10,
     ) => {
-        const whereCondition = {}
         const timeRangesMap = {
             morning: { start: 6, end: 12 },
             afternoon: { start: 12, end: 18 },
@@ -31,260 +22,300 @@ const tripService = {
             night: { start: 0, end: 6 },
         }
 
-        // lọc ngày xuất phát
-        if (departureDay) {
-            const date = new Date(departureDay)
-
-            if (!isNaN(date.getTime())) {
-                whereCondition.departureTime = {
-                    gte: startOfDay(date),
-                    lte: endOfDay(date),
-                }
-            }
-        }
-
-        if (busType && busType.length > 0) {
-            const types = Array.isArray(busType) ? busType : [busType]
-            whereCondition.bus = {
-                type: {
-                    in: types,
-                },
-            }
-        }
-
-        const routeConditions = []
-
-        if (from) {
-            routeConditions.push({
-                stops: {
-                    some: {
-                        station: {
-                            province: { contains: from, mode: 'insensitive' },
-                        },
-                    },
-                },
-            })
-        }
-
-        if (to) {
-            routeConditions.push({
-                stops: {
-                    some: {
-                        station: {
-                            province: { contains: to, mode: 'insensitive' },
-                        },
-                    },
-                },
-            })
-        }
-
-        if (routeConditions.length > 0) {
-            whereCondition.route = {
-                AND: routeConditions,
-            }
-        }
-
-        const rawTrips = await prisma.trip.findMany({
-            where: whereCondition,
-            include: {
-                bus: true,
-                route: {
-                    include: {
-                        stops: {
-                            include: { station: true },
-                            orderBy: { order: 'asc' }, // Lấy stops theo thứ tự để dễ xử lý
-                        },
-                    },
-                },
-                // Lấy vé để tính ghế trống
-                tickets: {
-                    select: { seatId: true, fromOrder: true, toOrder: true },
-                },
-            },
-        })
-
-        // 3. Xử lý Logic Nghiệp vụ (Mapping & Calculation)
-        let processedTrips = rawTrips
-            .map((trip) => {
-                // Tìm trạm đi và trạm đến cụ thể trong list stops của trip này
-                // (Logic tìm kiếm mờ - fuzzy search dựa trên province)
-                const startStop = from
-                    ? trip.route.stops.find((s) =>
-                          s.station.province
-                              .toLowerCase()
-                              .includes(from.toLowerCase()),
-                      )
-                    : trip.route.stops[0] // Mặc định trạm đầu nếu không search
-
-                const endStop = to
-                    ? trip.route.stops.find((s) =>
-                          s.station.province
-                              .toLowerCase()
-                              .includes(to.toLowerCase()),
-                      )
-                    : trip.route.stops[trip.route.stops.length - 1] // Mặc định trạm cuối
-
-                // Bỏ qua nếu không tìm thấy trạm hoặc đi ngược chiều (order đi >= order đến)
-                if (
-                    !startStop ||
-                    !endStop ||
-                    startStop.order >= endStop.order
-                ) {
-                    return null
-                }
-
-                // --- TÍNH TOÁN THỜI GIAN ---
-                // Trip.departureTime là giờ xe chạy tại trạm gốc (order 0)
-                // Giờ đón khách = Giờ gốc + durationFromStart
-                const pickupTime = new Date(
-                    trip.departureTime.getTime() +
-                        startStop.durationFromStart * 60000,
-                )
-                const dropOffTime = new Date(
-                    trip.departureTime.getTime() +
-                        endStop.durationFromStart * 60000,
-                )
-
-                // Tính thời gian di chuyển
-                const duration = calDuration(pickupTime, dropOffTime)
-
-                // --- TÍNH GIÁ VÉ ---
-                // Giá = Giá tại trạm đến - Giá tại trạm đi
-                const price =
-                    Number(endStop.priceFromStart) -
-                    Number(startStop.priceFromStart)
-
-                // --- TÍNH GHẾ TRỐNG (OVERLAP LOGIC) ---
-                const occupiedSeats = new Set()
-                trip.tickets.forEach((ticket) => {
-                    // Check trùng: (Vé.from < Khách.to) AND (Vé.to > Khách.from)
-                    if (
-                        ticket.fromOrder < endStop.order &&
-                        ticket.toOrder > startStop.order
-                    ) {
-                        occupiedSeats.add(ticket.seatId)
-                    }
-                })
-                const availableSeats = trip.bus.totalSeats - occupiedSeats.size
-
-                return {
-                    id: trip.id,
-                    busName: trip.bus.name,
-                    plateNumber: trip.bus.plateNumber,
-                    totalSeats: trip.bus.totalSeats,
-                    availableSeats,
-
-                    // Thông tin trạm
-                    originStation: startStop.station,
-                    destStation: endStop.station,
-
-                    // Thông tin tính toán
-                    departureTime: pickupTime, // Giờ đón thực tế
-                    arrivalTime: dropOffTime, // Giờ đến thực tế
-                    durationHours: duration.hours,
-                    durationMinutes: duration.minutes,
-                    price: price,
-                }
-            })
-            .filter((item) => item !== null) // Lọc bỏ các item null
-
-        // 4. Lọc theo khung giờ (departureTime filter)
-        // Logic cũ của bạn lọc theo giờ gốc chuyến xe, nhưng logic mới nên lọc theo GIỜ ĐÓN KHÁCH (pickupTime)
-        if (departureTime && departureTime.length > 0) {
-            const timeRangesMap = {
-                morning: { start: 6, end: 12 },
-                afternoon: { start: 12, end: 18 },
-                evening: { start: 18, end: 24 },
-                night: { start: 0, end: 6 },
-            }
-
-            processedTrips = processedTrips.filter((trip) => {
-                const hour = trip.departureTime.getHours()
-                return departureTime.some((rangeKey) => {
-                    const range = timeRangesMap[rangeKey]
-                    return range && hour >= range.start && hour < range.end
-                })
-            })
-        }
-
-        // 5. Sắp xếp (Sorting) - Thực hiện trên Array JS
-        if (sortBy) {
-            processedTrips.sort((a, b) => {
-                switch (sortBy) {
-                    case 'price-low':
-                        return a.price - b.price
-                    case 'price-high':
-                        return b.price - a.price
-                    case 'time-early':
-                        return (
-                            a.departureTime.getTime() -
-                            b.departureTime.getTime()
-                        )
-                    case 'time-late':
-                        return (
-                            b.departureTime.getTime() -
-                            a.departureTime.getTime()
-                        )
-                    default:
-                        return 0
-                }
-            })
-        } else {
-            // Mặc định sort theo giờ đi sớm nhất
-            processedTrips.sort(
-                (a, b) => a.departureTime.getTime() - b.departureTime.getTime(),
+        // --- 1. VALIDATION FROM/TO ---
+        // Kiểm tra logic: Có From mà không có To (hoặc ngược lại) -> Báo lỗi hoặc return rỗng tùy policy
+        if ((from && !to) || (!from && to)) {
+            throw new Error(
+                'Vui lòng cung cấp cả điểm đi và điểm đến, hoặc để trống cả hai.',
             )
         }
+        const hasLocationFilter = !!(from && to)
 
-        // 6. Phân trang (Pagination) - Cắt Array thủ công
-        const totalItems = processedTrips.length
-        const totalPages = Math.ceil(totalItems / limit)
-        const startIndex = (page - 1) * limit
-        const paginatedData = processedTrips.slice(
-            startIndex,
-            startIndex + limit,
-        )
+        // --- 2. XỬ LÝ NGÀY THÁNG (Optional) ---
+        let dbQueryStart, targetDateStart, targetDateEnd
 
-        return {
-            data: paginatedData,
-            pagination: {
-                page: Number(page),
-                limit: Number(limit),
-                totalItems,
-                totalPages,
-            },
+        if (departureDay) {
+            targetDateStart = new Date(departureDay)
+            targetDateStart.setHours(0, 0, 0, 0)
+
+            targetDateEnd = new Date(departureDay)
+            targetDateEnd.setHours(23, 59, 59, 999)
+
+            // Buffer 3 ngày nếu lọc theo ngày (để bắt chuyến xuất phát từ hôm trước)
+            dbQueryStart = new Date(targetDateStart)
+            dbQueryStart.setDate(dbQueryStart.getDate() - 3)
         }
-    },
 
-    getTripById: async (id) => {
         try {
-            const trip = await prisma.trip.findUnique({
-                where: { id },
+            // --- 3. TÌM STATION IDs (Nếu có filter) ---
+            let startStationIds = []
+            let endStationIds = []
+
+            if (hasLocationFilter) {
+                startStationIds = await stationService.findStationIdsByKeyword(
+                    from,
+                )
+                endStationIds = await stationService.findStationIdsByKeyword(to)
+
+                // Nếu user nhập tên bến/tỉnh không tồn tại -> Trả về rỗng luôn
+                if (
+                    startStationIds.length === 0 ||
+                    endStationIds.length === 0
+                ) {
+                    return {
+                        data: [],
+                        meta: { total: 0, page, limit, totalPages: 0 },
+                    }
+                }
+            }
+
+            // --- 4. QUERY PRISMA ---
+            const rawTrips = await prisma.trip.findMany({
+                where: {
+                    // Điều kiện ngày (Nếu không truyền departureDay -> Không lọc, lấy hết)
+                    departureTime: departureDay
+                        ? {
+                              gte: dbQueryStart,
+                              lte: targetDateEnd,
+                          }
+                        : undefined,
+
+                    // Điều kiện Route (Chỉ lọc nếu có From & To)
+                    route: hasLocationFilter
+                        ? {
+                              AND: [
+                                  {
+                                      route_station: {
+                                          some: {
+                                              stationId: {
+                                                  in: startStationIds,
+                                              },
+                                          },
+                                      },
+                                  },
+                                  {
+                                      route_station: {
+                                          some: {
+                                              stationId: { in: endStationIds },
+                                          },
+                                      },
+                                  },
+                              ],
+                          }
+                        : undefined,
+
+                    // Điều kiện ghế (Optional)
+                    bus:
+                        seatType && seatType !== 'ALL'
+                            ? { seats: { some: { type: seatType } } }
+                            : undefined,
+                },
                 include: {
-                    originStation: true,
-                    destStation: true,
-                    bus: true,
+                    bus: {
+                        select: {
+                            name: true,
+                            plateNumber: true,
+                            totalSeats: true,
+                        },
+                    },
+                    route: {
+                        include: {
+                            route_station: {
+                                where: hasLocationFilter
+                                    ? {
+                                          stationId: {
+                                              in: [
+                                                  ...startStationIds,
+                                                  ...endStationIds,
+                                              ],
+                                          },
+                                      }
+                                    : undefined,
+                                include: { station: true },
+                            },
+                        },
+                    },
                 },
             })
 
-            let duration = {
-                hours: 0,
-                minutes: 0,
+            // --- 5. XỬ LÝ LOGIC & LỌC TRÊN RAM ---
+            let validTrips = rawTrips
+                .map((trip) => {
+                    let startNode, endNode
+
+                    if (hasLocationFilter) {
+                        // CASE A: User tìm trạm cụ thể
+                        startNode = trip.route.route_station.find((rs) =>
+                            startStationIds.includes(rs.stationId),
+                        )
+                        endNode = trip.route.route_station.find((rs) =>
+                            endStationIds.includes(rs.stationId),
+                        )
+                    } else {
+                        // CASE B: User xem toàn bộ chuyến (không filter nơi đi/đến)
+                        // Logic: Lấy trạm đầu tiên (order nhỏ nhất) và trạm cuối (order lớn nhất)
+                        if (
+                            !trip.route.route_station ||
+                            trip.route.route_station.length === 0
+                        )
+                            return null
+
+                        // Sắp xếp trạm theo thứ tự
+                        const sortedStations = trip.route.route_station.sort(
+                            (a, b) => a.order - b.order,
+                        )
+                        startNode = sortedStations[0] // Điểm đầu tuyến
+                        endNode = sortedStations[sortedStations.length - 1] // Điểm cuối tuyến
+                    }
+
+                    if (!startNode || !endNode) return null
+
+                    // Check chiều đi (Quan trọng)
+                    if (startNode.order >= endNode.order) return null
+
+                    // TÍNH TOÁN GIỜ ĐÓN THỰC TẾ
+                    // Nếu là điểm khởi hành gốc (durationFromStart=0), pickupTime = trip.departureTime
+                    const pickupTime = new Date(
+                        trip.departureTime.getTime() +
+                            startNode.durationFromStart * 60 * 1000,
+                    )
+                    const arrivalTime = new Date(
+                        trip.departureTime.getTime() +
+                            endNode.durationFromStart * 60 * 1000,
+                    )
+
+                    // --- CHECK NGÀY (Nếu có filter departureDay) ---
+                    if (departureDay) {
+                        // Kiểm tra xem giờ đón có lọt vào đúng ngày user chọn không
+                        if (
+                            pickupTime < targetDateStart ||
+                            pickupTime > targetDateEnd
+                        ) {
+                            return null
+                        }
+                    }
+
+                    // --- CHECK KHUNG GIỜ (Nếu có filter departureTime) ---
+                    if (departureTime && timeRangesMap[departureTime]) {
+                        const range = timeRangesMap[departureTime]
+                        const hour = pickupTime.getHours()
+                        if (hour < range.start || hour >= range.end) {
+                            return null
+                        }
+                    }
+
+                    // Tính giá vé
+                    const price =
+                        Number(endNode.priceFromStart) -
+                        Number(startNode.priceFromStart)
+
+                    return {
+                        id: trip.id,
+                        busName: trip.bus.name,
+                        plateNumber: trip.bus.plateNumber,
+                        totalSeats: trip.bus.totalSeats, // Chỉ trả về tổng số ghế (ví dụ: 40 chỗ)
+                        routeId: trip.routeId,
+                        fromStation: startNode.station.name,
+                        fromProvince: startNode.station.province,
+                        toStation: endNode.station.name,
+                        toProvince: endNode.station.province,
+                        pickupTime,
+                        arrivalTime,
+                        duration:
+                            endNode.durationFromStart -
+                            startNode.durationFromStart,
+                        price,
+                    }
+                })
+                .filter((item) => item !== null) // Loại bỏ null
+
+            // --- 6. SẮP XẾP (Optional) ---
+            if (sortBy) {
+                validTrips.sort((a, b) => {
+                    switch (sortBy) {
+                        case 'price_asc':
+                            return a.price - b.price
+                        case 'price_desc':
+                            return b.price - a.price
+                        case 'pickupTime_desc':
+                            return (
+                                a.pickupTime.getTime() - b.pickupTime.getTime()
+                            )
+                        case 'arrivalTime_desc':
+                            return (
+                                a.arrivalTime.getTime() -
+                                b.arrivalTime.getTime()
+                            )
+                        default:
+                            return 0
+                    }
+                })
             }
 
-            duration = tripService.calDuration(
-                trip.departureTime,
-                trip.arrivalTime,
+            // --- 7. PHÂN TRANG ---
+            const total = validTrips.length
+            const startIndex = (Number(page) - 1) * Number(limit)
+            const paginatedData = validTrips.slice(
+                startIndex,
+                startIndex + Number(limit),
             )
 
             return {
-                ...trip,
-                hoursTime: duration.hours,
-                minutesTime: duration.minutes,
+                data: paginatedData,
+                pagination: {
+                    total,
+                    page: Number(page),
+                    limit: Number(limit),
+                    totalPages: Math.ceil(total / Number(limit)),
+                },
             }
         } catch (error) {
             console.error('Lỗi khi lấy thông tin chuyến xe:', error)
             throw error
+        }
+    },
+
+    getTripDetailById: async (tripId) => {
+        const trip = await prisma.trip.findUnique({
+            where: { id: tripId },
+            include: {
+                bus: true, // Lấy thông tin xe (biển số, tên xe...)
+                route: {
+                    include: {
+                        route_station: {
+                            include: { station: true },
+                            orderBy: { order: 'asc' }, // Sắp xếp theo thứ tự lộ trình
+                        },
+                    },
+                },
+            },
+        })
+
+        if (!trip) throw new Error('Trip not found')
+
+        // Map lại dữ liệu để tính giờ đến từng trạm
+        const timeline = trip.route.route_station.map((rs) => {
+            // Giờ đến = Giờ khởi hành gốc + thời gian di chuyển (phút)
+            const estimatedTime = new Date(
+                trip.departureTime.getTime() + rs.durationFromStart * 60 * 1000,
+            )
+
+            return {
+                stationId: rs.stationId,
+                stationName: rs.station.name,
+                address: rs.station.address,
+                order: rs.order,
+                priceFromStart: Number(rs.priceFromStart),
+                arrivalTimeISO: estimatedTime, // Frontend sẽ format giờ này
+            }
+        })
+
+        return {
+            tripId: trip.id,
+            busName: trip.bus.name,
+            plateNumber: trip.bus.plateNumber,
+            totalSeats: trip.bus.totalSeats,
+            routePoints: timeline, // Frontend dùng cái này để vẽ Timeline và Dropdown chọn điểm đi/đến
         }
     },
 

@@ -2,8 +2,7 @@ const { validateStationPayload } = require('../utils/validate')
 const prisma = require('../configs/db')
 
 const stationService = {
-    
-    getStations: async(province, page = 1, limit = 10) => {
+    getStations: async (province, page = 1, limit = 10) => {
         const where = {}
 
         if (province) {
@@ -22,13 +21,12 @@ const stationService = {
                     departingTrips: true,
                 },
                 skip,
-                take: size
+                take: size,
             }),
             prisma.station.count({
                 where, // Đếm dựa trên cùng điều kiện lọc
             }),
         ])
-
 
         return {
             data: stations,
@@ -41,46 +39,66 @@ const stationService = {
         }
     },
 
-    getStationById: async(id) => {
+    findStationIdsByKeyword: async (keyword) => {
+        if (!keyword) return []
+
+        const stations = await prisma.station.findMany({
+            where: {
+                OR: [
+                    { name: { contains: keyword, mode: 'insensitive' } },
+                    { province: { contains: keyword, mode: 'insensitive' } },
+                    { address: { contains: keyword, mode: 'insensitive' } },
+                ],
+            },
+            select: { id: true },
+        })
+
+        return stations.map((s) => s.id)
+    },
+
+    getStationById: async (id) => {
         return prisma.station.findUnique({
             where: { id },
             include: {
                 arrivingTrips: true,
-                departingTrips: true
-            }
+                departingTrips: true,
+            },
         })
     },
 
-    registerNewStation: async(data) => {
+    registerNewStation: async (data) => {
         await validateStationPayload(data, { requireAll: true })
         return prisma.station.create({ data })
-    }, 
+    },
 
-    updateStation: async(id, data) => {
+    updateStation: async (id, data) => {
         const exists = await prisma.station.findUnique({ where: { id } })
         if (!exists) {
             const err = new Error('Not found: Station not found')
             err.statusCode = 404
             throw err
-        } 
+        }
 
-        await validateStationPayload(data, { requireAll: false, existingStation: exists })
+        await validateStationPayload(data, {
+            requireAll: false,
+            existingStation: exists,
+        })
         return prisma.station.update({
             where: { id },
-            data
+            data,
         })
     },
 
-    deleteStation: async(id) => {
+    deleteStation: async (id) => {
         const exists = await prisma.station.findUnique({ where: { id } })
         if (!exists) {
             const err = new Error('Not found: Station not found')
             err.statusCode = 404
             throw err
-        } 
+        }
 
         return prisma.station.delete({ where: { id } })
-    }
+    },
 }
 
 module.exports = stationService

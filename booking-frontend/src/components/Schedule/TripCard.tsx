@@ -1,12 +1,15 @@
 import convertAction from '@/actions/convertAction'
 import { Button } from '@/components/ui/button'
-import type { Trip } from '@/types/trip.type'
+import type { TripInTripList } from '@/types/tripInTripList.type'
 import { MapPin, Clock } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
-export default function TripCard({ trip }: { trip: Trip }) {
-    let originTime = convertAction.convertTime(trip.departureTime)
+export default function TripCard({ trip }: { trip: TripInTripList }) {
+    let originTime = convertAction.convertTime(trip.pickupTime)
     let destTime = convertAction.convertTime(trip.arrivalTime)
-    let busType = convertAction.mappingBusType(trip.bus?.type)
+    let durationParsed = convertAction.parseDuration(trip.duration)
+
+    const navigate = useNavigate()
 
     return (
         <div className="bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow">
@@ -25,11 +28,11 @@ export default function TripCard({ trip }: { trip: Trip }) {
                     <div className="flex justify-between items-start mb-3">
                         <div>
                             <h3 className="font-semibold text-foreground text-lg">
-                                {trip.bus?.name}
+                                {trip.busName}
                             </h3>
-                            <p className="text-sm text-muted-foreground">
+                            {/* <p className="text-sm text-muted-foreground">
                                 {busType}
-                            </p>
+                            </p> */}
                         </div>
                         {/* <div className="text-right">
                             <div className="flex items-center gap-1 mb-1">
@@ -51,23 +54,23 @@ export default function TripCard({ trip }: { trip: Trip }) {
                             <div>
                                 <div className="font-semibold text-foreground">
                                     {originTime.day}
-                                    <span className='text-primary ml-2'>
+                                    <span className="text-primary ml-2">
                                         {originTime.time}
                                     </span>
                                 </div>
                                 <div className="text-xs text-muted-foreground">
-                                    {trip.originStation?.province}
+                                    {trip.fromStation}, {trip.fromProvince}
                                 </div>
                             </div>
                         </div>
 
                         <div className="flex-1 flex flex-col items-center">
                             <div className="text-xs text-muted-foreground mb-1">
-                                {trip.minutesTime === 0
-                                    ? trip.hoursTime + 'h'
-                                    : trip.hoursTime +
+                                {durationParsed.minutes === 0
+                                    ? durationParsed.hours + 'h'
+                                    : durationParsed.hours +
                                       'h ' +
-                                      trip.minutesTime +
+                                      durationParsed.minutes +
                                       'm'}
                             </div>
                             <div className="w-full border-t border-border"></div>
@@ -76,13 +79,13 @@ export default function TripCard({ trip }: { trip: Trip }) {
                         <div className="flex items-center gap-3">
                             <div className="text-right">
                                 <div className="font-semibold text-foreground">
-                                    <span className='text-primary mr-2'>
+                                    <span className="text-primary mr-2">
                                         {destTime.time}
                                     </span>
                                     {destTime.day}
                                 </div>
                                 <div className="text-xs text-muted-foreground">
-                                    {trip.destStation?.province}
+                                    {trip.toStation}, {trip.toProvince}
                                 </div>
                             </div>
                             <MapPin className="w-4 h-4 text-muted-foreground" />
@@ -95,13 +98,15 @@ export default function TripCard({ trip }: { trip: Trip }) {
                     <div className="text-right">
                         <div className="text-sm text-muted-foreground">Từ</div>
                         <div className="text-2xl font-bold text-primary">
-                            {(trip.basePrice / 1000).toFixed(0)}K
+                            {(trip.price / 1000).toFixed(0)}.000 VNĐ
                         </div>
                         <div className="text-xs text-muted-foreground">
                             đ/vé
                         </div>
                     </div>
-                    <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                    <Button onClick={() => {
+                        navigate(`/trip/${trip.id}`)
+                    }} className="bg-primary hover:bg-primary/90 text-primary-foreground">
                         Chọn
                     </Button>
                 </div>

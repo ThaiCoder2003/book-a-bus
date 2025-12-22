@@ -16,7 +16,7 @@ const tripController = {
                 origin,
                 destination,
                 date,
-                busType,
+                seatType,
                 departureTime,
                 sortBy,
                 page,
@@ -33,7 +33,7 @@ const tripController = {
                 from: origin,
                 to: destination,
                 departureDay: date,
-                busType,
+                seatType,
                 departureTime,
                 sortBy,
             }
@@ -49,10 +49,10 @@ const tripController = {
         }
     },
 
-    getTripById: async (req, res) => {
+    getTripDetail: async (req, res) => {
         try {
             const id = req.params.id
-            const result = await tripService.getTripById(id)
+            const result = await tripService.getTripDetailById(id)
 
             if (result) {
                 return res.status(200).json({

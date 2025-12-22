@@ -21,6 +21,11 @@ const registerSchema = Joi.object({
             'string.pattern.base':
                 'Password must contain uppercase, lowercase and number',
         }),
+    phone: Joi.string()
+        .pattern(/^[0-9]+$/) // Chỉ cho phép số
+        .min(10)
+        .max(11)
+        .required(),
 })
 
 const loginSchema = Joi.object({
