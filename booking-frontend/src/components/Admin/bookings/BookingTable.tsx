@@ -1,7 +1,7 @@
 import React, { useState } from "react";
+import type { Booking } from "@/types/booking.type";
 import BookingTableRow from "./BookingTableRow";
-import BookingDetailModal from "../bookings/BookingDetailModal"; // ⬅ import modal
-import type { Booking } from "../../../types/admin/booking";
+import BookingDetailModal from "../bookings/BookingDetailModal";
 
 interface BookingTableProps {
   bookings: Booking[];
@@ -45,7 +45,7 @@ const BookingTable: React.FC<BookingTableProps> = ({ bookings }) => {
               Trạng thái
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Thanh toán
+              Số vé
             </th>
             <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
               Hành động
