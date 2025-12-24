@@ -7,9 +7,15 @@ const seatController = {
         // get all seat by trip
         try {
             const tripId = req.params.tripId
+            const { fromOrder, toOrder } = req.query
 
-            if (busId) {
-                const results = await seatService.getSeatByTrip(tripId)
+            if (tripId) {
+                console.log(tripId)
+                const results = await seatService.getTripSeats({
+                    tripId,
+                    fromOrder: parseInt(fromOrder),
+                    toOrder: parseInt(toOrder),
+                })
 
                 if (results) {
                     return res.status(200).json({
@@ -17,7 +23,9 @@ const seatController = {
                         data: results,
                     })
                 } else {
-                    throw new Error('Không lấy được danh sách ghế theo chuyến đi.')
+                    throw new Error(
+                        'Không lấy được danh sách ghế theo chuyến đi.',
+                    )
                 }
             } else {
                 throw new Error('Không tìm được id của chuyến đi.')
@@ -57,7 +65,12 @@ const seatController = {
     checkSeatOverlap: async (req, res) => {
         try {
             const { tripId, seatId, fromOrder, toOrder } = req.query
-            const isOverlap = await seatService.checkSeatOverlap(tripId, seatId, parseInt(fromOrder), parseInt(toOrder))
+            const isOverlap = await seatService.checkSeatOverlap(
+                tripId,
+                seatId,
+                parseInt(fromOrder),
+                parseInt(toOrder),
+            )
             return res.status(200).json({
                 message: 'Kiểm tra chỗ ngồi thành công.',
                 data: { isOverlap },

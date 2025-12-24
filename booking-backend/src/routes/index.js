@@ -8,6 +8,7 @@ const stationRoutes = require('./stationRoute')
 const seatRoutes = require('./seatRoute')
 const dashboardRoutes = require('./dashboardRoute')
 const paymentRoutes = require('./paymentRoute')
+const bookingRoutes = require('./bookingRoute')
 
 router.use('/auth', authRoutes)
 router.use('/trips', tripRoutes)
@@ -16,6 +17,7 @@ router.use('/station', stationRoutes)
 router.use('/seats', seatRoutes)
 router.use('/dashboard', dashboardRoutes)
 router.use('/payment', paymentRoutes)
+router.use('/bookings', bookingRoutes)
 
 // health check (API kiểm tra server còn sống không)
 router.get('/health', (req, res) => {

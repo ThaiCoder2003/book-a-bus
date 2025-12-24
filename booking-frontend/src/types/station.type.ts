@@ -1,5 +1,5 @@
 import type { Booking } from './booking.type'
-import type { RouteStop } from './routeStop.type'
+import type { RouteStation } from './RouteStation.type'
 
 export interface Station {
     id: string
@@ -10,5 +10,5 @@ export interface Station {
     // Relations
     bookingDepartures?: Booking[]
     bookingArrivals?: Booking[]
-    routeStops?: RouteStop[]
+    routeStops?: RouteStation[]
 }

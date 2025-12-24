@@ -10,6 +10,7 @@ export interface Seat {
     row: number
     col: number
     type: SeatType
+    isAvailable: boolean
 
     // Relations
     bus?: Bus
