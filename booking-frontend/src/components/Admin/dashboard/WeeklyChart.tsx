@@ -1,26 +1,40 @@
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
-const data = [
-  { name: "Mon", revenue: 2 },
-  { name: "Tue", revenue: 1.5 },
-  { name: "Wed", revenue: 2.5 },
-  { name: "Thu", revenue: 1.8 },
-  { name: "Fri", revenue: 4 },
-  { name: "Sat", revenue: 5.5 },
-  { name: "Sun", revenue: 6 },
-];
+import { WEEKLY_REVENUE_MOCK } from "@/data/weekly-revenue.mock";
+import { mapWeeklyRevenueApiToUI } from "./weeklyRevenue.mapper";
 
 export default function WeeklyChart() {
+  const data = mapWeeklyRevenueApiToUI(WEEKLY_REVENUE_MOCK);
+
   return (
-    <div className="bg-white p-6 rounded-xl shadow-sm border h-120">
+    <div
+      className="bg-white p-6 rounded-xl shadow-sm border"
+      style={{ height: 400 }}
+    >
       <h3 className="font-semibold mb-4">Weekly Revenue</h3>
 
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data}>
-          <XAxis dataKey="name" />
-          <YAxis />
-          <Tooltip />
-          <Bar dataKey="revenue" fill="#1d4ed8" radius={[8, 8, 0, 0]} />
+          <XAxis dataKey="day" />
+          <YAxis tickFormatter={(v) => `${v / 1_000_000}M`} />
+          <Tooltip
+            formatter={(value) => {
+              if (typeof value !== "number") return value;
+              return value.toLocaleString("vi-VN") + " đ";
+            }}
+          />
+          <Bar
+            dataKey="revenue"
+            fill="#1d4ed8" // ✅ blue giống lúc đầu
+            radius={[8, 8, 0, 0]}
+          />
         </BarChart>
       </ResponsiveContainer>
     </div>

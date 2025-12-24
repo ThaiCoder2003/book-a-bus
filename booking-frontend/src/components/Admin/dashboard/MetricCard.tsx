@@ -1,20 +1,23 @@
 import { DollarSign, Ticket, Bus } from "lucide-react";
 
-interface Props {
+// 1. Định nghĩa Interface đầy đủ
+interface MetricCardProps {
   title: string;
-  value: string;
-  subtitle: string;
-  valueColor: string;
+  value: number;
+  subtitle?: string;
+  valueColor?: string;
+  formatter?: (value: number) => string;
 }
 
-const getMetricIcon = (title) => {
+const getMetricIcon = (title: string) => {
+  const iconClass = "h-4 w-4 text-gray-400";
   switch (title) {
     case "Total Revenue":
-      return <DollarSign className="h-4 w-4 text-gray-400" />;
+      return <DollarSign className={iconClass} />;
     case "Tickets Sold":
-      return <Ticket className="h-4 w-4 text-gray-400" />;
+      return <Ticket className={iconClass} />;
     case "Buses Running":
-      return <Bus className="h-4 w-4 text-gray-400" />;
+      return <Bus className={iconClass} />;
     default:
       return null;
   }
@@ -25,22 +28,21 @@ export default function MetricCard({
   value,
   subtitle,
   valueColor,
-}: Props) {
+  formatter,
+}: MetricCardProps) {
   return (
     <div className="bg-white p-5 rounded-lg shadow-sm border">
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex justify-between items-center mb-4">
         <p className="text-sm font-medium text-gray-500">{title}</p>
-        <div>{getMetricIcon(title)}</div>
+        {getMetricIcon(title)}
       </div>
 
-      <h3
-        className={`text-2xl font-bold ${
-          valueColor ? valueColor : "text-gray-900"
-        }`}
-      >
-        {value}
-      </h3>
-      <p className={"text-xs text-gray-500"}>{subtitle}</p>
+      <div>
+        <h3 className={`text-2xl font-bold ${valueColor ?? "text-gray-900"}`}>
+          {formatter ? formatter(value) : value.toLocaleString()}
+        </h3>
+        {subtitle && <p className="text-xs text-gray-500 mt-1">{subtitle}</p>}
+      </div>
     </div>
   );
 }

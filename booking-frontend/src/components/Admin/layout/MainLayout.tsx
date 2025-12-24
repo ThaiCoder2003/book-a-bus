@@ -4,12 +4,13 @@ import Header from "./Header";
 
 export default function MainLayout() {
   return (
-    <div className="flex h-screen">
+    <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
-      <div className="flex flex-col flex-1">
+
+      <div className="flex flex-col flex-1 min-w-0">
         <Header />
-        <main className="p-6 overflow-y-auto">
-          {/* Outlet sẽ tự động render các trang con tương ứng với URL */}
+
+        <main className="flex-1 p-6 overflow-y-auto">
           <Outlet />
         </main>
       </div>
