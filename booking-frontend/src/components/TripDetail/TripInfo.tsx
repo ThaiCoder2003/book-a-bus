@@ -117,7 +117,7 @@ export function TripInfo({ trip }: { trip: TripDetail }) {
                     <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
                         <Clock className="h-4 w-4" /> Lộ trình chi tiết
                     </h4>
-                    <ScrollArea className="h-[200px] pr-4">
+                    <ScrollArea className="h-[238px] pr-4">
                         <div className="relative pl-2 border-l-2 border-muted ml-2 space-y-6 pb-2">
                             {sortedPoints.map((point, index) => {
                                 const isStart = index === 0

@@ -6,12 +6,14 @@ const tripRoutes = require('./tripRoute')
 const busRoutes = require('./busRoute')
 const stationRoutes = require('./stationRoute')
 const seatRoutes = require('./seatRoute')
+const bookingRoutes = require('./bookingRoute')
 
 router.use('/auth', authRoutes)
 router.use('/trips', tripRoutes)
 router.use('/bus', busRoutes)
 router.use('/station', stationRoutes)
 router.use('/seats', seatRoutes)
+router.use('/bookings', bookingRoutes)
 
 // health check (API kiểm tra server còn sống không)
 router.get('/health', (req, res) => {

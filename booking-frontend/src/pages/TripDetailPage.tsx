@@ -1,5 +1,6 @@
 import LoadingSpin from '@/components/helpers/LoadingSpin'
-// import SeatSelector from '@/components/TripDetail/SeatSelector'
+import { BookingSelection } from '@/components/TripDetail/BookingSelection'
+import SeatSelector from '@/components/TripDetail/SeatSelector'
 import TripInfo from '@/components/TripDetail/TripInfo'
 import tripService from '@/services/tripService'
 import type { TripDetail } from '@/types/tripDetail.type'
@@ -16,6 +17,12 @@ export default function TripDetailPage() {
         routePoints: [],
     })
     const [isLoading, setIsLoading] = useState<boolean>(false)
+    const [isSeatSelect, setIsSeatSelect] = useState<boolean>(false)
+    const [basePrice, setBasePrice] = useState<number>(0)
+    const [fromTo, setFromTo] = useState({
+        from: 1,
+        to: 2,
+    })
     const { id } = useParams()
 
     useEffect(() => {
@@ -56,15 +63,24 @@ export default function TripDetailPage() {
                     {/* Thông tin chuyến xe */}
                     <TripInfo trip={tripData} />
 
-                    {/* Phần chọn ghế và tóm tắt đặt vé
-                    <div className="grid lg:grid-cols-3 gap-6 mt-6">
-                        <div className="lg:col-span-2">
-                            <SeatSelector tripId={tripData.id} />
+                    {isSeatSelect ? (
+                        // Phần chọn ghế và tóm tắt đặt vé
+                        <div className="grid lg:grid-cols-3 gap-6 mt-6">
+                            <div className="lg:col-span-2">
+                                <SeatSelector tripId={tripData.tripId} fromTo={fromTo} />
+                            </div>
+                            {/* <div className="lg:col-span-1">
+                                <BookingSummary trip={tripData} />
+                            </div> */}
                         </div>
-                        <div className="lg:col-span-1">
-                            <BookingSummary trip={tripData} />
-                        </div>
-                    </div> */}
+                    ) : (
+                        <BookingSelection
+                            routePoints={tripData.routePoints}
+                            setIsSeatSelect={setIsSeatSelect}
+                            setBasePrice={setBasePrice}
+                            setFromTo={setFromTo}
+                        />
+                    )}
                 </div>
             )}
         </div>

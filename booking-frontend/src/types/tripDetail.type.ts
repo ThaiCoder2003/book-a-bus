@@ -1,4 +1,4 @@
-interface RoutePoint {
+export interface RoutePoint {
     stationId: string
     stationName: string
     address: string

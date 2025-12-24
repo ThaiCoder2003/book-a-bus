@@ -3,20 +3,71 @@ const prisma = require('../configs/db')
 
 const bookingService = {
     createBooking: async (payload) => {
-        const { tripId, userId, userName, userPhone, totalAmount } = payload
-        try {
-            return await prisma.booking.create({
-                tripId,
-                userId,
-                userName,
-                userPhone,
-                totalAmount,
-                expiredAt: new Date(Date.now() + 5 * 60 * 1000),
+        const {
+            userId,
+            tripId,
+            seatIds,
+            fromOrder,
+            toOrder,
+            depStationId,
+            arrStationId,
+            totalAmount,
+        } = payload
+
+        return await prisma.$transaction(async (tx) => {
+            // Tìm xem trong các ghế user chọn, có ghế nào vừa bị người khác đặt không
+            const conflictingTickets = await tx.ticket.findFirst({
+                where: {
+                    tripId: tripId,
+                    seatId: { in: seatIds }, // Chỉ check các ghế user đang chọn
+                    fromOrder: { lt: toOrder },
+                    toOrder: { gt: fromOrder },
+                    booking: {
+                        OR: [
+                            { status: 'CONFIRMED' },
+                            {
+                                status: 'PENDING',
+                                expiredAt: { gt: new Date() },
+                            },
+                        ],
+                    },
+                },
             })
-        } catch (error) {
-            console.error('Lỗi khi tạo booking:', error)
-            throw error
-        }
+
+            if (conflictingTickets) {
+                // Nếu tìm thấy xung đột => Ném lỗi để rollback và báo FE
+                throw new Error('SEAT_ALREADY_TAKEN')
+            }
+
+            // Thời gian giữ ghế (ví dụ 10 phút)
+            const expiredAt = new Date(new Date().getTime() + 10 * 60 * 1000)
+
+            const newBooking = await tx.booking.create({
+                data: {
+                    userId,
+                    tripId,
+                    departureStationId: depStationId,
+                    arrivalStationId: arrStationId,
+                    totalAmount: totalAmount,
+                    status: 'PENDING',
+                    expiredAt: expiredAt,
+                    // Tạo luôn các vé (Tickets) liên kết
+                    tickets: {
+                        create: seatIds.map((seatId) => ({
+                            seatId: seatId,
+                            tripId: tripId, // Quan trọng để query nhanh
+                            fromOrder: fromOrder,
+                            toOrder: toOrder,
+                        })),
+                    },
+                },
+                include: {
+                    tickets: true, // Trả về vé để hiển thị
+                },
+            })
+
+            return newBooking
+        })
     },
 
     getBookingByUser: async (userId) => {
@@ -137,9 +188,7 @@ const bookingService = {
                             where: { tripId_seatId: { tripId, seatId } },
                         })
                         if (isTaken)
-                            throw new Error(
-                                'Ghế này đã được người khác chọn.',
-                            )
+                            throw new Error('Ghế này đã được người khác chọn.')
 
                         // Thêm vé mới nối vào booking cũ
                         await tx.ticket.create({
