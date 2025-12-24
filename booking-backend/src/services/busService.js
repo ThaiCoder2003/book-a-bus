@@ -1,6 +1,5 @@
 const validatePayload = require("../utils/validate");
 const prisma = require("../configs/db");
-const { Prisma } = require("@prisma/client");
 
 const busService = {
   getBuses: async (type, page = 1, limit = 10) => {

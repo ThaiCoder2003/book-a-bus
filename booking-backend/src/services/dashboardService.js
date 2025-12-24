@@ -1,6 +1,6 @@
 const prisma = require('../configs/db')
-import { startOfDay, endOfDay, subDays } from "date-fns";
-import { BusStatus } from '@prisma/client'
+const { startOfDay, endOfDay, subDays,  startOfYear, endOfYear } = require('date-fns');
+const { BusStatus, BookingStatus } = require('@prisma/client')
 
 const todayStart = startOfDay(new Date());
 const todayEnd = endOfDay(new Date());
@@ -146,7 +146,38 @@ const dashboardService = {
         return {
             recentBooking
         }
+    },
+
+    yearlyRevenue: async() => {
+        const yearStart = startOfYear(new Date())
+        const yearEnd = endOfYear(new Date())  
+        const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        
+        const rawData = await prisma.$queryRaw`
+        SELECT
+            EXTRACT(MONTH FROM "createdAt") AS month,
+            COALESCE(SUM("totalAmount"), 0) AS revenue
+        FROM "Booking"
+        WHERE
+        "status" = ${BookingStatus.CONFIRMED} AND
+            "createdAt" BETWEEN ${yearStart} AND ${yearEnd}
+        GROUP BY month
+        `
+
+        
+        const yearlyRevenue = MONTHS.map((label, index) => {
+            const found = rawData.find(
+                r => Number(r.month) === index + 1
+            )
+
+            return {
+                label,
+                value: Number(found?.revenue ?? 0)
+            }
+        })
+
+        return { yearlyRevenue }
     }
-}
+};
 
 module.exports = dashboardService
