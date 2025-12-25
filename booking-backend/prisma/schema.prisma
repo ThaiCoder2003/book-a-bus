@@ -130,6 +130,9 @@ model Booking {
   updatedAt DateTime  @updatedAt
   expiredAt DateTime?
 
+  paymentTime   DateTime?  
+  paymentRef    String?
+
   user             User     @relation(fields: [userId], references: [id])
   trip             Trip     @relation(fields: [tripId], references: [id])
   departureStation Station  @relation("BookingDep", fields: [departureStationId], references: [id])
