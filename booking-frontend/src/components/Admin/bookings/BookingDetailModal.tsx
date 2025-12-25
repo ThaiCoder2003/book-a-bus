@@ -83,7 +83,10 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
           {isEditing ? (
             <UpdatePaymentSection
               booking={booking}
-              onSave={() => setIsEditing(false)}
+              onSave={(newTotalAmount) => {
+                booking.totalAmount = newTotalAmount;
+                setIsEditing(false);
+              }}
               onCancel={() => setIsEditing(false)}
             />
           ) : (
@@ -93,15 +96,9 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
                 <h4 className="font-bold text-gray-700 mb-3">
                   Thông tin khách hàng
                 </h4>
-                <InfoRow
-                  label="Tên khách hàng"
-                  value={booking.user?.name || "N/A"}
-                />
-                <InfoRow
-                  label="Điện thoại"
-                  value={booking.user?.phone || "N/A"}
-                />
-                <InfoRow label="Email" value={booking.user?.email || "N/A"} />
+                <InfoRow label="Tên khách hàng" value={booking.user.name} />
+                <InfoRow label="Điện thoại" value={booking.user.phone} />
+                <InfoRow label="Email" value={booking.user.email} />
               </div>
 
               {/* Thông tin chuyến đi */}
@@ -109,23 +106,15 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
                 <h4 className="font-bold text-gray-700 mb-3">
                   Thông tin chuyến đi
                 </h4>
-                <InfoRow
-                  label="Tuyến đường"
-                  value={booking.trip?.route?.name || "N/A"}
-                />
-                <InfoRow
-                  label="Bến đi"
-                  value={booking.departureStation?.name || "N/A"}
-                />
-                <InfoRow
-                  label="Bến đến"
-                  value={booking.arrivalStation?.name || "N/A"}
-                />
+                <InfoRow label="Tuyến đường" value={booking.trip.route.name} />
+                <InfoRow label="Bến đi" value={booking.departureStation.name} />
+                <InfoRow label="Bến đến" value={booking.arrivalStation.name} />
                 <InfoRow
                   label="Ngày khởi hành"
-                  value={booking.trip?.departureTime || "N/A"}
+                  value={booking.trip.departureTime}
                 />
-                <InfoRow label="Số vé" value={booking.tickets?.length || 0} />
+                <InfoRow label="Số vé" value={booking.tickets.length} />
+                <InfoRow label="Hết hạn" value={booking.expiredAt} />
               </div>
 
               {/* Thông tin thanh toán */}

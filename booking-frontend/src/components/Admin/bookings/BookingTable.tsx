@@ -1,8 +1,9 @@
 // BookingTable.tsx
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import type { Booking } from "@/types/booking.type";
 import BookingTableRow from "./BookingTableRow";
 import Pagination from "../ui/Pagination";
+
 interface BookingTableProps {
   bookings: Booking[];
   onRowClick: (booking: Booking) => void; // nhận từ page cha
@@ -12,17 +13,17 @@ const BookingTable: React.FC<BookingTableProps> = ({
   bookings,
   onRowClick,
 }) => {
-  // 1. Khai báo các biến quản lý phân trang
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10; // Bạn có thể thay đổi số lượng mục mỗi trang ở đây
+  const itemsPerPage = 10;
 
-  // 2. Tính toán dữ liệu sẽ hiển thị trên trang hiện tại
-  const totalItems = bookings.length;
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentData = bookings.slice(startIndex, endIndex);
+  const currentData = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return bookings.slice(startIndex, endIndex);
+  }, [bookings, currentPage]);
+
   return (
-    <>
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col">
       <div className="overflow-x-auto relative">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
@@ -58,26 +59,31 @@ const BookingTable: React.FC<BookingTableProps> = ({
               <BookingTableRow
                 key={booking.id}
                 booking={booking}
-                onActionClick={() => onRowClick(booking)} // gọi prop từ cha
+                onActionClick={() => onRowClick(booking)}
               />
             ))}
           </tbody>
         </table>
       </div>
-      {/* 4. Truyền đúng các props cho Pagination */}
+
+      {/* Pagination */}
       <div className="px-6 py-4 border-t border-gray-100">
         <Pagination
-          totalItems={totalItems}
+          totalItems={bookings.length}
           itemsPerPage={itemsPerPage}
           currentPage={currentPage}
           onPageChange={(page) => {
-            setCurrentPage(page);
-            // Optional: Cuộn lên đầu bảng khi đổi trang
-            window.scrollTo({ top: 0, behavior: "smooth" });
+            if (
+              page >= 1 &&
+              page <= Math.ceil(bookings.length / itemsPerPage)
+            ) {
+              setCurrentPage(page);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }
           }}
         />
       </div>
-    </>
+    </div>
   );
 };
 

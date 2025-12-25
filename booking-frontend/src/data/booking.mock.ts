@@ -17,7 +17,7 @@ export const mockBookings: Booking[] = [
     arrivalStationId: "st-hcm",
     createdAt: "2024-12-01T08:00:00Z",
     updatedAt: "2024-12-01T09:00:00Z",
-    expiredAt: null,
+    expiredAt: "2024-12-31T23:59:59Z",
 
     user: {
       id: "user-1",
@@ -67,7 +67,7 @@ export const mockBookings: Booking[] = [
     arrivalStationId: "st-hp",
     createdAt: "2024-12-10T14:00:00Z",
     updatedAt: "2024-12-10T14:00:00Z",
-    expiredAt: null,
+    expiredAt: "2024-12-10T14:00:00Z",
 
     user: {
       id: "user-2",

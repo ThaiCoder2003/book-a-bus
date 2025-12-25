@@ -16,7 +16,7 @@ export interface Booking {
 
   createdAt: string; // ISO Date String
   updatedAt: string; // ISO Date String
-  expiredAt?: string | null; // ISO Date String
+  expiredAt: string; // ISO Date String
 
   // --- Payment info ---
   paymentTime?: string | null; // ISO Date String, thời điểm thanh toán ZaloPay
