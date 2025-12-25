@@ -1,31 +1,22 @@
-import React, { useState } from "react";
+// BookingTable.tsx
+import React from "react";
 import type { Booking } from "@/types/booking.type";
 import BookingTableRow from "./BookingTableRow";
-import BookingDetailModal from "../bookings/BookingDetailModal";
 
 interface BookingTableProps {
   bookings: Booking[];
+  onRowClick: (booking: Booking) => void; // nhận từ page cha
 }
 
-const BookingTable: React.FC<BookingTableProps> = ({ bookings }) => {
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const handleRowClick = (booking: Booking) => {
-    setSelectedBooking(booking);
-    setIsModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setSelectedBooking(null);
-  };
-
+const BookingTable: React.FC<BookingTableProps> = ({
+  bookings,
+  onRowClick,
+}) => {
   return (
     <div className="overflow-x-auto relative">
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
-          <tr>
+          <tr className="whitespace-nowrap">
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Mã vé
             </th>
@@ -57,20 +48,11 @@ const BookingTable: React.FC<BookingTableProps> = ({ bookings }) => {
             <BookingTableRow
               key={booking.id}
               booking={booking}
-              onActionClick={() => handleRowClick(booking)}
+              onActionClick={() => onRowClick(booking)} // gọi prop từ cha
             />
           ))}
         </tbody>
       </table>
-
-      {/* Modal hiển thị chi tiết */}
-      {selectedBooking && (
-        <BookingDetailModal
-          isOpen={isModalOpen}
-          onClose={handleCloseModal}
-          booking={selectedBooking}
-        />
-      )}
     </div>
   );
 };
