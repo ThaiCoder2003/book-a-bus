@@ -1,68 +1,74 @@
-// src/components/trips/StopTimelineItem.tsx
-import type { Stop } from "../../../types/admin/stop"; // dùng relative path
-import { Clock, MapPin } from "lucide-react";
+import { Clock, MapPin, Route } from "lucide-react";
+import type { RouteStation } from "@/types/RouteStation.type";
 
-interface StopItemProps {
-  stop: Stop;
+interface Props {
+  routeStation: RouteStation;
   isLast: boolean;
 }
 
-export default function StopTimelineItem({ stop, isLast }: StopItemProps) {
-  const isStart = stop.type === "start";
-  const isEnd = stop.type === "end";
+export default function StopTimelineItem({ routeStation, isLast }: Props) {
+  const { order, station, durationFromStart, distanceFromStart } = routeStation;
+
+  const isStart = order === 1;
+  const isEnd = isLast;
+  const isMiddle = !isStart && !isEnd;
 
   return (
     <div className="relative flex">
-      {/* Vertical Line */}
+      {/* Timeline line */}
       {!isLast && (
-        <div className="absolute left-4 top-7 w-0.5 h-[calc(100%-1.75rem)] bg-gray-200"></div>
+        <div className="absolute left-4 top-8 w-0.5 h-[calc(100%-2rem)] bg-gray-200" />
       )}
 
-      {/* Number Circle */}
+      {/* Number circle */}
       <div
-        className={`z-10 w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-sm font-semibold
+        className={`z-10 w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold
           ${
-            isStart || isEnd
-              ? "bg-blue-600 text-white"
-              : "bg-white text-gray-800 border-2 border-blue-400"
+            isMiddle
+              ? "bg-white text-gray-800 border-2 border-blue-500"
+              : "bg-blue-600 text-white"
           }
         `}
       >
-        {stop.order}
+        {order}
       </div>
 
       {/* Content */}
       <div className="ml-4 flex-1">
+        {/* Station name */}
         <h3
           className={`text-[15px] font-semibold ${
-            isStart || isEnd ? "text-blue-600" : "text-gray-900"
+            isMiddle ? "text-gray-900" : "text-blue-600"
           }`}
         >
-          {stop.name}
+          {station?.name}
         </h3>
 
-        <div className="flex items-center text-sm text-gray-500 mt-1">
+        {/* Address */}
+        <div className="flex items-center text-sm text-gray-500 mt-0.5">
           <MapPin className="w-4 h-4 mr-1 text-blue-500" />
-          {stop.address}
+          {station?.address}
         </div>
 
-        <div className="flex items-center gap-8 mt-3 mb-1">
-          <div className="flex items-center text-sm text-gray-700">
+        {/* Time */}
+        <div className="flex items-center gap-6 mt-2 text-sm">
+          <div className="flex items-center text-gray-700">
             <Clock className="w-4 h-4 mr-1 text-green-500" />
-            Đến dự kiến:
-            <span className="font-medium ml-1">{stop.arrivalTime}</span>
+            Thời gian dự kiến:
+            <span className="font-medium ml-1">{durationFromStart}p</span>
           </div>
 
-          <div className="flex items-center text-sm text-gray-700">
-            <Clock className="w-4 h-4 mr-1 text-orange-500" />
-            Đi dự kiến:
-            <span className="font-medium ml-1">{stop.departureTime}</span>
+          <div className="flex items-center text-gray-700">
+            <Route className="w-4 h-4 mr-1 text-orange-500" />
+            Quảng đường dự kiến:
+            <span className="font-medium ml-1">{distanceFromStart}km</span>
           </div>
         </div>
 
+        {/* Badge chỉ cho start / end */}
         {(isStart || isEnd) && (
           <span
-            className={`inline-block text-xs font-medium px-2 py-0.5 rounded-md mt-1
+            className={`inline-block mt-2 text-xs font-medium px-2 py-0.5 rounded-md
               ${
                 isStart
                   ? "bg-green-100 text-green-700"
