@@ -41,11 +41,11 @@ export const TransactionTable = ({
       <div className="overflow-x-auto">
         <table className="w-full min-w-[900px] text-sm">
           <thead className="bg-gray-50 text-gray-500 uppercase text-[10px]">
-            <tr>
-              <th className="px-6 py-4">Mã</th>
-              <th className="px-6 py-4">Khách hàng</th>
-              <th className="px-6 py-4">Tuyến</th>
-              <th className="px-6 py-4">Số tiền</th>
+            <tr className="whitespace-nowrap">
+              <th className="px-6 py-4 text-left">Mã</th>
+              <th className="px-6 py-4 text-left">Khách hàng</th>
+              <th className="px-6 py-4 text-left">Tuyến</th>
+              <th className="px-6 py-4 text-left">Số tiền</th>
               <th className="px-6 py-4 text-center">Trạng thái</th>
               <th className="px-6 py-4 text-center">Thời gian</th>
               <th className="px-6 py-4 text-center">Chi tiết</th>
@@ -55,30 +55,41 @@ export const TransactionTable = ({
           <tbody className="divide-y">
             {filteredData.map((b) => (
               <tr key={b.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 font-semibold">{b.id}</td>
+                <td className="px-6 py-4 whitespace-nowrap font-semibold text-left">
+                  {b.id}
+                </td>
 
-                <td className="px-6 py-4">
+                <td className="px-6 py-4 whitespace-nowrap text-left">
                   <div className="font-medium">{b.user?.name}</div>
                   <div className="text-xs text-gray-400">{b.user?.email}</div>
                 </td>
 
-                <td className="px-6 py-4">{b.trip?.route?.name}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-left">
+                  <div className="leading-tight">
+                    <div className="font-medium truncate max-w-40">
+                      {b.user?.name}
+                    </div>
+                    <div className="text-xs text-gray-400 truncate max-w-40">
+                      {b.user?.email}
+                    </div>
+                  </div>
+                </td>
 
-                <td className="px-6 py-4 font-bold">
+                <td className="px-6 py-4 font-bold whitespace-nowrap text-left">
                   {b.totalAmount.toLocaleString()} đ
                 </td>
 
-                <td className="px-6 py-4 text-center">
+                <td className="px-6 py-4 text-center whitespace-nowrap">
                   <StatusBadge status={b.status} />
                 </td>
 
-                <td className="px-6 py-4 text-center text-xs text-gray-500">
+                <td className="px-6 py-4 text-center text-xs text-gray-500 whitespace-nowrap">
                   {new Date(b.paymentTime ?? b.createdAt).toLocaleString(
                     "vi-VN",
                   )}
                 </td>
 
-                <td className="px-6 py-4 text-center">
+                <td className="px-6 py-4 text-center whitespace-nowrap">
                   <button
                     disabled={b.status !== "CONFIRMED"}
                     onClick={() => onViewDetail(b)}
