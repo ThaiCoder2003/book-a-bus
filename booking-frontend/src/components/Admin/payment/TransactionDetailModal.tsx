@@ -1,170 +1,114 @@
-import {
-  X,
-  CheckCircle2,
-  Download,
-  RotateCcw,
-  Copy,
-  Clock,
-  CreditCard,
-  User,
-  MapPin,
-} from "lucide-react";
-
-interface ModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  data: any;
-}
+import { X, CheckCircle, Download, RotateCcw } from "lucide-react";
+import type { Booking } from "../../../types/booking.type";
 
 export default function TransactionDetailModal({
   isOpen,
   onClose,
   data,
-}: ModalProps) {
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  data: Booking | null;
+}) {
   if (!isOpen || !data) return null;
 
-  // Hàm copy mã giao dịch nhanh
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    alert("Đã sao chép: " + text);
-  };
+  const isSuccess = data.status === "CONFIRMED";
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-xl overflow-hidden relative animate-in zoom-in duration-300">
-        {/* Nút đóng góc trên */}
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+      <div className="bg-white w-full max-w-2xl rounded-2xl shadow-xl relative">
+        {/* Close */}
         <button
           onClick={onClose}
-          className="absolute right-5 top-5 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all"
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
         >
-          <X className="h-5 w-5" />
+          <X />
         </button>
 
-        <div className="p-8">
-          <h2 className="text-xl font-extrabold text-gray-800 mb-8">
-            Chi tiết giao dịch
-          </h2>
-
-          {/* Header Modal: Trạng thái & Nút thao tác nhanh */}
-          <div className="flex items-center gap-5 mb-10 pb-8 border-b border-gray-100">
-            <div className="bg-emerald-100 p-3 rounded-full">
-              <CheckCircle2 className="h-10 w-10 text-emerald-500" />
+        {/* Header */}
+        <div className="p-6 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 rounded-full bg-emerald-100 flex items-center justify-center">
+              <CheckCircle className="h-6 w-6 text-emerald-600" />
             </div>
+
             <div>
-              <div className="text-3xl font-black text-gray-900 tracking-tight">
-                {data.amount.toLocaleString()} đ
+              <div className="text-2xl font-bold">
+                {data.totalAmount.toLocaleString("vi-VN")} đ
               </div>
-              <div className="text-sm text-emerald-500 font-bold flex items-center gap-1.5">
-                <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-                Hoàn thành
-              </div>
-            </div>
-
-            <div className="ml-auto flex flex-col gap-2">
-              <button className="flex items-center justify-center gap-2 px-4 py-2 border border-gray-200 rounded-xl text-xs font-bold hover:bg-gray-50 transition-all shadow-sm">
-                <Download className="h-3.5 w-3.5" /> Tải hóa đơn
-              </button>
-              <button className="flex items-center justify-center gap-2 px-4 py-2 border border-gray-200 rounded-xl text-xs font-bold hover:bg-gray-50 text-orange-600 transition-all shadow-sm">
-                <RotateCcw className="h-3.5 w-3.5" /> Hoàn tiền
-              </button>
-            </div>
-          </div>
-
-          {/* Body: Thông tin chia 2 cột */}
-          <div className="grid grid-cols-2 gap-10 mb-10">
-            {/* Cột trái: Thông tin giao dịch */}
-            <div className="space-y-5">
-              <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
-                Thông tin giao dịch
-              </p>
-
-              <InfoItem
-                label="Mã giao dịch"
-                value={data.id}
-                icon={
-                  <Copy
-                    className="h-3 w-3 cursor-pointer hover:text-blue-500"
-                    onClick={() => copyToClipboard(data.id)}
-                  />
-                }
-              />
-
-              <InfoItem
-                label="PayOS ID"
-                value={`PAYOS_${data.id.split("TXN")[1]}`}
-                icon={
-                  <Copy
-                    className="h-3 w-3 cursor-pointer hover:text-blue-500"
-                    onClick={() => copyToClipboard("PAYOS_ID")}
-                  />
-                }
-              />
-
-              <InfoItem label="Thời gian" value={data.time} />
-              <InfoItem label="Phương thức" value={data.method} />
-            </div>
-
-            {/* Cột phải: Thông tin khách hàng */}
-            <div className="space-y-5">
-              <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
-                Thông tin khách hàng
-              </p>
-
-              <div className="space-y-1">
-                <label className="text-gray-400 text-xs font-medium">
-                  Họ tên:
-                </label>
-                <div className="font-bold text-gray-800 text-sm">
-                  {data.customer}
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-gray-400 text-xs font-medium">
-                  Email:
-                </label>
-                <div className="font-bold text-gray-800 text-sm truncate">
-                  {data.email}
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-gray-400 text-xs font-medium">
-                  Tuyến đường:
-                </label>
-                <div className="font-bold text-gray-800 text-xs leading-relaxed">
-                  {data.route}
-                </div>
+              <div className="text-sm text-emerald-600 font-medium">
+                ● Hoàn thành
               </div>
             </div>
           </div>
 
-          {/* Phần Footer: Chi tiết thanh toán (Giống thiết kế ảnh của bạn) */}
-          <div className="bg-gray-50/80 rounded-2xl p-6 space-y-3">
-            <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-4">
-              Chi tiết thanh toán
-            </p>
+          <div className="flex gap-2 flex-col">
+            <button className="flex items-center gap-2 px-4 py-2 border rounded-xl text-sm hover:bg-gray-50 cursor-pointer">
+              <Download className="h-4 w-4" />
+              Tải hóa đơn
+            </button>
 
-            <div className="flex justify-between text-sm text-gray-600">
-              <span className="font-medium">Giá vé:</span>
-              <span className="font-bold">
-                {data.amount.toLocaleString()} đ
-              </span>
-            </div>
+            <button className="flex items-center gap-2 px-4 py-2 border rounded-xl text-sm text-orange-600 hover:bg-orange-50 cursor-pointer">
+              <RotateCcw className="h-4 w-4" />
+              Hoàn tiền
+            </button>
+          </div>
+        </div>
 
-            <div className="flex justify-between text-sm text-gray-600">
-              <span className="font-medium">Phí dịch vụ:</span>
-              <span className="font-bold">0 đ</span>
-            </div>
+        <div className="border-t" />
 
-            <div className="pt-4 mt-2 border-t border-gray-200 flex justify-between items-center">
-              <span className="text-base font-extrabold text-gray-800">
-                Tổng thanh toán:
-              </span>
-              <span className="text-xl font-black text-blue-600">
-                {data.amount.toLocaleString()} đ
-              </span>
-            </div>
+        {/* Body */}
+        <div className="p-6 grid grid-cols-2 gap-8 text-sm">
+          {/* Transaction info */}
+          <div>
+            <h4 className="text-xs font-semibold text-gray-400 mb-4">
+              THÔNG TIN GIAO DỊCH
+            </h4>
+
+            <Info label="Mã giao dịch" value={data.id} />
+            <Info label="PayOS ID" value={data.paymentRef ?? "—"} />
+            <Info
+              label="Thời gian"
+              value={new Date(
+                data.paymentTime ?? data.createdAt,
+              ).toLocaleString("vi-VN")}
+            />
+            <Info label="Phương thức" value="ZaloPay Sandbox" />
+          </div>
+
+          {/* Customer info */}
+          <div>
+            <h4 className="text-xs font-semibold text-gray-400 mb-4">
+              THÔNG TIN KHÁCH HÀNG
+            </h4>
+
+            <Info label="Họ tên" value={data.user?.name} />
+            <Info label="Email" value={data.user?.email} />
+            <Info label="Tuyến đường" value={data.trip?.route?.name} />
+          </div>
+        </div>
+
+        {/* Payment detail */}
+        <div className="px-6 pb-6">
+          <div className="bg-gray-50 rounded-xl p-4">
+            <h4 className="text-xs font-semibold text-gray-400 mb-4">
+              CHI TIẾT THANH TOÁN
+            </h4>
+
+            <Row
+              label="Giá vé"
+              value={`${data.totalAmount.toLocaleString()} đ`}
+            />
+            <Row label="Phí dịch vụ" value="0 đ" />
+
+            <div className="border-t my-3" />
+
+            <Row
+              label="Tổng thanh toán"
+              value={`${data.totalAmount.toLocaleString()} đ`}
+              bold
+              highlight
+            />
           </div>
         </div>
       </div>
@@ -172,23 +116,32 @@ export default function TransactionDetailModal({
   );
 }
 
-// Component con hiển thị dòng thông tin nhỏ
-function InfoItem({
+const Info = ({ label, value }: { label: string; value?: string }) => (
+  <div className="mb-3">
+    <div className="text-xs text-gray-400">{label}</div>
+    <div className="font-medium">{value ?? "—"}</div>
+  </div>
+);
+
+const Row = ({
   label,
   value,
-  icon,
+  bold,
+  highlight,
 }: {
   label: string;
   value: string;
-  icon?: React.ReactNode;
-}) {
-  return (
-    <div className="space-y-1">
-      <label className="text-gray-400 text-xs font-medium">{label}:</label>
-      <div className="flex items-center gap-2">
-        <span className="font-bold text-gray-800 text-sm">{value}</span>
-        {icon && <span className="text-gray-400">{icon}</span>}
-      </div>
-    </div>
-  );
-}
+  bold?: boolean;
+  highlight?: boolean;
+}) => (
+  <div className="flex justify-between items-center text-sm mb-2">
+    <span className={bold ? "font-semibold" : ""}>{label}</span>
+    <span
+      className={`${bold ? "font-bold" : ""} ${
+        highlight ? "text-blue-600 text-lg" : ""
+      }`}
+    >
+      {value}
+    </span>
+  </div>
+);
