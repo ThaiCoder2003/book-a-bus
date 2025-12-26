@@ -1,175 +1,78 @@
 import { Search } from "lucide-react";
-import type { TripFilter, TripStatus } from "../../../types/admin/trip";
+import type { Route } from "@/types/route.type";
 
-interface TripFilterPanelProps {
-  filter: TripFilter;
-  setFilter: React.Dispatch<React.SetStateAction<TripFilter>>;
+interface TripFilter {
+  searchTerm: string;
+  routeId: string | "all";
 }
 
-const statusOptions: { label: string; value: TripStatus | "all" }[] = [
-  { label: "Tất cả trạng thái", value: "all" },
-  { label: "Sắp khởi hành", value: "scheduled" },
-  { label: "Đang diễn ra", value: "on_going" },
-  { label: "Đã hoàn thành", value: "completed" },
-  { label: "Đã hủy", value: "canceled" },
-];
+interface Props {
+  filter: TripFilter;
+  setFilter: React.Dispatch<React.SetStateAction<TripFilter>>;
+  routes: Route[];
+}
 
-export function TripFilterPanel({ filter, setFilter }: TripFilterPanelProps) {
-  const handleFilterChange = (
-    key: keyof TripFilter,
-    value: string | number | undefined,
-  ) => {
-    setFilter((prev) => ({ ...prev, [key]: value }));
-  };
-
-  const handleResetFilters = () => {
-    setFilter({
-      searchTerm: "",
-      status: "all",
-      routeId: "all",
-      busCompanyId: "all",
-      departureDate: "",
-      minPrice: undefined,
-      maxPrice: undefined,
-    });
-  };
-
+export function TripFilterPanel({ filter, setFilter, routes }: Props) {
   return (
-    <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 space-y-4">
-      {/* Ô tìm kiếm */}
+    <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+      {/* Search Bar */}
       <div className="relative">
         <Search
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-          size={18}
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+          size={20}
         />
         <input
           type="text"
           placeholder="Tìm kiếm theo ID, tuyến, tài xế, nhà xe..."
+          className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
           value={filter.searchTerm}
-          onChange={(e) => handleFilterChange("searchTerm", e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"
+          onChange={(e) =>
+            setFilter((p) => ({ ...p, searchTerm: e.target.value }))
+          }
         />
       </div>
 
-      {/* Bộ lọc dropdown */}
+      {/* Selects Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Trạng thái */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
             Trạng thái
           </label>
-          <select
-            value={filter.status}
-            onChange={(e) =>
-              handleFilterChange("status", e.target.value as TripStatus | "all")
-            }
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-600 focus:outline-none"
-          >
-            {statusOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
+          <select className="w-full p-2 border border-slate-200 rounded-lg bg-white outline-none">
+            <option>Tất cả trạng thái</option>
           </select>
         </div>
-
-        {/* Tuyến đường */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
             Tuyến đường
           </label>
           <select
             value={filter.routeId}
-            onChange={(e) => handleFilterChange("routeId", e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-600 focus:outline-none"
+            onChange={(e) =>
+              setFilter((p) => ({ ...p, routeId: e.target.value }))
+            }
+            className="w-full p-2 border border-slate-200 rounded-lg bg-white outline-none"
           >
             <option value="all">Tất cả tuyến đường</option>
-            <option value="R1">Hà Nội - TP.HCM</option>
-            <option value="R2">Hà Nội - Đà Nẵng</option>
-            <option value="R3">Đà Nẵng - TP.HCM</option>
+            {routes.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.name}
+              </option>
+            ))}
           </select>
         </div>
-
-        {/* Nhà xe */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
             Nhà xe
           </label>
-          <select
-            value={filter.busCompanyId}
-            onChange={(e) => handleFilterChange("busCompanyId", e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-600 focus:outline-none"
-          >
-            <option value="all">Tất cả nhà xe</option>
-            <option value="viettrip">VietTrip Express</option>
-            <option value="futa">Futa Bus</option>
-            <option value="phuongtrang">Phương Trang</option>
+          <select className="w-full p-2 border border-slate-200 rounded-lg bg-white outline-none">
+            <option>Tất cả nhà xe</option>
           </select>
         </div>
       </div>
 
-      {/* Bộ lọc ngày & khoảng giá */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Ngày khởi hành */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Ngày khởi hành
-          </label>
-          <input
-            type="date"
-            value={filter.departureDate || ""}
-            onChange={(e) =>
-              handleFilterChange("departureDate", e.target.value)
-            }
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-600 focus:outline-none"
-          />
-        </div>
-
-        {/* Giá từ */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Giá từ (₫)
-          </label>
-          <input
-            type="number"
-            min="0"
-            value={filter.minPrice ?? ""}
-            onChange={(e) =>
-              handleFilterChange(
-                "minPrice",
-                e.target.value ? Number(e.target.value) : undefined,
-              )
-            }
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-600 focus:outline-none"
-          />
-        </div>
-
-        {/* Giá đến */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Đến (₫)
-          </label>
-          <input
-            type="number"
-            min="0"
-            value={filter.maxPrice ?? ""}
-            onChange={(e) =>
-              handleFilterChange(
-                "maxPrice",
-                e.target.value ? Number(e.target.value) : undefined,
-              )
-            }
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-600 focus:outline-none"
-          />
-        </div>
-      </div>
-
-      {/* Nút reset */}
-      <div className="flex justify-end pt-2">
-        <button
-          onClick={handleResetFilters}
-          className="text-sm text-blue-600 hover:underline"
-        >
+      <div className="flex justify-end">
+        <button className="text-blue-600 text-sm font-medium hover:underline">
           Xóa tất cả bộ lọc
         </button>
       </div>
