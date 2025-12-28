@@ -5,9 +5,10 @@ interface Props {
   value: string;
   subtitle: string;
   valueColor: string;
+  trendValue?: number;
 }
 
-const getMetricIcon = (title) => {
+const getMetricIcon = (title: String) => {
   switch (title) {
     case "Total Revenue":
       return <DollarSign className="h-4 w-4 text-gray-400" />;
@@ -26,6 +27,18 @@ export default function MetricCard({
   subtitle,
   valueColor,
 }: Props) {
+
+  const isPositive = subtitle.startsWith('+');
+  const isNegative = subtitle.startsWith('-');
+
+  // Xác định màu sắc dựa trên dấu
+  const trendClass = isPositive 
+    ? "text-green-600" 
+    : isNegative 
+    ? "text-red-600" 
+    : "text-gray-500";
+
+    
   return (
     <div className="bg-white p-5 rounded-lg shadow-sm border">
       <div className="flex justify-between items-center mb-8">
@@ -40,7 +53,7 @@ export default function MetricCard({
       >
         {value}
       </h3>
-      <p className={"text-xs text-gray-500"}>{subtitle}</p>
+      <p className={`text-xs ${trendClass}`}>{subtitle}</p>
     </div>
   );
 }

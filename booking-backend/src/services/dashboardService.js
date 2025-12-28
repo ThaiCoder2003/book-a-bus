@@ -1,120 +1,110 @@
 const prisma = require('../configs/db')
 const { startOfDay, endOfDay, subDays,  startOfYear, endOfYear } = require('date-fns');
 const { BusStatus, BookingStatus } = require('@prisma/client')
+const { subDays, format } = require('date-fns');
 
-const todayStart = startOfDay(new Date());
-const todayEnd = endOfDay(new Date());
-const yesterdayStart = startOfDay(subDays(new Date(), 1));
-const yesterdayEnd = endOfDay(subDays(new Date(), 1));
+const { startOfMonth, endOfMonth, subMonths, startOfDay, endOfDay, subDays } = require('date-fns');
 
 const dashboardService = {
     summary: async() => {
+        const now = new Date();
+        const yesterday = subDays(now, 1);
         const [
-            todayRevenue,
+            monthRevenue,
             todayTicketCount,
-            runningBus,
-            maintenanceBus,
+            busCount,
+            lastMonthRevenueData, 
+            yesterdayTicketCount
         ] = await Promise.all([
 
             prisma.ticket.aggregate({
                 _sum: { price: true },
                 where: {
                     createdAt: {
-                        gte: todayStart,
-                        lte: todayEnd 
+                    gte: startOfMonth(now),
+                    lte: now
                     },
                 },
-            }) ?? 0,
+            }),
 
             prisma.ticket.count({
                 where: {
                     createdAt: {
-                        gte: todayStart,
-                        lte: todayEnd 
+                        gte: startOfDay(now),
+                        lte: endOfDay(now)
                     }
                 }
             }),
 
-            prisma.bus.count({
-                where: {
-                    busStatus: BusStatus.RUNNING
-                }
-            }),
+            prisma.bus.count(),
 
-            prisma.bus.count({
+                        prisma.ticket.aggregate({
+                _sum: { price: true },
                 where: {
-                    busStatus: BusStatus.MAINTENANCE
-                }
+                    createdAt: {
+                        gte: startOfMonth(subMonths(now, 1)),
+                        lte: endOfMonth(subMonths(now, 1))
+                    },
+                },
+            }),
+            // Số vé ngày hôm qua
+            prisma.ticket.count({
+                where: {
+                    createdAt: {
+                        gte: startOfDay(yesterday),
+                        lte: endOfDay(yesterday)
+                    },
+                },
             })
         ]);
 
-        const revenue = todayRevenue._sum.price ?? 0
+        const revenue = Number(monthRevenue?._sum?.price || 0)
+        const lastMonthRevenue = Number(lastMonthRevenueData?._sum?.price || 0);
 
-        const yesterdayRevenue = await prisma.ticket.aggregate({
-            _sum: { price: true },
-            where: {
-                createdAt: {
-                    gte: yesterdayStart,
-                    lte: yesterdayEnd
-                },
-            },
-        });
+    // Tính toán tăng trưởng %
+        const revenueGrowth = lastMonthRevenue > 0 
+            ? ((revenue - lastMonthRevenue) / lastMonthRevenue) * 100 
+            : (revenue > 0 ? 100 : 0);
 
-        const yesterday = yesterdayRevenue._sum.price ?? 0
-
-        let revenueGrowth = 0
-        if (yesterday > 0) {
-            revenueGrowth = (( revenue - yesterday ) / yesterday ) * 100;
-        }
-
-        const yesterdayTicket = await prisma.ticket.count({
-            where: {
-                createdAt: {
-                    gte: yesterdayStart,
-                    lte: yesterdayEnd
-                },
-            },
-        });
-
-
-        let ticketGrowth = 0
-
-        if (yesterdayTicket < 0) {
-            ticketGrowth = ((todayTicketCount - yesterdayTicket) / yesterdayTicket) * 100
-        }
-
+        const ticketGrowth = yesterdayTicketCount > 0 
+            ? ((todayTicketCount - yesterdayTicketCount) / yesterdayTicketCount) * 100 
+            : (todayTicketCount > 0 ? 100 : 0);
         return {
             revenue: {
-                revenue: todayRevenue,
+                revenue,
                 tickets: todayTicketCount,
-                runningBus: runningBus,
-                maintenanceBus: maintenanceBus,
-                revenuegrowth: revenueGrowth,
-                ticketGrowth: ticketGrowth
+                busCount,
+                revenueGrowth: Number(revenueGrowth.toFixed(2)),
+                ticketGrowth: Number(ticketGrowth.toFixed(2))
             }
         }
     },
 
     weeklyChart: async() => {
+        const sevenDaysAgo = subDays(new Date(), 6);
         const rawData = await prisma.$queryRaw`
         SELECT
-            EXTRACT(ISODOW FROM "createdAt") AS day,
+            DATE("createdAt") AS date,
             COALESCE(SUM(price), 0) AS revenue
         FROM "Ticket"
-        WHERE "createdAt" BETWEEN ${todayStart} AND ${todayEnd}
-        GROUP BY day
+        WHERE "createdAt" BETWEEN ${sevenDaysAgo} AND ${new Date()}
+        GROUP BY date
         `
 
-        const WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+        const weeklyRevenue = Array.from({ length: 7 }).map((_, i) => {
+            const date = subDays(new Date(), 6 - i);
+            const label = format(date, "dd/MM");
 
-        const weeklyRevenue = WEEK_DAYS.map((day, index) => {
-            const found = rawData.find(r => Number(r.day) === index + 1);
+            const found = rawData.find(
+            r =>
+                new Date(r.date).toDateString() === date.toDateString()
+            );
 
             return {
-                day,
+                label,
                 revenue: Number(found?.revenue ?? 0),
             };
-        })
+        });
 
         return {
             weeklyRevenue

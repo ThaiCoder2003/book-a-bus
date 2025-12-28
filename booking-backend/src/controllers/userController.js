@@ -66,6 +66,7 @@ const userController = {
         } catch (error) {
             handleError(res, error)
         }
+    },
 
     getAllUsers: async (req, res) => {
         try {

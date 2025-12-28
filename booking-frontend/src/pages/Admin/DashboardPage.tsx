@@ -1,8 +1,45 @@
 import MetricCard from "../../components/Admin/dashboard/MetricCard";
 import WeeklyChart from "../../components/Admin/dashboard/WeeklyChart";
 import TransactionFeed from "../../components/Admin/dashboard/TransactionFeed";
+import { useEffect, useState } from "react";
+import axios from "axios";
 
 export default function DashboardPage() {
+  const [summary, setSummary] = useState<any>(null);
+  const [weeklyData, setWeeklyData] = useState<any[]>([]);
+  const [recentBooking, setRecentBooking] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        document.title = "Admin Dashboard - Book A Bus";
+  
+        const token = localStorage.getItem("accessToken");
+
+        const headers = {
+          Authorization: `Bearer ${token}`,
+        };
+        
+      const [
+        summaryResponse,
+        weeklyResponse,
+        recentBookingResponse,
+      ] = await Promise.all([
+        axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/dashboard/summary`, { headers }),
+        axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/dashboard/weekly-chart`, { headers }),
+        axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/dashboard/recent-bookings`, { headers }),
+      ]);
+
+      setSummary(summaryResponse.data)
+      setWeeklyData(weeklyResponse.data)
+      setRecentBooking(recentBookingResponse.data)
+      } catch (error) {
+        console.error("Failed to fetch dashboard", error);
+      }
+    };
+
+    fetchData();
+  }, []);
   return (
     <div className="p-8 space-y-6">
       {/* Dashboard Overview */}
@@ -18,15 +55,15 @@ export default function DashboardPage() {
       <div className="grid grid-cols-3 gap-6">
         <MetricCard
           title="Total Revenue"
-          value="15,000,000 đ"
-          subtitle="+20.1% from last month"
+          value={`${summary?.revenue?.toLocaleString() ?? 0} đ`}
+          subtitle={`${summary?.revenueGrowth > 0 ? '+' : ''}${summary?.revenueGrowth}% from last month`}
           valueColor="text-blue-600"
         />
 
         <MetricCard
           title="Tickets Sold"
-          value="120"
-          subtitle="+15% from yesterday"
+          value={summary?.tickets?.toString() ?? 0}
+          subtitle={`${summary?.ticketGrowth > 0 ? '+' : ''}${summary?.ticketGrowth}% from yesterday`}
           valueColor="text-orange-500"
         />
 
@@ -41,7 +78,7 @@ export default function DashboardPage() {
       {/* Middle section */}
       <div className="grid grid-cols-3 gap-6">
         <div className="col-span-2">
-          <WeeklyChart />
+          <WeeklyChart data={weeklyData || []}/>
         </div>
 
         <TransactionFeed />

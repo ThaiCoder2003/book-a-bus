@@ -15,7 +15,7 @@ router.use('/trips', tripRoutes)
 router.use('/bus', busRoutes)
 router.use('/station', stationRoutes)
 router.use('/seats', seatRoutes)
-router.use('/dashboard', dashboardRoutes)
+router.use('/adminDashboard', dashboardRoutes)
 router.use('/payment', paymentRoutes)
 router.use('/bookings', bookingRoutes)
 
