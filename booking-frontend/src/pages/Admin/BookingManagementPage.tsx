@@ -1,85 +1,60 @@
-import { useState } from "react";
+// BookingManagementPage.tsx
+import { useState, useMemo } from "react";
 import BookingTable from "../../components/Admin/bookings/BookingTable";
 import FilterSection from "../../components/Admin/bookings/FilterSection";
+import type { Filters } from "../../components/Admin/bookings/FilterSection";
 import BookingDetailModal from "../../components/Admin/bookings/BookingDetailModal";
-import { Search, FileSpreadsheet } from "lucide-react"; // ⬅ icon lucide-react
-
-// Định nghĩa kiểu dữ liệu
-export interface Booking {
-  id: string;
-  customer: string;
-  route: string;
-  departureDate: string;
-  totalPrice: string;
-  status: "Đã xác nhận" | "Đang chờ" | "Đã hủy";
-  paymentStatus: "Đã thanh toán" | "Chưa thanh toán" | "Đã hoàn tiền";
-}
-
-const mockBookings: Booking[] = [
-  {
-    id: "BK001",
-    customer: "Nguyễn Văn A",
-    route: "Hà Nội - TPHCM",
-    departureDate: "2024-12-20",
-    totalPrice: "850.000 đ",
-    status: "Đã xác nhận",
-    paymentStatus: "Đã thanh toán",
-  },
-  {
-    id: "BK002",
-    customer: "Trần Thị B",
-    route: "Hà Nội - Hải Phòng",
-    departureDate: "2024-12-15",
-    totalPrice: "200.000 đ",
-    status: "Đang chờ",
-    paymentStatus: "Chưa thanh toán",
-  },
-  {
-    id: "BK003",
-    customer: "Lê Văn C",
-    route: "TPHCM - Cần Thơ",
-    departureDate: "2024-12-18",
-    totalPrice: "500.000 đ",
-    status: "Đã hủy",
-    paymentStatus: "Đã hoàn tiền",
-  },
-];
+import { Search, FileSpreadsheet } from "lucide-react";
+import { mockBookings } from "../../data/booking.mock";
+import type { Booking } from "../../types/booking.type";
 
 const BookingManagementPage: React.FC = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [filteredBookings, setFilteredBookings] =
+    useState<Booking[]>(mockBookings);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const [filteredBookings, setFilteredBookings] = useState(mockBookings);
-
-  const handleFilterChange = (filters: any) => {
+  // Lọc bookings dựa trên Filters
+  const handleFilterChange = (filters: Filters) => {
     let result = [...mockBookings];
 
-    if (filters.status !== "Tất cả") {
+    if (filters.status) {
       result = result.filter((b) => b.status === filters.status);
     }
 
-    if (filters.payment !== "Tất cả") {
-      result = result.filter((b) => b.paymentStatus === filters.payment);
-    }
-
-    if (filters.route !== "Tất cả") {
-      result = result.filter((b) => b.route === filters.route);
+    if (filters.route) {
+      result = result.filter((b) => b.trip?.route?.name === filters.route);
     }
 
     if (filters.startDate) {
-      result = result.filter((b) => b.departureDate >= filters.startDate);
+      const start = new Date(filters.startDate);
+      result = result.filter(
+        (b) => b.trip?.departureTime && new Date(b.trip.departureTime) >= start,
+      );
     }
 
     if (filters.endDate) {
-      result = result.filter((b) => b.departureDate <= filters.endDate);
-    }
-
-    if (filters.vipOnly) {
-      result = result.filter((b) => b.customer.includes("VIP"));
+      const end = new Date(filters.endDate);
+      result = result.filter(
+        (b) => b.trip?.departureTime && new Date(b.trip.departureTime) <= end,
+      );
     }
 
     setFilteredBookings(result);
   };
+
+  // Search kết hợp với lọc
+  const displayedBookings = useMemo(() => {
+    if (!searchTerm) return filteredBookings;
+    const lowerSearch = searchTerm.toLowerCase();
+    return filteredBookings.filter(
+      (b) =>
+        b.id.toLowerCase().includes(lowerSearch) ||
+        b.user?.name.toLowerCase().includes(lowerSearch) ||
+        b.user?.phone.includes(lowerSearch),
+    );
+  }, [searchTerm, filteredBookings]);
 
   const handleOpenModal = (booking: Booking) => {
     setSelectedBooking(booking);
@@ -87,60 +62,61 @@ const BookingManagementPage: React.FC = () => {
   };
 
   const handleCloseModal = () => {
-    setIsModalOpen(false);
     setSelectedBooking(null);
+    setIsModalOpen(false);
   };
 
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
+      {/* Header */}
       <div className="mb-6 flex justify-between items-center">
-        {/* Bên trái */}
         <div>
           <h1 className="text-4xl font-semibold text-gray-800">
             Quản lý đặt chỗ
           </h1>
-          <p className="text-2x1 text-gray-500 mt-1">
-            Tổng: <b>{mockBookings.length}</b> đơn
+          <p className="text-sm text-gray-500 mt-1">
+            Tổng cộng:{" "}
+            <span className="font-bold text-blue-600">
+              {mockBookings.length}
+            </span>{" "}
+            đơn đặt vé
           </p>
         </div>
-
-        {/* Bên phải - nút Excel */}
-        <button
-          className="px-4 py-2 text-sm text-black bg-white rounded flex items-center border border-gray-300 hover:bg-blue-900
-           hover:text-white hover:shadow-md hover:shadow-blue-200 transition duration-150 cursor-pointer"
-        >
+        <button className="px-4 py-2 text-sm text-black bg-white rounded flex items-center border border-gray-300 hover:bg-blue-900 hover:text-white transition duration-150 cursor-pointer">
           <FileSpreadsheet className="w-4 h-4 mr-2" />
           Xuất Excel
         </button>
       </div>
-      {/* Thanh tìm kiếm */}
-      <div className="mb-6 p-4 bg-white rounded-lg shadow-sm">
-        <div
-          className="flex items-center space-x-2 border border-gray-300 rounded-lg px-3 py-2
-    focus-within:border-blue-800 transition duration-150"
-        >
-          <Search className="w-5 h-5 text-gray-400" />
 
+      {/* Search */}
+      <div className="mb-6 p-4 bg-white rounded-lg shadow-sm">
+        <div className="flex items-center space-x-2 border border-gray-300 rounded-lg px-3 py-2 focus-within:border-blue-800">
+          <Search className="w-5 h-5 text-gray-400" />
           <input
             type="text"
-            placeholder="Tìm kiếm theo mã vé, tên khách hàng hoặc số điện thoại..."
-            className="grow p-0.5 outline-none border-none focus:ring-0"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Tìm theo ID đơn, tên khách hoặc SĐT..."
+            className="grow p-0.5 outline-none border-none focus:ring-0 text-sm"
           />
         </div>
       </div>
-      {/* Bộ lọc */}
+
+      {/* Filter */}
       <FilterSection onFilterChange={handleFilterChange} />
-      {/* Danh sách */}
+
+      {/* Booking table */}
       <div className="mt-6 p-4 bg-white rounded-lg shadow">
         <h2 className="text-lg font-medium mb-4 text-gray-700">
-          Danh sách đặt vé
+          Danh sách đặt vé hiện tại
         </h2>
-
         <BookingTable
-          bookings={filteredBookings}
+          bookings={displayedBookings}
           onRowClick={handleOpenModal}
         />
       </div>
+
+      {/* Detail modal */}
       {selectedBooking && (
         <BookingDetailModal
           isOpen={isModalOpen}
@@ -151,4 +127,5 @@ const BookingManagementPage: React.FC = () => {
     </div>
   );
 };
+
 export default BookingManagementPage;

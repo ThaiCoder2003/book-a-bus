@@ -1,17 +1,31 @@
+// FilterSection.tsx
 import React, { useState, forwardRef } from "react";
 import { ChevronUp, ChevronDown, Calendar } from "lucide-react";
-import InputMask from "react-input-mask-next";
 import ReactDatePicker from "react-datepicker";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import "react-datepicker/dist/react-datepicker.css";
 
-/* ============================
-   CUSTOM DATE INPUT
-============================ */
+export interface Filters {
+  status?: "CONFIRMED" | "PENDING" | "CANCELLED";
+  route?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+interface FilterSectionProps {
+  onFilterChange?: (filters: Filters) => void;
+}
 
 const CustomDateInput = forwardRef(
-  ({ value, onClick, placeholder }: any, ref: any) => (
+  (
+    {
+      value,
+      onClick,
+      placeholder,
+    }: { value?: string; onClick?: () => void; placeholder?: string },
+    ref: any,
+  ) => (
     <div className="relative w-full">
       <input
         ref={ref}
@@ -32,10 +46,6 @@ const CustomDateInput = forwardRef(
   ),
 );
 
-/* ============================
-   FILTER BUTTON
-============================ */
-
 const FilterButton: React.FC<{
   label: string;
   active: boolean;
@@ -53,45 +63,16 @@ const FilterButton: React.FC<{
   </button>
 );
 
-/* ============================
-   MAIN COMPONENT
-============================ */
-
-interface FilterSectionProps {
-  onFilterChange?: (filters: {
-    status: string;
-    payment: string;
-    route: string;
-    startDate?: string; // ISO format (yyyy-MM-dd)
-    endDate?: string; // ISO format (yyyy-MM-dd)
-    vipOnly: boolean;
-  }) => void;
-}
-
 const FilterSection: React.FC<FilterSectionProps> = ({ onFilterChange }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const [filters, setFilters] = useState({
-    status: "Tất cả",
-    payment: "Tất cả",
-    route: "Tất cả",
-    startDate: "",
-    endDate: "",
-    vipOnly: false,
-  });
+  const statusMap: Record<string, Filters["status"] | undefined> = {
+    "Tất cả": undefined,
+    "Đã xác nhận": "CONFIRMED",
+    "Đang chờ": "PENDING",
+    "Đã hủy": "CANCELLED",
+  };
 
-  const [displayDates, setDisplayDates] = useState({
-    startDisplay: "",
-    endDisplay: "",
-  });
-
-  const statusOptions = ["Tất cả", "Đã xác nhận", "Đang chờ", "Đã hủy"];
-  const paymentOptions = [
-    "Tất cả",
-    "Đã thanh toán",
-    "Chưa thanh toán",
-    "Đã hoàn tiền",
-  ];
   const routeOptions = [
     "Tất cả",
     "Hà Nội - TPHCM",
@@ -99,29 +80,48 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onFilterChange }) => {
     "TPHCM - Cần Thơ",
   ];
 
-  const updateFilter = (key: string, value: any) => {
-    const newFilters = { ...filters, [key]: value };
+  const [filters, setFilters] = useState<{
+    status?: Filters["status"];
+    route: string;
+    startDate?: string;
+    endDate?: string;
+  }>({
+    route: "Tất cả",
+  });
+
+  const updateFilter = (key: keyof Filters, value?: string) => {
+    let val: Filters["status"] | string | undefined = value;
+    if (key === "status") val = statusMap[value ?? "Tất cả"];
+
+    const newFilters = { ...filters, [key]: val };
     setFilters(newFilters);
-    onFilterChange?.(newFilters);
+
+    onFilterChange?.({
+      status: newFilters.status,
+      route: newFilters.route === "Tất cả" ? undefined : newFilters.route,
+      startDate: newFilters.startDate,
+      endDate: newFilters.endDate,
+    });
   };
 
   const resetFilters = () => {
     const defaultFilters = {
-      status: "Tất cả",
-      payment: "Tất cả",
+      status: undefined,
       route: "Tất cả",
-      startDate: "",
-      endDate: "",
-      vipOnly: false,
+      startDate: undefined,
+      endDate: undefined,
     };
     setFilters(defaultFilters);
-    setDisplayDates({ startDisplay: "", endDisplay: "" });
-    onFilterChange?.(defaultFilters);
+    onFilterChange?.({
+      status: undefined,
+      route: undefined,
+      startDate: undefined,
+      endDate: undefined,
+    });
   };
 
   return (
     <div className="bg-white border-b border-gray-200 rounded-lg shadow-sm">
-      {/* Header */}
       <div
         className="flex justify-between items-center cursor-pointer p-4"
         onClick={() => setIsExpanded(!isExpanded)}
@@ -136,159 +136,88 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onFilterChange }) => {
 
       {isExpanded && (
         <div className="space-y-4 p-4 pt-4 border-t border-gray-200">
-          <div className="space-y-5">
-            {/* Trạng thái đặt vé */}
-            <div>
-              <p className="text-sm font-medium mb-2 text-gray-700">
-                Trạng thái đặt vé
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {statusOptions.map((option) => (
-                  <FilterButton
-                    key={option}
-                    label={option}
-                    active={filters.status === option}
-                    onClick={() => updateFilter("status", option)}
-                  />
-                ))}
+          {/* Trạng thái */}
+          <div>
+            <p className="text-sm font-medium mb-2 text-gray-700">
+              Trạng thái đặt vé
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {Object.keys(statusMap).map((status) => (
+                <FilterButton
+                  key={status}
+                  label={status}
+                  active={filters.status === statusMap[status]}
+                  onClick={() => updateFilter("status", status)}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Tuyến đường */}
+          <div>
+            <p className="text-sm font-medium mb-2 text-gray-700">
+              Tuyến đường
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {routeOptions.map((route) => (
+                <FilterButton
+                  key={route}
+                  label={route}
+                  active={filters.route === route}
+                  onClick={() => updateFilter("route", route)}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Khoảng ngày */}
+          <div>
+            <p className="text-sm font-medium mb-2 text-gray-700">
+              Khoảng ngày
+            </p>
+            <div className="flex gap-3">
+              {/* Start date */}
+              <div className="w-1/2">
+                <ReactDatePicker
+                  selected={
+                    filters.startDate ? new Date(filters.startDate) : undefined
+                  }
+                  onChange={(date) => {
+                    if (!date) return updateFilter("startDate", undefined);
+                    updateFilter("startDate", format(date, "yyyy-MM-dd"));
+                  }}
+                  dateFormat="dd/MM/yyyy"
+                  locale={vi}
+                  customInput={<CustomDateInput placeholder="dd/mm/yyyy" />}
+                />
+              </div>
+
+              {/* End date */}
+              <div className="w-1/2">
+                <ReactDatePicker
+                  selected={
+                    filters.endDate ? new Date(filters.endDate) : undefined
+                  }
+                  onChange={(date) => {
+                    if (!date) return updateFilter("endDate", undefined);
+                    updateFilter("endDate", format(date, "yyyy-MM-dd"));
+                  }}
+                  dateFormat="dd/MM/yyyy"
+                  locale={vi}
+                  customInput={<CustomDateInput placeholder="dd/mm/yyyy" />}
+                />
               </div>
             </div>
+          </div>
 
-            {/* Trạng thái thanh toán */}
-            <div>
-              <p className="text-sm font-medium mb-2 text-gray-700">
-                Trạng thái thanh toán
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {paymentOptions.map((option) => (
-                  <FilterButton
-                    key={option}
-                    label={option}
-                    active={filters.payment === option}
-                    onClick={() => updateFilter("payment", option)}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Tuyến đường */}
-            <div>
-              <p className="text-sm font-medium mb-2 text-gray-700">
-                Tuyến đường
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {routeOptions.map((option) => (
-                  <FilterButton
-                    key={option}
-                    label={option}
-                    active={filters.route === option}
-                    onClick={() => updateFilter("route", option)}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Khoảng ngày */}
-            <div>
-              <p className="text-sm font-medium mb-2 text-gray-700">
-                Khoảng ngày
-              </p>
-
-              <div className="flex w-full gap-3">
-                {/* Ngày bắt đầu */}
-                <div className="w-1/2">
-                  <ReactDatePicker
-                    wrapperClassName="w-full"
-                    popperClassName="z-50"
-                    popperPlacement="bottom-start"
-                    selected={
-                      displayDates.startDisplay
-                        ? new Date(
-                            displayDates.startDisplay
-                              .split("/")
-                              .reverse()
-                              .join("-"),
-                          )
-                        : null
-                    }
-                    onChange={(date) => {
-                      if (!date) {
-                        updateFilter("startDate", "");
-                        setDisplayDates((p) => ({ ...p, startDisplay: "" }));
-                        return;
-                      }
-                      const display = format(date, "dd/MM/yyyy");
-                      const iso = format(date, "yyyy-MM-dd");
-                      updateFilter("startDate", iso);
-                      setDisplayDates((p) => ({ ...p, startDisplay: display }));
-                    }}
-                    dateFormat="dd/MM/yyyy"
-                    locale={vi}
-                    customInput={<CustomDateInput placeholder="dd/mm/yyyy" />}
-                  />
-                </div>
-
-                {/* Ngày kết thúc */}
-                <div className="w-1/2">
-                  <ReactDatePicker
-                    wrapperClassName="w-full"
-                    popperClassName="z-50"
-                    popperPlacement="bottom-start"
-                    selected={
-                      displayDates.endDisplay
-                        ? new Date(
-                            displayDates.endDisplay
-                              .split("/")
-                              .reverse()
-                              .join("-"),
-                          )
-                        : null
-                    }
-                    onChange={(date) => {
-                      if (!date) {
-                        updateFilter("endDate", "");
-                        setDisplayDates((p) => ({ ...p, endDisplay: "" }));
-                        return;
-                      }
-                      const display = format(date, "dd/MM/yyyy");
-                      const iso = format(date, "yyyy-MM-dd");
-                      updateFilter("endDate", iso);
-                      setDisplayDates((p) => ({ ...p, endDisplay: display }));
-                    }}
-                    dateFormat="dd/MM/yyyy"
-                    locale={vi}
-                    customInput={<CustomDateInput placeholder="dd/mm/yyyy" />}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Vãng lai */}
-            <div className="flex items-center pt-2">
-              <input
-                id="vip"
-                type="checkbox"
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                checked={filters.vipOnly}
-                onChange={(e) => updateFilter("vipOnly", e.target.checked)}
-              />
-              <label
-                htmlFor="vip"
-                className="ml-2 text-sm text-gray-600 cursor-pointer"
-              >
-                Chỉ hiển thị đơn khách hàng vãng lai
-              </label>
-            </div>
-
-            {/* Nút xóa */}
-            <div className="pt-3 border-t border-gray-200 flex justify-end">
-              <button
-                onClick={resetFilters}
-                className="px-4 py-2 text-sm text-black bg-white rounded flex items-center border border-gray-300 hover:bg-blue-900 hover:text-white hover:shadow-md transition duration-150 cursor-pointer"
-              >
-                Xóa bộ lọc
-              </button>
-            </div>
+          {/* Reset */}
+          <div className="pt-3 border-t border-gray-200 flex justify-end">
+            <button
+              onClick={resetFilters}
+              className="px-4 py-2 text-sm text-black bg-white rounded flex items-center border border-gray-300 hover:bg-blue-900 hover:text-white hover:shadow-md transition duration-150 cursor-pointer"
+            >
+              Xóa bộ lọc
+            </button>
           </div>
         </div>
       )}

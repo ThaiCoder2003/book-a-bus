@@ -1,9 +1,7 @@
 export default function Header() {
   return (
-    <header className="bg-white p-4 border-b flex justify-between items-center">
-      <div className="relative w-1/3 max-w-sm">
-        
-      </div>
+    <header className="bg-white p-4 border-b flex justify-between items-center shrink-0">
+      <div className="relative w-1/3 max-w-sm"></div>
       <div className="flex items-center space-x-3">
         <div className="relative p-2 rounded-full bg-gray-100 hover:bg-gray-200 cursor-pointer transition-colors">
           <svg

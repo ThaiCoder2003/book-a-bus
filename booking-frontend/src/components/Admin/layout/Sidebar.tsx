@@ -87,7 +87,14 @@ const AdminMenus = [
 // -----------------------------------------------------------
 export default function Sidebar() {
   return (
-    <aside className="w-64 bg-white border-r p-5 space-y-4 shadow-lg">
+    <aside
+      className=" w-64
+  bg-white
+  border-r
+  p-5
+  space-y-4
+  shadow-lg"
+    >
       <h1 className="text-xl font-bold text-blue-600 flex items-center space-x-2 pb-4 border-b">
         <Bus className="h-6 w-6" />
         <span>BusAdmin Panel</span>

@@ -42,34 +42,34 @@ export default function DashboardPage() {
   }, []);
   return (
     <div className="p-8 space-y-6">
-      {/* Dashboard Overview */}
-
       <div className="flex justify-between items-center mt-2 mb-12">
         <h2 className="text-4xl font-semibold text-gray-800">
           Dashboard Overview
         </h2>
-
         <span className="text-sm text-gray-600">Welcome back, Admin</span>
       </div>
+
       {/* Top section */}
       <div className="grid grid-cols-3 gap-6">
         <MetricCard
           title="Total Revenue"
-          value={`${summary?.revenue?.toLocaleString() ?? 0} đ`}
+          value={summary?.revenue ?? 0}
           subtitle={`${summary?.revenueGrowth > 0 ? '+' : ''}${summary?.revenueGrowth}% from last month`}
           valueColor="text-blue-600"
+          formatter={(val) => `${val.toLocaleString("vi-VN")} đ`}
         />
 
         <MetricCard
           title="Tickets Sold"
-          value={summary?.tickets?.toString() ?? 0}
+          value={summary?.tickets ?? 0}
           subtitle={`${summary?.ticketGrowth > 0 ? '+' : ''}${summary?.ticketGrowth}% from yesterday`}
           valueColor="text-orange-500"
         />
 
         <MetricCard
           title="Buses Running"
-          value="5 Running"
+          value={3}
+          formatter={(v) => `${v} Running`}
           subtitle="2 in maintenance"
           valueColor="text-green-500"
         />
@@ -80,7 +80,6 @@ export default function DashboardPage() {
         <div className="col-span-2">
           <WeeklyChart data={weeklyData || []}/>
         </div>
-
         <TransactionFeed />
       </div>
     </div>

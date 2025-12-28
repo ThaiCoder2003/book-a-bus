@@ -1,5 +1,6 @@
+// BookingTableRow.tsx
 import React from "react";
-import type { Booking } from "../../../types/admin/booking";
+import type { Booking } from "@/types/booking.type";
 import { Info } from "lucide-react";
 
 interface BookingTableRowProps {
@@ -7,19 +8,13 @@ interface BookingTableRowProps {
   onActionClick: () => void;
 }
 
-// Hàm helper xác định màu nhãn theo trạng thái
-const getStatusBadgeClass = (
-  status: Booking["status"] | Booking["paymentStatus"],
-) => {
+const getStatusBadgeClass = (status: Booking["status"]) => {
   switch (status) {
-    case "Đã xác nhận":
-    case "Đã thanh toán":
+    case "CONFIRMED":
       return "bg-green-100 text-green-800";
-    case "Đang chờ":
-    case "Chưa thanh toán":
+    case "PENDING":
       return "bg-yellow-100 text-yellow-800";
-    case "Đã hủy":
-    case "Đã hoàn tiền":
+    case "CANCELLED":
       return "bg-red-100 text-red-800";
     default:
       return "bg-gray-100 text-gray-800";
@@ -30,34 +25,25 @@ const BookingTableRow: React.FC<BookingTableRowProps> = ({
   booking,
   onActionClick,
 }) => {
+  const totalTickets = booking.tickets.length;
+
   return (
     <tr className="hover:bg-gray-50 transition duration-150">
-      {/* Mã đặt vé */}
       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
         {booking.id}
       </td>
-
-      {/* Tên khách hàng */}
       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-        {booking.customer}
+        {booking.user.name}
       </td>
-
-      {/* Tuyến */}
       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-        {booking.route}
+        {booking.trip.route.name}
       </td>
-
-      {/* Ngày khởi hành */}
       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-        {booking.departureDate}
+        {booking.trip.departureTime}
       </td>
-
-      {/* Tổng tiền */}
       <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-        {booking.totalPrice}
+        {booking.totalAmount}
       </td>
-
-      {/* Trạng thái */}
       <td className="px-6 py-4 whitespace-nowrap">
         <span
           className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(
@@ -67,19 +53,9 @@ const BookingTableRow: React.FC<BookingTableRowProps> = ({
           {booking.status}
         </span>
       </td>
-
-      {/* Thanh toán */}
-      <td className="px-6 py-4 whitespace-nowrap">
-        <span
-          className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(
-            booking.paymentStatus,
-          )}`}
-        >
-          {booking.paymentStatus}
-        </span>
+      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
+        {totalTickets}
       </td>
-
-      {/* Hành động */}
       <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
         <button
           onClick={onActionClick}

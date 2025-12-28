@@ -1,20 +1,16 @@
+// BookingDetailModal.tsx
 import React, { useState } from "react";
 import UpdatePaymentSection from "./UpdatePaymentSection";
-import type { Booking } from "../../../types/admin/booking";
+import type { Booking } from "../../../types/booking.type";
 import { X, Send, Pencil, XCircle } from "lucide-react";
 
-const getStatusBadgeClass = (
-  status: Booking["status"] | Booking["paymentStatus"],
-) => {
+const getStatusBadgeClass = (status: Booking["status"]) => {
   switch (status) {
-    case "Đã xác nhận":
-    case "Đã thanh toán":
+    case "CONFIRMED":
       return "bg-green-100 text-green-800";
-    case "Đang chờ":
-    case "Chưa thanh toán":
+    case "PENDING":
       return "bg-yellow-100 text-yellow-800";
-    case "Đã hủy":
-    case "Đã hoàn tiền":
+    case "CANCELLED":
       return "bg-red-100 text-red-800";
     default:
       return "bg-gray-100 text-gray-800";
@@ -43,27 +39,12 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
   booking,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [paymentStatus, setPaymentStatus] = useState(booking.paymentStatus);
 
   if (!isOpen) return null;
-
-  const detailedBooking = {
-    ...booking,
-    email: "a@example.com",
-    phone: "0912345678",
-    paymentMethod: "Momo",
-    seat: "A1, A2",
-  };
-
-  const handleSavePayment = (newStatus: Booking["paymentStatus"]) => {
-    setPaymentStatus(newStatus);
-    setIsEditing(false);
-  };
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center"
-      aria-labelledby="modal-title"
       role="dialog"
       aria-modal="true"
     >
@@ -71,26 +52,22 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
       <div
         className="absolute inset-0 bg-black/30 backdrop-blur-[2px]"
         onClick={onClose}
-      ></div>
+      />
 
       {/* Modal content */}
-      <div
-        className="relative z-10 bg-white rounded-lg shadow-xl w-full max-w-lg mx-auto"
-        style={{ width: "600px" }}
-      >
+      <div className="relative z-10 bg-white rounded-lg shadow-xl w-full max-w-lg mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center p-4 border-b">
-          <h3 className="text-lg font-semibold text-gray-900" id="modal-title">
-            Chi tiết đặt vé {detailedBooking.id}
+          <h3 className="text-lg font-semibold text-gray-900">
+            Chi tiết đặt vé {booking.id}
           </h3>
-
           <div className="flex items-center space-x-3">
             <span
               className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusBadgeClass(
-                detailedBooking.status,
+                booking.status,
               )}`}
             >
-              {detailedBooking.status}
+              {booking.status}
             </span>
             <button
               onClick={onClose}
@@ -105,23 +82,23 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
         <div className="p-6 space-y-5 max-h-[80vh] overflow-y-auto">
           {isEditing ? (
             <UpdatePaymentSection
-              booking={{ ...detailedBooking, paymentStatus }}
-              onSave={handleSavePayment}
+              booking={booking}
+              onSave={(newTotalAmount) => {
+                booking.totalAmount = newTotalAmount;
+                setIsEditing(false);
+              }}
               onCancel={() => setIsEditing(false)}
             />
           ) : (
             <>
-              {/* Thông tin đặt vé */}
+              {/* Thông tin khách hàng */}
               <div className="border p-4 rounded-lg">
                 <h4 className="font-bold text-gray-700 mb-3">
-                  Thông tin đặt vé
+                  Thông tin khách hàng
                 </h4>
-                <InfoRow
-                  label="Tên khách hàng"
-                  value={detailedBooking.customer}
-                />
-                <InfoRow label="Điện thoại" value={detailedBooking.phone} />
-                <InfoRow label="Email" value={detailedBooking.email} />
+                <InfoRow label="Tên khách hàng" value={booking.user.name} />
+                <InfoRow label="Điện thoại" value={booking.user.phone} />
+                <InfoRow label="Email" value={booking.user.email} />
               </div>
 
               {/* Thông tin chuyến đi */}
@@ -129,12 +106,15 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
                 <h4 className="font-bold text-gray-700 mb-3">
                   Thông tin chuyến đi
                 </h4>
-                <InfoRow label="Tuyến đường" value={detailedBooking.route} />
+                <InfoRow label="Tuyến đường" value={booking.trip.route.name} />
+                <InfoRow label="Bến đi" value={booking.departureStation.name} />
+                <InfoRow label="Bến đến" value={booking.arrivalStation.name} />
                 <InfoRow
                   label="Ngày khởi hành"
-                  value={detailedBooking.departureDate}
+                  value={booking.trip.departureTime}
                 />
-                <InfoRow label="Số ghế" value={detailedBooking.seat} />
+                <InfoRow label="Số vé" value={booking.tickets.length} />
+                <InfoRow label="Hết hạn" value={booking.expiredAt} />
               </div>
 
               {/* Thông tin thanh toán */}
@@ -143,15 +123,10 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
                   Thông tin thanh toán
                 </h4>
                 <InfoRow
-                  label="Cổng thanh toán"
-                  value={detailedBooking.paymentMethod}
-                />
-                <InfoRow label="Trạng thái" value={paymentStatus} />
-                <InfoRow
                   label="Tổng tiền"
                   value={
                     <span className="text-xl text-blue-700 font-bold">
-                      {detailedBooking.totalPrice}
+                      {booking.totalAmount}
                     </span>
                   }
                 />
@@ -160,14 +135,13 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
           )}
         </div>
 
-        {/* Footer: 3 nút trái + 1 nút phải */}
+        {/* Footer */}
         {!isEditing && (
           <div className="flex justify-between items-center p-4 border-t bg-white rounded-b-lg">
-            {/* Nhóm nút trái */}
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => alert("Resend ticket")}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-100 transition cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-100 transition"
               >
                 <Send className="w-4 h-4" strokeWidth={1.5} />
                 Gửi lại vé
@@ -175,7 +149,7 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
 
               <button
                 onClick={() => setIsEditing(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-100 transition cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-100 transition"
               >
                 <Pencil className="w-4 h-4" strokeWidth={1.5} />
                 Sửa đổi
@@ -183,17 +157,16 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
 
               <button
                 onClick={() => alert("Cancel booking")}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition"
               >
                 <XCircle className="w-4 h-4" strokeWidth={1.5} />
                 Hủy vé
               </button>
             </div>
 
-            {/* Nút Đóng */}
             <button
               onClick={onClose}
-              className="px-3 py-1.5 text-sm font-medium text-white bg-blue-700 rounded-md hover:bg-blue-800 transition cursor-pointer"
+              className="px-3 py-1.5 text-sm font-medium text-white bg-blue-700 rounded-md hover:bg-blue-800 transition"
             >
               Xác nhận
             </button>

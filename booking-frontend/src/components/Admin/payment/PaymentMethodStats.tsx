@@ -1,26 +1,26 @@
 const methods = [
   {
-    label: "MoMo",
-    percentage: 39.6,
-    amount: "98.500.000 đ",
+    label: "ZaloPay Sandbox",
+    percentage: 100,
+    amount: "22.000.000 đ",
     color: "bg-blue-600",
   },
   {
     label: "Thẻ ngân hàng",
-    percentage: 34.3,
-    amount: "85.200.000 đ",
+    percentage: 0,
+    amount: "0 đ",
     color: "bg-blue-400",
   },
   {
     label: "QR Code",
-    percentage: 17.2,
-    amount: "42.800.000 đ",
+    percentage: 0,
+    amount: "0 đ",
     color: "bg-indigo-500",
   },
   {
-    label: "PayOS",
-    percentage: 8.9,
-    amount: "22.000.000 đ",
+    label: "ZaloPay Sandbox",
+    percentage: 0,
+    amount: "0 đ",
     color: "bg-gray-300",
   },
 ];
