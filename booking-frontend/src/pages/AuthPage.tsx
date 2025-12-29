@@ -2,6 +2,7 @@ import authAction from '@/actions/authAction'
 import authService from '@/services/authService'
 import { useState } from 'react'
 import type { FC, FormEvent } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
 const AuthPage: FC = () => {
@@ -10,6 +11,11 @@ const AuthPage: FC = () => {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [confirmPassword, setConfirmPassword] = useState('')
+
+    const navigate = useNavigate()
+    const location = useLocation()
+
+    const from = location.state?.from?.pathname || '/'
 
     // handle submit
     const handleRegisterSubmit = async (e?: FormEvent) => {
@@ -50,7 +56,7 @@ const AuthPage: FC = () => {
 
                 authAction.setToken(tokens.accessToken, tokens.refreshToken)
                 toast.success('Đăng nhập thành công')
-                window.location.replace('/dashboard')
+                navigate(from, { replace: true })
             }
         } catch (error: any) {
             const message = error.response?.data?.message

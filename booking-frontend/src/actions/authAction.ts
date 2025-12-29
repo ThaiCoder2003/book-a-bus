@@ -1,3 +1,12 @@
+import { jwtDecode, type JwtPayload } from 'jwt-decode'
+
+export interface DecodedToken extends JwtPayload {
+    userId: string
+    email: string
+    name: string
+    role: 'USER' | 'ADMIN'
+}
+
 const authAction = {
     getToken: async () => {
         return localStorage.getItem('accessToken')
@@ -14,6 +23,10 @@ const authAction = {
 
     clearToken: async () => {
         localStorage.clear()
+    },
+
+    decodeToken: async (token: string) => {
+        return token ? jwtDecode<DecodedToken>(token) : null
     },
 }
 

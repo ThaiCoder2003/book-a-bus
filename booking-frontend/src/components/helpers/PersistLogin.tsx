@@ -42,7 +42,7 @@ const PersistLogin = () => {
         } catch (err) {
           console.error("Refresh token failed:", err);
           localStorage.clear();
-          window.location.replace("/auth");
+          window.location.replace("/schedule");
         } finally {
           setIsLoading(false);
         }
