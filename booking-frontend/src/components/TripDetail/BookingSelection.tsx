@@ -12,7 +12,7 @@ import { MapPin, Bus } from 'lucide-react'
 import { format } from 'date-fns'
 import type { RoutePoint } from '@/types/tripDetail.type'
 
-// --- Helper functions giữ nguyên ---
+// --- Helper functions ---
 const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', {
         style: 'currency',
@@ -24,6 +24,7 @@ const formatTime = (isoString: string) => {
     return format(new Date(isoString), 'HH:mm')
 }
 
+// BookingSelection component
 export function BookingSelection({
     routePoints,
     setIsSeatSelect,

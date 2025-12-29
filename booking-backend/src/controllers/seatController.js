@@ -10,7 +10,6 @@ const seatController = {
             const { fromOrder, toOrder } = req.query
 
             if (tripId) {
-                console.log(tripId)
                 const results = await seatService.getTripSeats({
                     tripId,
                     fromOrder: parseInt(fromOrder),

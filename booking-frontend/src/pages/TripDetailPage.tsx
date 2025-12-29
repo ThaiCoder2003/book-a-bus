@@ -1,8 +1,10 @@
 import LoadingSpin from '@/components/helpers/LoadingSpin'
 import { BookingSelection } from '@/components/TripDetail/BookingSelection'
 import SeatSelector from '@/components/TripDetail/SeatSelector'
+import BookingSummary from '@/components/TripDetail/Summary'
 import TripInfo from '@/components/TripDetail/TripInfo'
 import tripService from '@/services/tripService'
+import type { Seat } from '@/types/seat.type'
 import type { TripDetail } from '@/types/tripDetail.type'
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
@@ -23,6 +25,8 @@ export default function TripDetailPage() {
         from: 1,
         to: 2,
     })
+    const [selectedSeatList, setSelectedSeatList] = useState<Seat[]>([])
+
     const { id } = useParams()
 
     useEffect(() => {
@@ -67,11 +71,11 @@ export default function TripDetailPage() {
                         // Phần chọn ghế và tóm tắt đặt vé
                         <div className="grid lg:grid-cols-3 gap-6 mt-6">
                             <div className="lg:col-span-2">
-                                <SeatSelector tripId={tripData.tripId} fromTo={fromTo} />
+                                <SeatSelector tripId={tripData.tripId} fromTo={fromTo} selectedSeatList={selectedSeatList} setSelectedSeatList={setSelectedSeatList}/>
                             </div>
-                            {/* <div className="lg:col-span-1">
-                                <BookingSummary trip={tripData} />
-                            </div> */}
+                            <div className="lg:col-span-1">
+                                <BookingSummary trip={tripData} fromTo={fromTo} basePrice={basePrice} selectedSeatList={selectedSeatList}/>
+                            </div>
                         </div>
                     ) : (
                         <BookingSelection
