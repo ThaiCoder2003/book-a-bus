@@ -8,15 +8,13 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const data = [
-  { name: "01/12", revenue: 1000000 },
-  { name: "05/12", revenue: 4500000 },
-  { name: "10/12", revenue: 3000000 },
-  { name: "15/12", revenue: 7000000 },
-  { name: "19/12", revenue: 9000000 },
-];
+import type { Revenue } from "@/types/admin/dashboard";
 
-export const RevenueChart = () => (
+interface RevenueChartProps {
+  data: Revenue[];
+}
+
+export const RevenueChart = ({ data }: RevenueChartProps) => (
   <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm h-full">
     <h3 className="font-bold text-sm text-gray-800 mb-6 uppercase tracking-tight">
       Doanh thu theo thời gian
@@ -39,8 +37,9 @@ export const RevenueChart = () => (
             axisLine={false}
             tickLine={false}
             tick={{ fontSize: 12, fill: "#9ca3af" }}
+            tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M`}
           />
-          <Tooltip />
+          <Tooltip formatter={(value: number | undefined) => value !== undefined ? [`${value.toLocaleString()} đ`, "Doanh thu"] : ["", "Doanh thu"]}/>
           <Line
             type="monotone"
             dataKey="revenue"

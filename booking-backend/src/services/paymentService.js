@@ -44,7 +44,7 @@ const paymentService = {
       // Cap nhat trang thai booking
       await prisma.booking.update({
         where: { id: bookingId },
-        data: { status: BookingStatus.CONFIRMED }
+        data: { status: BookingStatus.CONFIRMED, paymentTime: new Date() }
       })
       return response.data
     } catch (error) {

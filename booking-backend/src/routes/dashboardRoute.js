@@ -7,6 +7,8 @@ const authMiddleware = require('../middlewares/authMiddleware')
 router.get('/summary', authMiddleware.verifyToken, authMiddleware.requireAdmin, dashboardController.getSummary)
 router.get('/weekly-chart', authMiddleware.verifyToken, authMiddleware.requireAdmin, dashboardController.weeklyChart)
 router.get('/recent-booking', authMiddleware.verifyToken, authMiddleware.requireAdmin, dashboardController.recentBooking)
-router.get('/yearly-revenue', authMiddleware.verifyToken, authMiddleware.requireAdmin, dashboardController.yearlyRevenue)
+router.get('/finance-analysis', authMiddleware.verifyToken, authMiddleware.requireAdmin, dashboardController.financeAnalysis)
+router.get('/monthly-revenue', authMiddleware.verifyToken, authMiddleware.requireAdmin, dashboardController.monthlyRevenue)
+router.get('/transactions', authMiddleware.verifyToken, authMiddleware.requireAdmin, dashboardController.getTransactions)
 
 module.exports = router

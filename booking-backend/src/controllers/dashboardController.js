@@ -24,6 +24,16 @@ const dashboardController = {
         }
     },
 
+    financeAnalysis: async (req, res) => {
+        try {
+            const result = await dashboardService.financeAnalysis();
+            res.status(200).json(result)
+        }
+        catch (error) {
+            handleError(res, error);
+        }
+    },
+
     recentBooking: async (req, res) => {
         try {
             const result = await dashboardService.recentBooking();
@@ -35,15 +45,25 @@ const dashboardController = {
         }
     },
 
-    yearlyRevenue: async (req, res) => {
+    monthlyRevenue: async (req, res) => {
         try {
-            const result = await dashboardService.yearlyRevenue();
+            const result = await dashboardService.monthlyRevenue();
             res.status(200).json(result)
         }
         catch (error) {
             handleError(res, error);
         }
     },
+
+    getTransactions: async (req, res) => {
+        try {
+            const result = await dashboardService.getTransactions()
+            res.status(200).json(result)
+        }
+        catch (error) {
+            handleError(res, error);
+        }
+    }
 }
 
 module.exports = dashboardController;   

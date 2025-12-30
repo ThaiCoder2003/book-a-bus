@@ -2,37 +2,33 @@ import MetricCard from "../../components/Admin/dashboard/MetricCard";
 import WeeklyChart from "../../components/Admin/dashboard/WeeklyChart";
 import TransactionFeed from "../../components/Admin/dashboard/TransactionFeed";
 import { useEffect, useState } from "react";
-import axios from "axios";
+import dashboardService from "@/services/dashboardService";
 
-export default function DashboardPage() {
-  const [summary, setSummary] = useState<any>(null);
-  const [weeklyData, setWeeklyData] = useState<any[]>([]);
-  const [recentBooking, setRecentBooking] = useState<any[]>([]);
+import type { TransactionUI } from "@/types/ui/transaction.ui";
+import type { DashboardSummary, WeeklyChartData } from "@/types/admin/dashboard";
+  export default function DashboardPage() {
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [weeklyData, setWeeklyData] = useState<WeeklyChartData[]>([]);
+  const [recentBooking, setRecentBooking] = useState<TransactionUI[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         document.title = "Admin Dashboard - Book A Bus";
   
-        const token = localStorage.getItem("accessToken");
+        const [
+          summaryResponse,
+          weeklyResponse,
+          recentBookingResponse,
+        ] = await Promise.all([
+          dashboardService.summary(),
+          dashboardService.WeeklyChart(),
+          dashboardService.recentBooking()
+        ]);
 
-        const headers = {
-          Authorization: `Bearer ${token}`,
-        };
-        
-      const [
-        summaryResponse,
-        weeklyResponse,
-        recentBookingResponse,
-      ] = await Promise.all([
-        axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/dashboard/summary`, { headers }),
-        axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/dashboard/weekly-chart`, { headers }),
-        axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/dashboard/recent-bookings`, { headers }),
-      ]);
-
-      setSummary(summaryResponse.data)
-      setWeeklyData(weeklyResponse.data)
-      setRecentBooking(recentBookingResponse.data)
+        setSummary(summaryResponse)
+        setWeeklyData(weeklyResponse)
+        setRecentBooking(recentBookingResponse)
       } catch (error) {
         console.error("Failed to fetch dashboard", error);
       }
@@ -54,7 +50,7 @@ export default function DashboardPage() {
         <MetricCard
           title="Total Revenue"
           value={summary?.revenue ?? 0}
-          subtitle={`${summary?.revenueGrowth > 0 ? '+' : ''}${summary?.revenueGrowth}% from last month`}
+          subtitle={`${(summary?.revenueGrowth ?? 0) > 0 ? '+' : ''}${summary?.revenueGrowth}% from last month`}
           valueColor="text-blue-600"
           formatter={(val) => `${val.toLocaleString("vi-VN")} đ`}
         />
@@ -62,13 +58,13 @@ export default function DashboardPage() {
         <MetricCard
           title="Tickets Sold"
           value={summary?.tickets ?? 0}
-          subtitle={`${summary?.ticketGrowth > 0 ? '+' : ''}${summary?.ticketGrowth}% from yesterday`}
+          subtitle={`${(summary?.ticketGrowth ?? 0) > 0 ? '+' : ''}${summary?.ticketGrowth}% from yesterday`}
           valueColor="text-orange-500"
         />
 
         <MetricCard
           title="Buses Running"
-          value={3}
+          value={summary?.busCount ?? 0}
           formatter={(v) => `${v} Running`}
           subtitle="2 in maintenance"
           valueColor="text-green-500"
@@ -80,7 +76,9 @@ export default function DashboardPage() {
         <div className="col-span-2">
           <WeeklyChart data={weeklyData || []}/>
         </div>
-        <TransactionFeed />
+        <TransactionFeed 
+         data={recentBooking || []}
+        />
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useEffect } from "react";
 import { CircleDollarSign, CreditCard, Users, RotateCcw } from "lucide-react";
 
 import { StatCard } from "../../components/Admin/payment/StatCard";
@@ -8,38 +8,42 @@ import { RevenueChart } from "../../components/Admin/payment/RevenueChart";
 import { PaymentMethodStats } from "../../components/Admin/payment/PaymentMethodStats";
 import { TransactionTable } from "../../components/Admin/payment/TransactionTable";
 import TransactionDetailModal from "../../components/Admin/payment/TransactionDetailModal";
+import dashboardService from "@/services/dashboardService";
 
-import { paymentMock } from "../../data/paymentMock";
+import type { FinanceAnalysis, Revenue } from "@/types/admin/dashboard";
+
 import type { Booking } from "../../types/booking.type";
 
 export default function PaymentDashboard() {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
-  const nowRef = useRef<number>(Date.now());
+  const [financeStat, setFinanceStat] = useState<FinanceAnalysis | null>(null);
+  const [monthlyRevenue, setMonthlyRevenue] = useState<Revenue[]>([])
+  const [booking, setBooking] = useState<Booking[]>([])
 
-  const totalRevenue = useMemo(() => {
-    return paymentMock.reduce(
-      (sum, b) => sum + (b.status === "CONFIRMED" ? b.totalAmount : 0),
-      0,
-    );
-  }, []);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        document.title = "Admin Dashboard - Payment Management";
+    
+        const [
+          financeResponse,
+          revenueResponse,
+          bookingResponse,
+        ] = await Promise.all([
+          dashboardService.getFinanceAnalysis(),
+          dashboardService.getMonthlyRevenue(),
+          dashboardService.getTransactions()
+        ]);
 
-  const successfulTxns = useMemo(
-    () => paymentMock.filter((b) => b.status === "CONFIRMED").length,
-    [],
-  );
+        setFinanceStat(financeResponse)
+        setMonthlyRevenue(revenueResponse)
+        setBooking(bookingResponse)
+      } catch (error) {
+        console.error("Failed to fetch dashboard", error);
+      }
+    };
 
-  const refunds = useMemo(
-    () => paymentMock.filter((b) => b.status === "CANCELLED").length,
-    [],
-  );
-
-  const newCustomers = useMemo(() => {
-    return paymentMock.filter((b) => {
-      const createdAt = new Date(b.user?.createdAt ?? b.createdAt);
-      const diffDays =
-        (nowRef.current - createdAt.getTime()) / (1000 * 60 * 60 * 24);
-      return diffDays <= 30;
-    }).length;
+    fetchData();
   }, []);
 
   return (
@@ -52,43 +56,46 @@ export default function PaymentDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <StatCard
           title="Tổng doanh thu"
-          value={`${totalRevenue.toLocaleString("vi-VN")} đ`}
-          trend="+12.5%"
+          value={`${Number(financeStat?.revenue || 0).toLocaleString("vi-VN")} đ`}
+          trend={`${(financeStat?.revenueGrowth || 0) >= 0 ? '+' : ''}${financeStat?.revenueGrowth || 0}%`}
           icon={<CircleDollarSign className="h-6 w-6" />}
           iconColor="emerald"
+          isNegative={(financeStat?.revenueGrowth || 0) < 0}
         />
         <StatCard
           title="Giao dịch thành công"
-          value={successfulTxns.toString()}
-          trend="+8.2%"
+          value={Number(financeStat?.successfulBooking || 0).toLocaleString("vi-VN")}
+          trend={`${(financeStat?.successfulBookingGrowth || 0) >= 0 ? '+' : ''}${financeStat?.successfulBookingGrowth || 0}%`}
           icon={<CreditCard className="h-6 w-6" />}
           iconColor="blue"
+          isNegative={(financeStat?.successfulBookingGrowth || 0) < 0}
         />
         <StatCard
           title="Khách hàng mới"
-          value={newCustomers.toString()}
-          trend="+18.7%"
+          value={Number(financeStat?.newUsers || 0).toLocaleString("vi-VN")}
+          trend={`${(financeStat?.customerTrend || 0) >= 0 ? '+' : ''}${financeStat?.customerTrend || 0}%`}
           icon={<Users className="h-6 w-6" />}
           iconColor="purple"
+          isNegative={(financeStat?.customerTrend || 0) < 0}
         />
         <StatCard
           title="Hoàn tiền"
-          value={refunds.toString()}
-          trend="-5.3%"
+          value={Number(financeStat?.refundThisMonth || 0).toLocaleString("vi-VN")}
+          trend={`${(financeStat?.refundTrend || 0) >= 0 ? '+' : ''}${financeStat?.refundTrend || 0}%`}
           icon={<RotateCcw className="h-6 w-6" />}
           iconColor="orange"
-          isNegative
+          isNegative={(financeStat?.refundTrend || 0) > 0}
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <div className="lg:col-span-2">
-          <RevenueChart />
+          <RevenueChart data={monthlyRevenue || []} />
         </div>
         <PaymentMethodStats />
       </div>
 
-      <TransactionTable data={paymentMock} onViewDetail={setSelectedBooking} />
+      <TransactionTable data={booking} onViewDetail={setSelectedBooking} />
 
       <TransactionDetailModal
         isOpen={!!selectedBooking}

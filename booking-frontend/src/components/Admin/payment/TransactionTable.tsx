@@ -66,17 +66,18 @@ export const TransactionTable = ({
 
                 <td className="px-6 py-4 whitespace-nowrap text-left">
                   <div className="leading-tight">
-                    <div className="font-medium truncate max-w-40">
-                      {b.user?.name}
-                    </div>
-                    <div className="text-xs text-gray-400 truncate max-w-40">
-                      {b.user?.email}
-                    </div>
+                    <div className="font-medium truncate max-w-40 text-blue-600">
+                        {b.trip?.route?.name || "N/A"}
+                      </div>
+                      {/* Hiển thị mã chuyến hoặc thông tin khác */}
+                      <div className="text-xs text-gray-400">
+                        Chuyến: {b.trip?.id.slice(-6)}
+                      </div>
                   </div>
                 </td>
 
                 <td className="px-6 py-4 font-bold whitespace-nowrap text-left">
-                  {b.totalAmount.toLocaleString()} đ
+                  {(b.totalAmount || 0).toLocaleString()} đ
                 </td>
 
                 <td className="px-6 py-4 text-center whitespace-nowrap">

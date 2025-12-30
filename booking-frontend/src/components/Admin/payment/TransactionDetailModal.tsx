@@ -12,6 +12,7 @@ export default function TransactionDetailModal({
 }) {
   if (!isOpen || !data) return null;
 
+  const isCancelled = data.status === "CANCELLED";
   const isSuccess = data.status === "CONFIRMED";
 
   return (
@@ -28,16 +29,26 @@ export default function TransactionDetailModal({
         {/* Header */}
         <div className="p-6 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-full bg-emerald-100 flex items-center justify-center">
-              <CheckCircle className="h-6 w-6 text-emerald-600" />
+            <div className={`h-12 w-12 rounded-full flex items-center justify-center ${
+              isSuccess ? "bg-emerald-100" : isCancelled ? "bg-red-100" : "bg-gray-100"
+            }`}>
+              {isSuccess ? (
+                <CheckCircle className="h-6 w-6 text-emerald-600" />
+              ) : isCancelled ? (
+                <X className="h-6 w-6 text-red-600" />
+              ) : (
+                <RotateCcw className="h-6 w-6 text-gray-600" />
+              )}
             </div>
 
             <div>
               <div className="text-2xl font-bold">
                 {data.totalAmount.toLocaleString("vi-VN")} đ
               </div>
-              <div className="text-sm text-emerald-600 font-medium">
-                ● Hoàn thành
+              <div className={`text-sm font-medium ${
+                isSuccess ? "text-emerald-600" : isCancelled ? "text-red-600" : "text-gray-500"
+              }`}>
+                ● {isSuccess ? "Hoàn thành" : isCancelled ? "Đã hủy" : "Chờ thanh toán"}
               </div>
             </div>
           </div>

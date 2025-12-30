@@ -3,8 +3,10 @@ import type { BookingStatus } from "../enum";
 
 export interface TransactionUI {
   id: string;
-  userName: string;
-  userEmail: string;
-  amount: number;
+  totalAmount: number;
   status: BookingStatus;
+  user: {
+    name: string;
+    email: string;
+  };
 }

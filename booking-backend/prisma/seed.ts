@@ -318,6 +318,7 @@ async function main() {
                 totalAmount: ticketPrice * 2, // Mua 2 vé
                 departureStationId: stations['HCM'],
                 arrivalStationId: stations['Đà Lạt'],
+                expiredAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours from now
                 tickets: {
                     create: [
                         {
