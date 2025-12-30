@@ -1,7 +1,6 @@
 const prisma = require('../configs/db')
 const { BusStatus, BookingStatus } = require('@prisma/client')
-const { startOfYear, endOfYear } = require('date-fns');
-const { startOfMonth, endOfMonth, subMonths, startOfDay, endOfDay, subDays, format } = require('date-fns');
+const { startOfYear, endOfYear, startOfMonth, endOfMonth, subMonths, startOfDay, endOfDay, subDays, format } = require('date-fns');
 
 const dashboardService = {
     summary: async() => {

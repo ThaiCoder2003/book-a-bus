@@ -27,18 +27,18 @@ export default function DashboardPage() {
         const decoded: any = jwtDecode(token);
         setUsername(decoded.name);
       } catch (error) {
-        window.location.replace("/auth");
+        window.location.replace("/schedule");
         toast.error("Can't get user information");
       }
     } else {
       toast.error("Can't get necessary token");
-      window.location.replace("/auth");
+      window.location.replace("/schedule");
     }
   }, []);
 
   return (
     <>
-      <UserHeader />
+      <UserHeader username={username}/>
 
       <div className="min-h-screen bg-muted/10 pb-10">
         <main className="container mx-auto px-4 py-10 max-w-8xl">

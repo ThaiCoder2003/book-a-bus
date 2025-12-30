@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
-import { Armchair, Check } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { Armchair, Crown, Bed, BedDouble, Check } from 'lucide-react'
+import { useEffect, useState, type Dispatch, type SetStateAction } from 'react'
 import seatService from '@/services/seatService'
 import { toast } from 'react-toastify'
 import type { Seat } from '@/types/seat.type'
@@ -10,25 +10,25 @@ import LoadingSpin from '../helpers/LoadingSpin'
 export function SeatSelector({
     tripId,
     fromTo,
-    onSeatSelect,
+    selectedSeatList,
+    setSelectedSeatList,
 }: {
     tripId: string
     fromTo: {
         from: number
         to: number
     }
-    onSeatSelect?: (seats: Seat[]) => void
+    selectedSeatList: Seat[]
+    setSelectedSeatList: Dispatch<SetStateAction<Seat[]>>
 }) {
     const [seatList, setSeatList] = useState<Seat[]>([])
-    const [selectedSeats, setSelectedSeats] = useState<Seat[]>([])
     const [isLoading, setIsLoading] = useState<boolean>(false)
 
     useEffect(() => {
         const getSeatByTrip = async () => {
             setIsLoading(true)
             // Reset selection khi đổi trip hoặc lộ trình
-            setSelectedSeats([])
-            if (onSeatSelect) onSeatSelect([])
+            setSelectedSeatList([])
 
             try {
                 const response = await seatService.getByTrip(
@@ -63,25 +63,19 @@ export function SeatSelector({
     const handleSeatClick = (seat: Seat) => {
         if (!seat.isAvailable) return
 
-        let newSelectedSeats = [...selectedSeats]
-        const isSelected = selectedSeats.find((s) => s.id === seat.id)
+        const isSelected = selectedSeatList.some((s) => s.id === seat.id)
 
         if (isSelected) {
-            // Bỏ chọn
-            newSelectedSeats = newSelectedSeats.filter((s) => s.id !== seat.id)
+            setSelectedSeatList((prev) => prev.filter((s) => s.id !== seat.id))
         } else {
-            // Chọn thêm (Có thể thêm logic giới hạn số ghế tối đa tại đây)
-            newSelectedSeats.push(seat)
-        }
+            if (selectedSeatList.length >= 5) {
+                toast.warn('Bạn chỉ được chọn tối đa 5 ghế!')
+                return
+            }
 
-        setSelectedSeats(newSelectedSeats)
-
-        // Gọi callback để báo cho component cha biết
-        if (onSeatSelect) {
-            onSeatSelect(newSelectedSeats)
+            setSelectedSeatList((prev) => [...prev, seat])
         }
     }
-
     // Tách ghế theo tầng (Floor 1 & 2)
     const seatListByFloor = seatList.reduce<Record<number, Seat[]>>(
         (acc, seat) => {
@@ -113,7 +107,7 @@ export function SeatSelector({
         })
 
         return (
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center mb-9">
                 <div className="flex items-center gap-2 mb-3">
                     <Badge
                         variant="outline"
@@ -123,7 +117,7 @@ export function SeatSelector({
                     </Badge>
                 </div>
 
-                <div className="relative bg-card border rounded-xl p-4 shadow-sm">
+                <div className="relative bg-card border rounded-xl p-4 shadow-sm md:w-1/2">
                     {/* Driver indicator */}
                     {floorLabel.includes('1') && (
                         <div className="absolute -top-3 left-4 bg-muted border text-muted-foreground px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider">
@@ -132,27 +126,47 @@ export function SeatSelector({
                     )}
 
                     <div
-                        className="grid gap-3"
+                        className="grid gap-3 justify-items-center"
                         style={{
                             gridTemplateColumns: `repeat(${maxCol}, minmax(0, 1fr))`,
                         }}
                     >
                         {seatMatrix.map((row, rowIdx) =>
                             row.map((seat, colIdx) => {
-                                // Render khoảng trống (lối đi)
+                                // 1. Render khoảng trống (lối đi)
                                 if (!seat) {
                                     return (
                                         <div
                                             key={`empty-${rowIdx}-${colIdx}`}
-                                            className="w-10 h-10" // Kích thước bằng ghế
+                                            className="w-10 h-10"
                                         />
                                     )
                                 }
 
-                                const isSelected = selectedSeats.some(
+                                // 2. Logic xác định trạng thái
+                                const isSelected = selectedSeatList.some(
                                     (s) => s.id === seat.id,
                                 )
                                 const isOccupied = !seat.isAvailable
+
+                                // 3. Logic xác định Icon và Màu sắc dựa trên seat.type
+                                // Bạn hãy thay đổi string so sánh ('SINGLE', 'DOUBLE') khớp với database của bạn
+                                let SeatIcon = Armchair // Mặc định là ghế
+                                let typeColorClass = ''
+
+                                if (seat.type === 'VIP') {
+                                    SeatIcon = Crown
+                                    typeColorClass =
+                                        'border-yellow-500/50 text-yellow-600'
+                                } else if (seat.type === 'SINGLE_BED') {
+                                    SeatIcon = Bed
+                                    typeColorClass =
+                                        'border-blue-500/50 text-blue-600'
+                                } else if (seat.type === 'DOUBLE_BED') {
+                                    SeatIcon = BedDouble
+                                    typeColorClass =
+                                        'border-purple-500/50 text-purple-600'
+                                }
 
                                 return (
                                     <button
@@ -161,28 +175,26 @@ export function SeatSelector({
                                         disabled={isOccupied}
                                         className={cn(
                                             'relative w-10 h-10 rounded-lg border flex items-center justify-center transition-all duration-200',
-                                            // 1. Trạng thái đã đặt (Occupied)
-                                            isOccupied &&
-                                                'bg-muted text-muted-foreground border-transparent cursor-not-allowed opacity-60',
 
-                                            // 2. Trạng thái đang chọn (Selected)
-                                            isSelected &&
-                                                'bg-primary border-primary text-primary-foreground shadow-md scale-105 ring-2 ring-primary ring-offset-1',
-
-                                            // 3. Trạng thái trống (Available)
-                                            !isOccupied &&
-                                                !isSelected &&
-                                                'bg-background hover:border-primary hover:text-primary hover:bg-primary/5',
-
-                                            // Màu đặc biệt cho VIP (nếu cần)
-                                            seat.type === 'VIP' &&
-                                                !isOccupied &&
-                                                !isSelected &&
-                                                'border-yellow-500/50 text-yellow-600',
+                                            // A. Trạng thái đã đặt (Occupied) - Ưu tiên cao nhất về UI disable
+                                            isOccupied
+                                                ? 'bg-muted text-muted-foreground border-transparent cursor-not-allowed opacity-60'
+                                                : cn(
+                                                      // B. Trạng thái đang chọn (Selected)
+                                                      isSelected
+                                                          ? 'bg-primary border-primary text-primary-foreground shadow-md scale-105 ring-2 ring-primary ring-offset-1'
+                                                          : // C. Trạng thái bình thường (Available)
+                                                            cn(
+                                                                'bg-background hover:bg-primary/5 hover:border-primary hover:text-primary',
+                                                                // Áp dụng màu riêng theo loại ghế (VIP/Giường) nếu chưa chọn
+                                                                typeColorClass,
+                                                            ),
+                                                  ),
                                         )}
                                         title={`${seat.label} - ${seat.type}`}
                                     >
-                                        <Armchair
+                                        {/* Render Icon động dựa trên loại ghế */}
+                                        <SeatIcon
                                             className="w-5 h-5"
                                             strokeWidth={2.5}
                                         />
@@ -213,10 +225,10 @@ export function SeatSelector({
             {/* Chú thích (Legend) */}
             <div className="flex flex-wrap gap-4 justify-center text-sm border-b pb-4">
                 <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded border bg-background flex items-center justify-center">
-                        <Armchair className="w-4 h-4 text-foreground" />
+                    <div className="w-6 h-6 rounded border bg-muted flex items-center justify-center text-muted-foreground opacity-60">
+                        <Armchair className="w-4 h-4" />
                     </div>
-                    <span>Trống</span>
+                    <span>Đã đặt</span>
                 </div>
                 <div className="flex items-center gap-2">
                     <div className="w-6 h-6 rounded border bg-primary flex items-center justify-center text-primary-foreground">
@@ -225,16 +237,28 @@ export function SeatSelector({
                     <span>Đang chọn</span>
                 </div>
                 <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded border bg-muted flex items-center justify-center text-muted-foreground opacity-60">
-                        <Armchair className="w-4 h-4" />
+                    <div className="w-6 h-6 rounded border bg-background flex items-center justify-center">
+                        <Armchair className="w-4 h-4 text-foreground" />
                     </div>
-                    <span>Đã đặt</span>
+                    <span>Ghế thường</span>
                 </div>
                 <div className="flex items-center gap-2">
                     <div className="w-6 h-6 rounded border border-yellow-500/50 flex items-center justify-center text-yellow-600">
-                        <Armchair className="w-4 h-4" />
+                        <Crown className="w-4 h-4" />
                     </div>
-                    <span>VIP</span>
+                    <span>Ghế VIP</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded border border-blue-500/50 flex items-center justify-center text-blue-600">
+                        <Bed className="w-4 h-4" />
+                    </div>
+                    <span>Giường đơn</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded border border-purple-500/50 flex items-center justify-center text-purple-600">
+                        <BedDouble className="w-4 h-4" />
+                    </div>
+                    <span>Giường đôi</span>
                 </div>
             </div>
 
@@ -244,7 +268,7 @@ export function SeatSelector({
                     <LoadingSpin content="Đang tải sơ đồ xe..." />
                 </div>
             ) : (
-                <div className="grid md:grid-cols-2 gap-8 justify-center">
+                <div className="grid md:grid-cols-2 justify-center">
                     {/* Tầng 1 */}
                     {seatListByFloor[1] &&
                         seatListByFloor[1].length > 0 &&

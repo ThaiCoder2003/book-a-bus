@@ -3,9 +3,102 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
 import { User } from 'lucide-react'
+import type { TripDetail } from '@/types/tripDetail.type'
+import type { Seat } from '@/types/seat.type'
+import bookingService from '@/services/bookingService'
+import { toast } from 'react-toastify'
+import { useLocation, useNavigate } from 'react-router-dom'
+import authAction from '@/actions/authAction'
 
-export function BookingSummary({ selectedSeats, pricePerSeat }) {
-    const totalPrice = selectedSeats.length * pricePerSeat
+const SEAT_MULTIPLIERS = {
+    SEAT: 1,
+    VIP: 1.25,
+    SINGLE_BED: 1.75,
+    DOUBLE_BED: 2.75,
+}
+
+export function BookingSummary({
+    trip,
+    fromTo,
+    basePrice,
+    selectedSeatList,
+}: {
+    trip: TripDetail
+    fromTo: {
+        from: number
+        to: number
+    }
+    basePrice: number
+    selectedSeatList: Seat[]
+}) {
+    const totalPrice = selectedSeatList.reduce((total, seat) => {
+        const coef = SEAT_MULTIPLIERS[seat.type] || 1
+        return total + basePrice * coef
+    }, 0)
+
+    const navigate = useNavigate()
+    const location = useLocation();
+
+    const handleOnClickContinue = async () => {
+        const payload = {
+            tripId: trip.tripId,
+            seatIds: selectedSeatList.map((seat) => seat.id),
+            fromOrder: fromTo.from,
+            toOrder: fromTo.to,
+            depStationId: trip.routePoints[fromTo.from - 1].stationId,
+            arrStationId: trip.routePoints[fromTo.to - 1].stationId,
+        }
+
+        try {
+            const accessToken = await authAction.getToken()
+
+            // --- KIỂM TRA ĐĂNG NHẬP ---
+            const handleUnauthorized = () => {
+                sessionStorage.setItem(
+                    'pendingBooking',
+                    JSON.stringify(payload),
+                )
+
+                // Chuyển hướng
+                navigate('/auth', {
+                    state: { from: location },
+                    replace: true,
+                })
+            }
+
+            if (!accessToken) {
+                handleUnauthorized()
+                return
+            }
+
+            const decoded = await authAction.decodeToken(accessToken)
+
+            // Nếu decode ra null hoặc không có userId (token bị lỗi/hết hạn)
+            if (!decoded || !decoded.userId) {
+                await authAction.clearToken()
+                handleUnauthorized()
+                return
+            }
+
+            // --- TIẾN HÀNH TẠO BOOKING ---
+            const response = await bookingService.create(payload)
+
+            if (response?.data?.success) {
+                // Điều hướng đến trang thanh toán
+                const booking = response.data.booking
+                navigate(`/payment?id=${booking.id}`, {
+                    state: { bookingData: booking },
+                })
+            }
+        } catch (error: any) {
+            if (error.response) {
+                const serverMessage = error.response.data.message
+                toast.error(serverMessage || 'Có lỗi xảy ra, vui lòng thử lại')
+            } else {
+                toast.error('Lỗi kết nối máy chủ')
+            }
+        }
+    }
 
     return (
         <Card className="border-2">
@@ -19,23 +112,23 @@ export function BookingSummary({ selectedSeats, pricePerSeat }) {
                         <span className="text-sm font-medium">Ghế đã chọn</span>
                         <Badge
                             variant={
-                                selectedSeats.length > 0
+                                selectedSeatList.length > 0
                                     ? 'default'
                                     : 'secondary'
                             }
                         >
-                            {selectedSeats.length} ghế
+                            {selectedSeatList.length} ghế
                         </Badge>
                     </div>
-                    {selectedSeats.length > 0 ? (
+                    {selectedSeatList.length > 0 ? (
                         <div className="flex flex-wrap gap-2">
-                            {selectedSeats.map((seat) => (
+                            {selectedSeatList.map((seat) => (
                                 <Badge
-                                    key={seat}
+                                    key={seat.id}
                                     variant="outline"
                                     className="text-base font-semibold"
                                 >
-                                    {seat}
+                                    {seat.label}
                                 </Badge>
                             ))}
                         </div>
@@ -52,7 +145,7 @@ export function BookingSummary({ selectedSeats, pricePerSeat }) {
                 <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">
-                            Giá vé ({selectedSeats.length} ghế)
+                            Giá vé ({selectedSeatList.length} ghế)
                         </span>
                         <span className="font-medium">
                             {totalPrice.toLocaleString('vi-VN')}đ
@@ -80,7 +173,8 @@ export function BookingSummary({ selectedSeats, pricePerSeat }) {
                     <Button
                         className="w-full"
                         size="lg"
-                        disabled={selectedSeats.length === 0}
+                        onClick={handleOnClickContinue}
+                        disabled={selectedSeatList.length === 0}
                     >
                         <User className="mr-2 h-4 w-4" />
                         Tiếp tục đặt vé

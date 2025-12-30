@@ -1,11 +1,15 @@
+import authAction from '@/actions/authAction'
 import LoadingSpin from '@/components/helpers/LoadingSpin'
 import { BookingSelection } from '@/components/TripDetail/BookingSelection'
 import SeatSelector from '@/components/TripDetail/SeatSelector'
+import BookingSummary from '@/components/TripDetail/Summary'
 import TripInfo from '@/components/TripDetail/TripInfo'
+import bookingService from '@/services/bookingService'
 import tripService from '@/services/tripService'
+import type { Seat } from '@/types/seat.type'
 import type { TripDetail } from '@/types/tripDetail.type'
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
 export default function TripDetailPage() {
@@ -23,6 +27,9 @@ export default function TripDetailPage() {
         from: 1,
         to: 2,
     })
+    const [selectedSeatList, setSelectedSeatList] = useState<Seat[]>([])
+
+    const navigate = useNavigate()
     const { id } = useParams()
 
     useEffect(() => {
@@ -47,7 +54,59 @@ export default function TripDetailPage() {
             }
         }
 
+        const handleReturn = async () => {
+            const savedBooking = sessionStorage.getItem('bookingPending')
+            sessionStorage.removeItem('bookingPending')
+
+            if (savedBooking) {
+                const parsedData = JSON.parse(savedBooking)
+
+                if (parsedData && parsedData?.tripId === id) {
+                    try {
+                        const accessToken = await authAction.getToken()
+
+                        if (accessToken) {
+                            const decoded = await authAction.decodeToken(
+                                accessToken,
+                            )
+
+                            if (decoded && decoded.userId) {
+                                const response = await bookingService.create(
+                                    parsedData,
+                                )
+
+                                if (response?.data?.success) {
+                                    // Điều hướng đến trang thanh toán
+                                    const booking = response.data.booking
+                                    navigate(`/payment?id=${booking.id}`, {
+                                        state: { bookingData: booking },
+                                    })
+                                }
+                            }
+                        }
+                    } catch (error: any) {
+                        if (error.response) {
+                            const serverMessage = error.response.data.message
+                            toast.error(
+                                serverMessage ||
+                                    'Có lỗi xảy ra, vui lòng thử lại',
+                            )
+                        } else {
+                            toast.error('Lỗi kết nối máy chủ')
+                        }
+
+                        setFromTo({
+                            from: parsedData.fromOrder,
+                            to: parsedData.toOrder
+                        })
+                        setIsSeatSelect(true)
+                    }
+                }
+            }
+        }
+
         getTripDetail()
+        handleReturn()
     }, [])
 
     return (
@@ -67,11 +126,21 @@ export default function TripDetailPage() {
                         // Phần chọn ghế và tóm tắt đặt vé
                         <div className="grid lg:grid-cols-3 gap-6 mt-6">
                             <div className="lg:col-span-2">
-                                <SeatSelector tripId={tripData.tripId} fromTo={fromTo} />
+                                <SeatSelector
+                                    tripId={tripData.tripId}
+                                    fromTo={fromTo}
+                                    selectedSeatList={selectedSeatList}
+                                    setSelectedSeatList={setSelectedSeatList}
+                                />
                             </div>
-                            {/* <div className="lg:col-span-1">
-                                <BookingSummary trip={tripData} />
-                            </div> */}
+                            <div className="lg:col-span-1">
+                                <BookingSummary
+                                    trip={tripData}
+                                    fromTo={fromTo}
+                                    basePrice={basePrice}
+                                    selectedSeatList={selectedSeatList}
+                                />
+                            </div>
                         </div>
                     ) : (
                         <BookingSelection
