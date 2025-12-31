@@ -3,11 +3,38 @@ import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { cn } from '@/lib/utils'
+import { useEffect, useState } from 'react'
+import authAction from '@/actions/authAction'
+import { toast } from 'react-toastify'
 
-export default function UserHeader({ username }: { username: string }) {
+export default function UserHeader() {
     const location = useLocation()
     const isHomeActive =
         location.pathname === '/' || location.pathname === '/dashboard'
+    const [username, setUsername] = useState('')
+
+    useEffect(() => {
+        const checkToken = async () => {
+            const token = localStorage.getItem('accessToken')
+
+            if (token) {
+                try {
+                    const decoded = await authAction.decodeToken(token)
+
+                    if (decoded && decoded.name) {
+                        setUsername(decoded.name)
+                    }
+                } catch (error) {
+                    await authAction.clearToken()
+                    window.location.replace('/schedule')
+                }
+            } else {
+                toast.error("Can't get necessary token")
+            }
+        }
+
+        checkToken()
+    }, [])
 
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">

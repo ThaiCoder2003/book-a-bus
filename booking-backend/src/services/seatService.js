@@ -8,7 +8,11 @@ const seatService = {
         return seat
     },
 
-    getTripSeats: async ({tripId, fromOrder, toOrder}) => {
+    getTripSeats: async ({ tripId, fromOrder, toOrder }) => {
+        if (fromOrder >= toOrder) {
+            throw new Error('Điểm đi phải trước điểm đến')
+        }
+
         // 1. Lấy thông tin chuyến đi để biết busId
         const trip = await prisma.trip.findUnique({
             where: { id: tripId },

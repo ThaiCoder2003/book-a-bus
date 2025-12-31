@@ -22,6 +22,7 @@ export function BookingSummary({
     fromTo,
     basePrice,
     selectedSeatList,
+    onBookingError,
 }: {
     trip: TripDetail
     fromTo: {
@@ -30,6 +31,7 @@ export function BookingSummary({
     }
     basePrice: number
     selectedSeatList: Seat[]
+    onBookingError: () => void
 }) {
     const totalPrice = selectedSeatList.reduce((total, seat) => {
         const coef = SEAT_MULTIPLIERS[seat.type] || 1
@@ -94,9 +96,12 @@ export function BookingSummary({
             if (error.response) {
                 const serverMessage = error.response.data.message
                 toast.error(serverMessage || 'Có lỗi xảy ra, vui lòng thử lại')
+                onBookingError()
             } else {
                 toast.error('Lỗi kết nối máy chủ')
             }
+
+
         }
     }
 
