@@ -7,6 +7,7 @@ import { TripManagementPage } from "@/pages/Admin/TripManagementPage";
 import RoutesPage from "@/pages/Admin/RoutesPage";
 import PaymentDashboard from "@/pages/Admin/PaymentDashboard";
 import UserManagementPage from "@/pages/Admin/UserManagementPage";
+import StationManagementPage from "@/pages/Admin/StationManagementPage";
 
 export default function AdminRoutes() {
   return (
@@ -15,6 +16,8 @@ export default function AdminRoutes() {
         <Route index element={<DashboardPage />} /> {/* /admin */}
         <Route path="fleets" element={<SeatManagementPage />} />{" "}
         {/* /admin/fleets */}
+        <Route path="stops" element={<StationManagementPage />} />{" "}
+        {/* /admin/stop */}
         <Route path="trips" element={<TripManagementPage />} />{" "}
         {/* /admin/trips */}
         <Route path="bookings" element={<BookingManagementPage />} />{" "}

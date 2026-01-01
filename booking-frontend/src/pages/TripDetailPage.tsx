@@ -1,5 +1,6 @@
 import authAction from '@/actions/authAction'
 import LoadingSpin from '@/components/helpers/LoadingSpin'
+import UserHeader from '@/components/helpers/UserHeader'
 import { BookingSelection } from '@/components/TripDetail/BookingSelection'
 import SeatSelector from '@/components/TripDetail/SeatSelector'
 import BookingSummary from '@/components/TripDetail/Summary'
@@ -28,9 +29,15 @@ export default function TripDetailPage() {
         to: 2,
     })
     const [selectedSeatList, setSelectedSeatList] = useState<Seat[]>([])
+    const [refreshSeatTrigger, setRefreshSeatTrigger] = useState(0)
 
     const navigate = useNavigate()
     const { id } = useParams()
+
+    const handleBookingError = () => {
+        setRefreshSeatTrigger((prev) => prev + 1)
+        setSelectedSeatList([])
+    }
 
     useEffect(() => {
         const getTripDetail = async () => {
@@ -55,8 +62,8 @@ export default function TripDetailPage() {
         }
 
         const handleReturn = async () => {
-            const savedBooking = sessionStorage.getItem('bookingPending')
-            sessionStorage.removeItem('bookingPending')
+            const savedBooking = sessionStorage.getItem('pendingBooking')
+            sessionStorage.removeItem('pendingBooking')
 
             if (savedBooking) {
                 const parsedData = JSON.parse(savedBooking)
@@ -97,7 +104,7 @@ export default function TripDetailPage() {
 
                         setFromTo({
                             from: parsedData.fromOrder,
-                            to: parsedData.toOrder
+                            to: parsedData.toOrder,
                         })
                         setIsSeatSelect(true)
                     }
@@ -110,48 +117,56 @@ export default function TripDetailPage() {
     }, [])
 
     return (
-        <div className="min-h-screen bg-linear-to-br from-purple-50 to-blue-50 py-8">
-            {isLoading ? (
-                <LoadingSpin content="Đang tải thông tin chuyến xe" />
-            ) : (
-                <div className="container mx-auto px-4">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-6">
-                        Chi tiết chuyến xe
-                    </h1>
+        <>
+            <UserHeader />
 
-                    {/* Thông tin chuyến xe */}
-                    <TripInfo trip={tripData} />
+            <div className="min-h-screen bg-linear-to-br from-purple-50 to-blue-50 py-8">
+                {isLoading ? (
+                    <LoadingSpin content="Đang tải thông tin chuyến xe" />
+                ) : (
+                    <div className="container mx-auto px-4">
+                        <h1 className="text-3xl font-bold text-gray-900 mb-6">
+                            Chi tiết chuyến xe
+                        </h1>
 
-                    {isSeatSelect ? (
-                        // Phần chọn ghế và tóm tắt đặt vé
-                        <div className="grid lg:grid-cols-3 gap-6 mt-6">
-                            <div className="lg:col-span-2">
-                                <SeatSelector
-                                    tripId={tripData.tripId}
-                                    fromTo={fromTo}
-                                    selectedSeatList={selectedSeatList}
-                                    setSelectedSeatList={setSelectedSeatList}
-                                />
+                        {/* Thông tin chuyến xe */}
+                        <TripInfo trip={tripData} />
+
+                        {isSeatSelect ? (
+                            // Phần chọn ghế và tóm tắt đặt vé
+                            <div className="grid lg:grid-cols-3 gap-6 mt-6">
+                                <div className="lg:col-span-2">
+                                    <SeatSelector
+                                        tripId={tripData.tripId}
+                                        fromTo={fromTo}
+                                        selectedSeatList={selectedSeatList}
+                                        setSelectedSeatList={
+                                            setSelectedSeatList
+                                        }
+                                        refreshSeatTrigger={refreshSeatTrigger}
+                                    />
+                                </div>
+                                <div className="lg:col-span-1">
+                                    <BookingSummary
+                                        trip={tripData}
+                                        fromTo={fromTo}
+                                        basePrice={basePrice}
+                                        selectedSeatList={selectedSeatList}
+                                        onBookingError={handleBookingError}
+                                    />
+                                </div>
                             </div>
-                            <div className="lg:col-span-1">
-                                <BookingSummary
-                                    trip={tripData}
-                                    fromTo={fromTo}
-                                    basePrice={basePrice}
-                                    selectedSeatList={selectedSeatList}
-                                />
-                            </div>
-                        </div>
-                    ) : (
-                        <BookingSelection
-                            routePoints={tripData.routePoints}
-                            setIsSeatSelect={setIsSeatSelect}
-                            setBasePrice={setBasePrice}
-                            setFromTo={setFromTo}
-                        />
-                    )}
-                </div>
-            )}
-        </div>
+                        ) : (
+                            <BookingSelection
+                                routePoints={tripData.routePoints}
+                                setIsSeatSelect={setIsSeatSelect}
+                                setBasePrice={setBasePrice}
+                                setFromTo={setFromTo}
+                            />
+                        )}
+                    </div>
+                )}
+            </div>
+        </>
     )
 }

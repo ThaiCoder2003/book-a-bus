@@ -9,7 +9,6 @@ const bookingController = {
                 userId,
                 ...req.body,
             })
-            console.log("🚀 ~ booking:", booking)
 
             return res.json({
                 success: true,
@@ -34,7 +33,7 @@ const bookingController = {
             }
 
             console.error(error)
-            return res.status(500).json({ message: 'Internal Server Error' })
+            return res.status(500).json({ message: error.message || 'Internal Server Error' })
         }
     },
 }

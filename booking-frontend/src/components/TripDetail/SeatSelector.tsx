@@ -12,6 +12,7 @@ export function SeatSelector({
     fromTo,
     selectedSeatList,
     setSelectedSeatList,
+    refreshSeatTrigger
 }: {
     tripId: string
     fromTo: {
@@ -20,6 +21,7 @@ export function SeatSelector({
     }
     selectedSeatList: Seat[]
     setSelectedSeatList: Dispatch<SetStateAction<Seat[]>>
+    refreshSeatTrigger: number
 }) {
     const [seatList, setSeatList] = useState<Seat[]>([])
     const [isLoading, setIsLoading] = useState<boolean>(false)
@@ -58,7 +60,7 @@ export function SeatSelector({
         if (tripId) {
             getSeatByTrip()
         }
-    }, [tripId, fromTo.from, fromTo.to])
+    }, [tripId, fromTo.from, fromTo.to, refreshSeatTrigger])
 
     const handleSeatClick = (seat: Seat) => {
         if (!seat.isAvailable) return

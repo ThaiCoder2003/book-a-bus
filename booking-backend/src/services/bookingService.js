@@ -90,69 +90,94 @@ const bookingService = {
             arrStationId,
         )
 
-        // tạo booking
-        return await prisma.$transaction(async (tx) => {
-            // Tìm xem trong các ghế user chọn, có ghế nào vừa bị người khác đặt không
-            const conflictingTickets = await tx.ticket.findFirst({
-                where: {
-                    tripId: tripId,
-                    seatId: { in: seatIds }, // Chỉ check các ghế user đang chọn
-                    fromOrder: { lt: toOrder },
-                    toOrder: { gt: fromOrder },
-                    booking: {
-                        OR: [
-                            { status: 'CONFIRMED' },
-                            {
-                                status: 'PENDING',
-                                expiredAt: { gt: new Date() },
-                            },
-                        ],
-                    },
-                },
-            })
+        try {
+            return await prisma.$transaction(async (tx) => {
+                const now = new Date()
 
-            if (conflictingTickets) {
-                // Nếu tìm thấy xung đột => Ném lỗi để rollback và báo FE
+                // Tìm tất cả các vé (Ticket) đang nằm trong khoảng ghế và chặng này
+                const blockingTickets = await tx.ticket.findMany({
+                    where: {
+                        tripId: tripId,
+                        seatId: { in: seatIds }, // Các ghế user đang chọn
+                        fromOrder: { lt: toOrder }, // Logic giao nhau (Overlap)
+                        toOrder: { gt: fromOrder },
+                    },
+                    include: {
+                        booking: true, // Lấy thông tin booking để check hạn
+                    },
+                })
+
+                // Duyệt qua các vé đang chắn đường để xử lý
+                for (const ticket of blockingTickets) {
+                    const { booking } = ticket
+
+                    // Check xem booking này đã hết hạn chưa
+                    const isExpired =
+                        booking.status === 'PENDING' &&
+                        new Date(booking.expiredAt) < now
+
+                    // Booking được coi là hợp lệ (đang giữ chỗ)
+                    const isValidBlocking =
+                        booking.status === 'CONFIRMED' ||
+                        (booking.status === 'PENDING' && !isExpired)
+
+                    if (isValidBlocking) {
+                        // Nếu gặp chướng ngại vật hợp lệ => Báo lỗi ngay
+                        throw new Error('SEAT_ALREADY_TAKEN')
+                    }
+
+                    if (isExpired) {
+                        // Nếu gặp chướng ngại vật là "Rác" (PENDING đã hết hạn)
+                        await tx.booking.deleteMany({
+                            where: { id: booking.id },
+                        })
+                    }
+                }
+
+                // tạo booking
+                // Thời gian giữ ghế (ví dụ 10 phút)
+                const expiredAt = new Date(
+                    new Date().getTime() + 10 * 60 * 1000,
+                )
+
+                const newBooking = await tx.booking.create({
+                    data: {
+                        userId,
+                        tripId,
+                        departureStationId: depStationId,
+                        arrivalStationId: arrStationId,
+                        totalAmount: finalTotalAmount,
+                        status: 'PENDING',
+                        expiredAt: expiredAt,
+                        // Tạo luôn các vé (Tickets) liên kết
+                        tickets: {
+                            create: seatIds.map((seatId) => ({
+                                seatId: seatId,
+                                tripId: tripId, // Quan trọng để query nhanh
+                                fromOrder: fromOrder,
+                                toOrder: toOrder,
+                            })),
+                        },
+                    },
+                    include: {
+                        tickets: true, // Trả về vé để hiển thị
+                    },
+                })
+
+                return newBooking
+            })
+        } catch (error) {
+            // Check mã lỗi của Prisma trả về từ Postgres
+            if (
+                error.code === 'P2010' ||
+                error.message.includes('ticket_seat_overlap_check')
+            ) {
                 throw new Error('SEAT_ALREADY_TAKEN')
             }
 
-            // Thời gian giữ ghế (ví dụ 10 phút)
-            const expiredAt = new Date(new Date().getTime() + 10 * 60 * 1000)
-            console.log({
-                userId,
-                tripId,
-                departureStationId: depStationId,
-                arrivalStationId: arrStationId,
-                totalAmount: finalTotalAmount,
-                status: 'PENDING',
-                expiredAt: expiredAt,
-            })
-            const newBooking = await tx.booking.create({
-                data: {
-                    userId,
-                    tripId,
-                    departureStationId: depStationId,
-                    arrivalStationId: arrStationId,
-                    totalAmount: finalTotalAmount,
-                    status: 'PENDING',
-                    expiredAt: expiredAt,
-                    // Tạo luôn các vé (Tickets) liên kết
-                    tickets: {
-                        create: seatIds.map((seatId) => ({
-                            seatId: seatId,
-                            tripId: tripId, // Quan trọng để query nhanh
-                            fromOrder: fromOrder,
-                            toOrder: toOrder,
-                        })),
-                    },
-                },
-                include: {
-                    tickets: true, // Trả về vé để hiển thị
-                },
-            })
-
-            return newBooking
-        })
+            // Các lỗi khác
+            throw error
+        }
     },
 
     getBookingByUser: async (userId) => {
