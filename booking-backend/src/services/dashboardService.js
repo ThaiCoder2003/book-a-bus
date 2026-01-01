@@ -21,14 +21,20 @@ const dashboardService = {
                         gte: startOfMonth(now),
                         lte: endOfMonth(now)
                     },
+
+                    status: BookingStatus.CONFIRMED
                 },
             }),
 
             prisma.ticket.count({
                 where: {
-                    createdAt: {
-                        gte: startOfDay(now),
-                        lte: endOfDay(now)
+                    booking: {
+                        // Lọc Ticket dựa trên thông tin của Booking sở hữu nó
+                        createdAt: {
+                            gte: startOfDay(now),
+                            lte: endOfDay(now)
+                        },
+                        status: BookingStatus.CONFIRMED
                     }
                 }
             }),
@@ -45,7 +51,7 @@ const dashboardService = {
                 },
             }),
             // Số vé ngày hôm qua
-            prisma.ticket.count({
+            prisma.booking.count({
                 where: {
                     createdAt: {
                         gte: startOfDay(yesterday),
@@ -76,13 +82,14 @@ const dashboardService = {
     },
 
     weeklyChart: async() => {
-        const sevenDaysAgo = subDays(new Date(), 6);
+        const sevenDaysAgo = startOfDay(subDays(new Date(), 6));
         const rawData = await prisma.$queryRaw`
         SELECT
-            DATE("createdAt") AS date,
-            COALESCE(SUM(price), 0) AS revenue
-        FROM "Ticket"
+            DATE_TRUNC('day', "createdAt") AS date,
+            SUM("totalAmount")::FLOAT AS revenue
+        FROM "Booking"
         WHERE "createdAt" BETWEEN ${sevenDaysAgo} AND ${new Date()}
+            AND "status" = 'CONFIRMED'
         GROUP BY date
         `
 
@@ -224,6 +231,8 @@ const dashboardService = {
             }),
         ]);
 
+        const totalRevenue = Number(totalAllTime?._sum?.totalAmount || 0)
+
         const revenue = Number(thisMonth?._sum?.totalAmount || 0)
         const lastMonthRevenue = Number(lastMonth?._sum?.totalAmount || 0);
 
@@ -245,7 +254,7 @@ const dashboardService = {
             : (refundThisMonth > 0 ? 100 : 0);
 
         return {
-            revenue,
+            revenue: totalRevenue,
             revenueGrowth: Number(revenueGrowth.toFixed(2)),
             successfulBooking,
             successfulBookingGrowth: Number(successfulBookingGrowth.toFixed(2)),

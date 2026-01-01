@@ -1,6 +1,10 @@
 import { Search } from 'lucide-react';
 
-export default function RouteSearchBar() {
+interface RouteSearchBarProps {
+  onSearch: (value: string) => void; // Hàm callback để báo cho cha biết dữ liệu đã thay đổi
+}
+
+export default function RouteSearchBar({onSearch}: RouteSearchBarProps) {
   return (
     <div className="flex items-center w-full bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden transition duration-300 focus-within:shadow-md focus-within:border-blue-400">
       
@@ -9,8 +13,8 @@ export default function RouteSearchBar() {
       <input
         type="text"
         placeholder="Tìm kiếm theo tên tuyến hoặc thành phố..."
-
         className="grow px-4 py-3 text-base placeholder-gray-500 text-gray-700 focus:outline-none"
+        onChange={(e) => onSearch(e.target.value)}
       />
     </div>
   );

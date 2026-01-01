@@ -8,7 +8,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-import type { WeeklyChartData } from "@/types/admin/dashboard";
+import type { WeeklyChartData } from "@/types/dashboard";
 interface WeeklyChartProps {
   data: WeeklyChartData[];
 }

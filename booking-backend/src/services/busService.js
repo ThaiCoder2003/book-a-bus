@@ -2,43 +2,32 @@ const validatePayload = require("../utils/validate");
 const prisma = require("../configs/db");
 
 const busService = {
-  getBuses: async (type, page = 1, limit = 10) => {
-    const whereCondition = {};
-
-    if (type) {
-      whereCondition.type = type;
-    }
-
-    const pageNumber = parseInt(page) || 1;
-    const pageSize = parseInt(limit) || 10;
-    const skip = (pageNumber - 1) * pageSize;
-
+getBuses: async (searchTerm) => {
     const [buses, total] = await Promise.all([
-      prisma.bus.findMany({
-        where,
+        prisma.bus.findMany({
+            where: searchTerm
+      ? {
+          OR: [
+            { name: { contains: searchTerm, mode: 'insensitive' } },
+            { plateNumber: { contains: searchTerm, mode: 'insensitive' } },
+          ],
+        }
+      : undefined,
         include: {
-          seats: true,
-          trips: true,
+          _count: {
+            select: {
+              trips: true,
+              seats: true // Thêm cái này để FE biết xe đã vẽ sơ đồ chưa
+            }
+          }
         },
-        skip,
-        take: pageSize,
+        orderBy: { name: 'asc' }
       }),
-      prisma.trip.count({
-        where, // Đếm dựa trên cùng điều kiện lọc
-      }),
+      prisma.bus.count({ where: whereCondition }),
     ]);
 
-    return {
-      data: buses,
-      pagination: {
-        page: pageNumber,
-        limit: pageSize,
-        totalItems: total,
-        totalPages: Math.ceil(total / pageSize),
-      },
-    };
+    return { buses, total };
   },
-
   getBusById: async (busId) => {
     return prisma.bus.findUnique({
       where: { id: busId },

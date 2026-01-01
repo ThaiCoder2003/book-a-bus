@@ -92,7 +92,6 @@ export const TransactionTable = ({
 
                 <td className="px-6 py-4 text-center whitespace-nowrap">
                   <button
-                    disabled={b.status !== "CONFIRMED"}
                     onClick={() => onViewDetail(b)}
                     className={`p-2 rounded-lg
                       ${
