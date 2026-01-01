@@ -11,16 +11,19 @@ import {
   CreditCard,
   Bell,
   Bot,
+  SquareParking,
 } from "lucide-react";
 
 // -----------------------------------------------------------
 // 1. ICON
 // -----------------------------------------------------------
-const getLucideIcon = (name) => {
+const getLucideIcon = (name: string) => {
   switch (name) {
     case "Tổng quan":
       return <LayoutDashboard className="h-5 w-5" />;
-    case "Tuyến đường & Điểm dừng":
+    case "Điểm dừng":
+      return <SquareParking className="h-5 w-5" />;
+    case "Tuyến đường":
       return <Map className="h-5 w-5" />;
     case "Lịch trình Chuyến đi":
       return <CalendarDays className="h-5 w-5" />;
@@ -60,7 +63,8 @@ const AdminMenus = [
   {
     title: "Quản lý Vận hành",
     items: [
-      { name: "Tuyến đường & Điểm dừng", path: "/admin/routes" },
+      { name: "Điểm dừng", path: "/admin/stops" },
+      { name: "Tuyến đường", path: "/admin/routes" },
       { name: "Lịch trình Chuyến đi", path: "/admin/trips" },
       { name: "Đội xe & Cấu hình Ghế", path: "/admin/fleets" },
     ],

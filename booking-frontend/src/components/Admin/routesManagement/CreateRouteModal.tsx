@@ -1,333 +1,269 @@
 "use client";
 
-import { useState } from "react";
-import Button from "../ui/Button";
-import { Input } from "../ui/Input";
-import { Card } from "../ui/Card";
-import { Badge } from "../ui/Badge";
-import { X, Plus, Trash2, Clock, MapPin, Navigation } from "lucide-react";
-
-// Import types của bạn (Giả định path)
-import type { Route } from "@/types/route.type";
-import type { RouteStation } from "@/types/RouteStation.type";
-
-interface CreateRouteModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
-
-// Component con hiển thị từng trạm trong tuyến
-interface StopItemProps {
-  stop: Partial<
-    RouteStation & { name: string; address: string; province: string }
-  >;
-  idx: number;
-  totalStops: number;
-  updateStop: (idx: number, field: string, value: any) => void;
-  removeStop: (idx: number) => void;
-}
-
-const StopItem: React.FC<StopItemProps> = ({
-  stop,
-  idx,
-  totalStops,
-  updateStop,
-  removeStop,
-}) => {
-  const isStart = idx === 0;
-  const isEnd = idx === totalStops - 1;
-
-  return (
-    <div className="p-4 border rounded-lg space-y-3 relative shadow-sm bg-white">
-      <div className="flex justify-between items-start">
-        <div className="flex items-center gap-3">
-          <div
-            className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold ${
-              isStart
-                ? "bg-green-600 text-white"
-                : isEnd
-                ? "bg-red-600 text-white"
-                : "bg-blue-600 text-white"
-            }`}
-          >
-            {idx + 1}
-          </div>
-          <div>
-            <p className="font-semibold text-base">
-              {isStart
-                ? "Điểm khởi hành"
-                : isEnd
-                ? "Điểm kết thúc"
-                : `Trạm dừng số ${idx + 1}`}
-            </p>
-          </div>
-        </div>
-
-        {totalStops > 2 && (
-          <button
-            type="button"
-            onClick={() => removeStop(idx)}
-            className="p-2 hover:bg-red-50 text-red-600 rounded transition-colors"
-          >
-            <Trash2 size={16} />
-          </button>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <Input
-          placeholder="Tên trạm (VD: Bến xe Miền Đông)"
-          value={stop.name || ""}
-          onChange={(e) => updateStop(idx, "name", e.target.value)}
-        />
-        <Input
-          placeholder="Địa chỉ chi tiết"
-          value={stop.address || ""}
-          onChange={(e) => updateStop(idx, "address", e.target.value)}
-          icon={<MapPin size={16} />}
-        />
-      </div>
-
-      <div className="grid grid-cols-3 gap-3 pt-2">
-        {/* Distance From Start */}
-        <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">
-            Khoảng cách từ điểm đầu
-          </label>
-          <div className="relative">
-            <Input
-              type="number"
-              disabled={isStart}
-              placeholder={isStart ? "0" : "Số km"}
-              value={isStart ? 0 : stop.distanceFromStart}
-              onChange={(e) =>
-                updateStop(idx, "distanceFromStart", Number(e.target.value))
-              }
-              className="pr-10"
-            />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">
-              km
-            </span>
-          </div>
-        </div>
-
-        {/* Duration From Start */}
-        <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">
-            TG di chuyển từ điểm đầu
-          </label>
-          <div className="relative">
-            <Input
-              type="number"
-              disabled={isStart}
-              placeholder={isStart ? "0" : "Số phút"}
-              value={isStart ? 0 : stop.durationFromStart}
-              onChange={(e) =>
-                updateStop(idx, "durationFromStart", Number(e.target.value))
-              }
-              className="pr-10"
-            />
-            <Clock
-              size={14}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
-            />
-          </div>
-        </div>
-
-        {/* Price From Start (Optional) */}
-        <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">
-            Giá vé từ điểm đầu
-          </label>
-          <div className="relative">
-            <Input
-              type="number"
-              disabled={isStart}
-              placeholder="VNĐ"
-              value={isStart ? 0 : stop.priceFromStart}
-              onChange={(e) =>
-                updateStop(idx, "priceFromStart", Number(e.target.value))
-              }
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
+import React, { useState } from "react";
+import { X, Plus, Trash2 } from "lucide-react";
+import type { Station } from "@/types/station.type";
+import { mockStations } from "@/data/mockStations"; // Giả định path chứa file của bạn
+import type { RouteStationForm } from "@/types/routeStationForm.type";
 export default function CreateRouteModal({
   isOpen,
   onClose,
-}: CreateRouteModalProps) {
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+}) {
   const [routeName, setRouteName] = useState("");
-
-  // State lưu trữ mảng RouteStation mở rộng thêm thông tin Station để hiển thị UI
-  const [stops, setStops] = useState<any[]>([
-    {
-      name: "",
-      address: "",
-      province: "",
-      distanceFromStart: 0,
-      durationFromStart: 0,
-      priceFromStart: 0,
-      order: 1,
-    },
-    {
-      name: "",
-      address: "",
-      province: "",
-      distanceFromStart: 0,
-      durationFromStart: 0,
-      priceFromStart: 0,
-      order: 2,
-    },
-  ]);
+  const [stops, setStops] = useState<RouteStationForm[]>([]);
 
   const addStop = () => {
     setStops([
       ...stops,
       {
-        name: "",
-        address: "",
-        province: "",
+        stationId: "",
+        order: stops.length + 1,
         distanceFromStart: 0,
         durationFromStart: 0,
         priceFromStart: 0,
-        order: stops.length + 1,
       },
     ]);
   };
 
   const removeStop = (index: number) => {
-    const newStops = stops.filter((_, i) => i !== index);
-    setStops(newStops.map((s, i) => ({ ...s, order: i + 1 })));
+    setStops(stops.filter((_, i) => i !== index));
   };
 
-  const updateStop = (index: number, field: string, value: any) => {
-    const newStops = [...stops];
-    newStops[index][field] = value;
-    setStops(newStops);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Format dữ liệu theo đúng Interface Route của bạn trước khi gửi API
-    const routeData: Partial<Route> = {
-      name: routeName,
-      stops: stops.map((s, index) => ({
+  const updateStop = <K extends keyof RouteStationForm>(
+    index: number,
+    field: K,
+    value: RouteStationForm[K],
+  ) => {
+    setStops((prev) => {
+      const next = [...prev];
+      next[index] = {
+        ...next[index],
+        [field]: value,
         order: index + 1,
-        distanceFromStart: s.distanceFromStart,
-        durationFromStart: s.durationFromStart,
-        priceFromStart: s.priceFromStart,
-        station: {
-          name: s.name,
-          address: s.address,
-          province: s.province,
-        },
-      })) as any,
-    };
-
-    console.log("Dữ liệu gửi đi:", routeData);
-    onClose();
+      };
+      return next;
+    });
   };
+
+  // Tính toán số liệu thống kê
+  const totalDistance = stops.reduce(
+    (sum, s) => sum + Number(s.distanceFromStart || 0),
+    0,
+  );
+  const totalDuration = stops.reduce(
+    (sum, s) => sum + Number(s.durationFromStart || 0),
+    0,
+  );
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col bg-gray-50 rounded-xl">
+    <div className="fixed inset-0 rounded-3x1 bg-black/50 flex items-center justify-center z-50 p-4 ">
+      <div className="bg-white w-full max-w-[500px] rounded-3x1 shadow-2xl flex flex-col font-sans overflow-hidden">
         {/* Header */}
-        <div className="p-6 bg-white border-b flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-gray-900">
-            Thiết lập lộ trình tuyến
+        <div className="p-6 pb-2 flex justify-between items-center">
+          <h2 className="text-[22px] font-bold text-[#111827]">
+            Tạo Tuyến Mới
           </h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full"
+            className="text-gray-400 hover:text-gray-600"
           >
-            <X size={24} />
+            <X size={22} />
           </button>
         </div>
 
-        <form
-          onSubmit={handleSubmit}
-          className="flex-1 overflow-y-auto p-6 space-y-6"
-        >
-          {/* Tên tuyến */}
-          <div className="bg-white p-4 rounded-lg border shadow-sm">
-            <label className="block text-sm font-semibold mb-2">
-              Tên tuyến đường
+        <div className="flex-1 overflow-y-auto px-6 py-2 space-y-6 max-h-[75vh] custom-scrollbar">
+          {/* Tên tuyến đường */}
+          <div className="space-y-2">
+            <label className="text-[15px] font-semibold text-gray-700">
+              Tên Tuyến Đường
             </label>
-            <Input
-              placeholder="Ví dụ: Hà Nội - Sài Gòn (Cao tốc)"
+            <input
+              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-[15px] focus:outline-none focus:border-blue-500 transition-all placeholder:text-gray-400"
+              placeholder="VD: Hà Nội - Sài Gòn"
               value={routeName}
               onChange={(e) => setRouteName(e.target.value)}
-              className="text-lg font-medium"
             />
           </div>
 
-          {/* Stats Overview */}
-          <div className="grid grid-cols-3 gap-4">
-            <div className="bg-blue-600 p-4 rounded-lg text-white">
-              <p className="text-xs opacity-80">Tổng chiều dài</p>
-              <p className="text-2xl font-bold">
-                {stops[stops.length - 1]?.distanceFromStart || 0} km
+          {/* Panel Thống kê - Giống ảnh 100% */}
+          <div className="grid grid-cols-3 gap-1 bg-gray-50/80 p-4 rounded-[20px] border border-gray-100">
+            <div className="text-center">
+              <p className="text-[11px] font-medium text-gray-500 mb-1 leading-tight">
+                Tổng Quãng Đường
+              </p>
+              <p className="text-[18px] font-bold text-blue-600">
+                {totalDistance} km
               </p>
             </div>
-            <div className="bg-orange-500 p-4 rounded-lg text-white">
-              <p className="text-xs opacity-80">Tổng thời gian dự kiến</p>
-              <p className="text-2xl font-bold">
-                {stops[stops.length - 1]?.durationFromStart || 0} phút
+            <div className="text-center border-x border-gray-200">
+              <p className="text-[11px] font-medium text-gray-500 mb-1 leading-tight">
+                Tổng Thời Gian
+              </p>
+              <p className="text-[18px] font-bold text-orange-600">
+                {totalDuration} phút
               </p>
             </div>
-            <div className="bg-white p-4 rounded-lg border border-gray-200">
-              <p className="text-xs text-gray-500">Số trạm dừng</p>
-              <p className="text-2xl font-bold text-gray-800">{stops.length}</p>
+            <div className="text-center">
+              <p className="text-[11px] font-medium text-gray-500 mb-1 leading-tight">
+                Số Trạm
+              </p>
+              <p className="text-[18px] font-bold text-green-600">
+                {stops.length}
+              </p>
             </div>
           </div>
 
-          {/* List trạm */}
+          {/* Danh sách trạm */}
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <h3 className="font-bold text-lg">Danh sách các trạm dừng</h3>
-              <Button
-                type="button"
+              <h3 className="font-bold text-[16px] text-gray-800">
+                Danh Sách Trạm Dừng
+              </h3>
+              <button
                 onClick={addStop}
-                variant="outline"
-                className="gap-2 border-blue-600 text-blue-600"
+                className="flex items-center gap-1 text-blue-600 font-bold text-[14px] hover:opacity-80"
               >
-                <Plus size={16} /> Thêm trạm trung gian
-              </Button>
+                <Plus size={16} strokeWidth={3} /> Thêm Trạm
+              </button>
             </div>
 
-            {stops.map((stop, idx) => (
-              <StopItem
-                key={idx}
-                stop={stop}
-                idx={idx}
-                totalStops={stops.length}
-                updateStop={updateStop}
-                removeStop={removeStop}
-              />
-            ))}
-          </div>
-        </form>
+            {stops.length === 0 ? (
+              /* Empty State (Ảnh 2) */
+              <div className="border-2 border-dashed border-gray-200 rounded-2xl py-14 flex flex-col items-center justify-center bg-gray-50/50">
+                <p className="text-gray-500 text-[15px] mb-2">
+                  Chưa có trạm dừng
+                </p>
+                <button
+                  onClick={addStop}
+                  className="text-blue-600 text-[15px] font-bold"
+                >
+                  Thêm trạm đầu tiên
+                </button>
+              </div>
+            ) : (
+              /* Item List (Ảnh 1) */
+              <div className="space-y-4 pb-4">
+                {stops.map((stop, idx) => (
+                  <div
+                    key={idx}
+                    className="p-5 border border-gray-100 rounded-[20px] bg-white shadow-sm space-y-4 relative"
+                  >
+                    <div className="flex justify-between items-center">
+                      <span className="text-[16px] font-bold text-gray-800">
+                        Trạm {idx + 1}
+                      </span>
+                      <button
+                        onClick={() => removeStop(idx)}
+                        className="text-red-500 p-1 hover:bg-red-50 rounded-lg"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
 
-        {/* Footer Actions */}
-        <div className="p-4 bg-white border-t flex justify-end gap-3">
-          <Button variant="outline" onClick={onClose}>
-            Hủy bỏ
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            className="bg-blue-700 hover:bg-blue-800 text-white px-8"
-          >
-            Lưu tuyến đường
-          </Button>
+                    <div className="space-y-1.5">
+                      <label className="text-[13px] font-semibold text-gray-600">
+                        Chọn Trạm Dừng
+                      </label>
+                      <select
+                        className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-[14px] outline-none appearance-none cursor-pointer focus:border-blue-500"
+                        value={stop.stationId}
+                        onChange={(e) =>
+                          updateStop(idx, "stationId", e.target.value)
+                        }
+                        style={{
+                          backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
+                          backgroundRepeat: "no-repeat",
+                          backgroundPosition: "right 1rem center",
+                          backgroundSize: "1em",
+                        }}
+                      >
+                        <option value="">-- Chọn trạm --</option>
+                        {mockStations.map((s: Station) => (
+                          <option key={s.id} value={s.id}>
+                            {s.name} ({s.province})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-gray-400 uppercase leading-tight">
+                          Quãng Đường (km)
+                        </label>
+                        <input
+                          type="number"
+                          className="w-full px-3 py-2 border border-gray-200 rounded-xl text-[15px] outline-none focus:border-blue-500"
+                          value={stop.distanceFromStart}
+                          onChange={(e) =>
+                            updateStop(
+                              idx,
+                              "distanceFromStart",
+                              Number(e.target.value),
+                            )
+                          }
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-gray-400 uppercase leading-tight">
+                          Thời Gian (phút)
+                        </label>
+                        <input
+                          type="number"
+                          className="w-full px-3 py-2 border border-gray-200 rounded-xl text-[15px] outline-none focus:border-blue-500"
+                          value={stop.durationFromStart}
+                          onChange={(e) =>
+                            updateStop(
+                              idx,
+                              "durationFromStart",
+                              Number(e.target.value),
+                            )
+                          }
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-gray-400 uppercase leading-tight">
+                          Giá Khởi đầu (đ)
+                        </label>
+                        <input
+                          type="number"
+                          className="w-full px-3 py-2 border border-gray-200 rounded-xl text-[15px] outline-none focus:border-blue-500"
+                          value={stop.priceFromStart}
+                          onChange={(e) =>
+                            updateStop(
+                              idx,
+                              "priceFromStart",
+                              Number(e.target.value),
+                            )
+                          }
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-      </Card>
+
+        {/* Footer */}
+        <div className="p-6 bg-white flex gap-3 border-t border-gray-50">
+          <button className="flex-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-2xl text-[15px] transition-all shadow-lg shadow-blue-100">
+            Lưu Tuyến Đường
+          </button>
+          <button
+            onClick={onClose}
+            className="flex-1 bg-white border border-gray-200 text-gray-700 font-bold py-3.5 rounded-2xl text-[15px] hover:bg-gray-50"
+          >
+            Hủy
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
