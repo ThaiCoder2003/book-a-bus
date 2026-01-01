@@ -8,7 +8,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-import type { Revenue } from "@/types/admin/dashboard";
+import type { Revenue } from "@/types/dashboard";
 
 interface RevenueChartProps {
   data: Revenue[];

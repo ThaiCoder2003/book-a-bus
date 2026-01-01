@@ -10,7 +10,7 @@ import { TransactionTable } from "../../components/Admin/payment/TransactionTabl
 import TransactionDetailModal from "../../components/Admin/payment/TransactionDetailModal";
 import dashboardService from "@/services/dashboardService";
 
-import type { FinanceAnalysis, Revenue } from "@/types/admin/dashboard";
+import type { FinanceAnalysis, Revenue } from "@/types/dashboard";
 
 import type { Booking } from "../../types/booking.type";
 

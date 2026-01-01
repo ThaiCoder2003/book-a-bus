@@ -1,24 +1,36 @@
 import { MapPin, Trash2 } from "lucide-react";
 import CustomTooltip from "./CustomTooltip";
 import type { Route } from "@/types/route.type";
+import routeService from "@/services/routeService";
 
 interface Props {
   route: Route;
   onViewDetails: (routeId: string) => void;
+  onDeleteSuccess: () => void;
 }
 
-export default function RouteTableRow({ route, onViewDetails }: Props) {
-  const stops = route.stops ?? [];
 
-  const start = stops[0]?.station?.name ?? "-";
-  const end = stops.at(-1)?.station?.name ?? "-";
 
+export default function RouteTableRow({ route, onViewDetails, onDeleteSuccess }: Props) {
+  const handleDelete = async () => {
+    if (window.confirm(`Bạn có chắc chắn muốn xóa tuyến: ${route.name}? Tất cả chuyến xe thuộc tuyến này cũng sẽ bị xóa!`)) {
+      try {
+        // Gọi API xóa của bạn ở đây
+        await routeService.delete(route.id);
+        
+        // Quan trọng: Phải gọi lại hàm fetchData() ở trang cha để cập nhật lại bảng
+        onDeleteSuccess();
+      } catch (error) {
+        alert("Không thể xóa tuyến đường này!");
+      }
+    }
+  };
   return (
     <tr className="border-b hover:bg-gray-50">
       <td className="px-3 py-4 font-medium">{route.name}</td>
-      <td className="px-3 py-4">{start}</td>
-      <td className="px-3 py-4">{end}</td>
-      <td className="px-3 py-4 text-center">{stops.length}</td>
+      <td className="px-3 py-4">{route.startLocation ?? "Chưa xác định"}</td>
+      <td className="px-3 py-4">{route.endLocation ?? "Chưa xác định"}</td>
+      <td className="px-3 py-4 text-center"><span className="font-semibold">{route._count?.route_station ?? 0}</span> trạm</td>
 
       <td className="px-3 py-4 text-center">
         <div className="flex justify-center gap-3">
@@ -32,7 +44,7 @@ export default function RouteTableRow({ route, onViewDetails }: Props) {
           </CustomTooltip>
 
           <CustomTooltip content="Xóa tuyến đường">
-            <button className="p-1 hover:bg-red-50 rounded text-red-500">
+            <button onClick={handleDelete} className="p-1 hover:bg-red-50 rounded text-red-500">
               <Trash2 className="w-4 h-4" />
             </button>
           </CustomTooltip>

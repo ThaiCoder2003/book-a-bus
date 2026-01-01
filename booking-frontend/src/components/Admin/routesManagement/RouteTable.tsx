@@ -4,9 +4,11 @@ import type { Route } from "@/types/route.type";
 interface RouteTableProps {
   routes: Route[];
   onViewDetails: (routeId: string) => void;
+  totalItems: number;
+  onDeleteSuccess: () => void;
 }
 
-export default function RouteTable({ routes, onViewDetails }: RouteTableProps) {
+export default function RouteTable({ routes, onViewDetails, totalItems, onDeleteSuccess }: RouteTableProps) {
   return (
     <div className="bg-white border rounded-lg shadow-sm overflow-hidden">
       <table className="w-full text-sm">
@@ -26,13 +28,14 @@ export default function RouteTable({ routes, onViewDetails }: RouteTableProps) {
               key={route.id}
               route={route}
               onViewDetails={onViewDetails}
+              onDeleteSuccess={onDeleteSuccess}
             />
           ))}
         </tbody>
       </table>
 
       <div className="text-sm text-gray-500 p-3">
-        Hiển thị {routes.length}/{routes.length} tuyến đường
+        Hiển thị {routes.length} trên tổng số {totalItems} tuyến đường
       </div>
     </div>
   );

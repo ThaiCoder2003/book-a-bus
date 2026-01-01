@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import dashboardService from "@/services/dashboardService";
 
 import type { TransactionUI } from "@/types/ui/transaction.ui";
-import type { DashboardSummary, WeeklyChartData } from "@/types/admin/dashboard";
+import type { DashboardSummary, WeeklyChartData } from "@/types/dashboard";
   export default function DashboardPage() {
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [weeklyData, setWeeklyData] = useState<WeeklyChartData[]>([]);
@@ -50,7 +50,7 @@ import type { DashboardSummary, WeeklyChartData } from "@/types/admin/dashboard"
         <MetricCard
           title="Total Revenue"
           value={summary?.revenue ?? 0}
-          subtitle={`${(summary?.revenueGrowth ?? 0) > 0 ? '+' : ''}${summary?.revenueGrowth}% from last month`}
+          subtitle={`${(summary?.revenueGrowth ?? 0) > 0 ? '+' : ''}${summary?.revenueGrowth ?? 0}% from last month`}
           valueColor="text-blue-600"
           formatter={(val) => `${val.toLocaleString("vi-VN")} đ`}
         />
@@ -58,7 +58,7 @@ import type { DashboardSummary, WeeklyChartData } from "@/types/admin/dashboard"
         <MetricCard
           title="Tickets Sold"
           value={summary?.tickets ?? 0}
-          subtitle={`${(summary?.ticketGrowth ?? 0) > 0 ? '+' : ''}${summary?.ticketGrowth}% from yesterday`}
+          subtitle={`${(summary?.ticketGrowth ?? 0) > 0 ? '+' : ''}${summary?.ticketGrowth ?? 0}% from yesterday`}
           valueColor="text-orange-500"
         />
 

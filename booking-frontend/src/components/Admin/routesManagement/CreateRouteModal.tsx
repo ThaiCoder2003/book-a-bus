@@ -174,7 +174,7 @@ export default function CreateRouteModal({
       order: 1,
     },
     {
-      name: "",
+      name: "", 
       address: "",
       province: "",
       distanceFromStart: 0,

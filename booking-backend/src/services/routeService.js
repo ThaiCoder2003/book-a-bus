@@ -8,39 +8,59 @@ function throwError(message, statusCode) {
 }
 
 const routeService = {
-  findAllRoutes: async () => {
-    return prisma.route.findMany({
-      include: {
-        // dem so stop trong route
-        _count: { select: { stops: true, trips: true } },
-      },
-    });
-  },
-
-  findRoutesByStations: async (fromStationId, toStationId) => {
-    const routes = await prisma.route.findMany({
-      where: {
-        stops: {
-          some: { stationId: fromStationId },
-        },
-        AND: {
-          stops: {
-            some: { stationId: toStationId },
+  findRoutes: async (query, page = 1, limit = 10) => {
+    const skip = (page - 1) * limit;
+    const [routes, total] = await prisma.$transaction([
+      prisma.route.findMany({
+        where: query ? 
+        {
+          name: { contains: query, mode: 'insensitive' }
+        }
+      : undefined,
+        skip,
+        take: limit,
+        include: {
+          route_station: {
+            include: { station: true },
+            orderBy: { order: 'asc' }
           },
+          trips: true,
+          _count: {
+            select: {
+              route_station: true,
+              trips: true
+            }
+          }
         },
-      },
-      include: {
-        // dem so stop trong route
-        _count: { select: { stops: true, trips: true } },
-        stops: true,
-      },
+      }),
+
+      prisma.route.count({
+        where: query ? 
+        {
+          name: { contains: query, mode: 'insensitive' }
+        }
+        : undefined}
+      )
+    ])
+
+    const formattedRoutes = routes.map(route => {
+      const stops = route.route_station;
+      return {
+        ...route,
+        startLocation: stops.length > 0 ? stops[0].station.name : "N/A",
+        endLocation: stops.length > 0 ? stops[stops.length - 1].station.name : "N/A",
+      };
     });
 
-    return routes.filter((route) => {
-      const from = route.stops.find((s) => s.stationId === fromStationId);
-      const to = route.stops.find((s) => s.stationId === toStationId);
-      return from && to && from.order < to.order;
-    });
+    return {
+      routes: formattedRoutes,
+      pagination: {
+        total,
+        page: Number(page),
+        limit: Number(limit),
+        totalPages: Math.ceil(total / limit)
+      }
+    };
   },
 
   getRouteById: async (id) => {
@@ -48,22 +68,97 @@ const routeService = {
       where: { id: id },
       include: {
         trips: true,
-        stops: {
-          orderBy: { order: "asc" },
-          include: { station: true },
-        },
+        route_station: {
+          include: {
+            station: true // <--- Phải có dòng này mới lấy được tên, địa chỉ trạm
+          },
+          orderBy: {
+            order: 'asc' // <--- Sắp xếp luôn từ Backend cho tiện
+          }
+        }
       },
     });
+    
     if (!route) throwError("Route not found", 404);
+
+    // Map lại thành 'stops' để khớp với Interface Frontend của bạn
+    return {
+      ...route,
+      stops: route.route_station
+    };
+  },
+  
+  createRouteWithStops: async (
+    tx,
+    payload
+  ) => {
+    const { name, stops } = payload;
+
+    if (!name || !Array.isArray(stops) || stops.length < 2) {
+      throwError("Route must have at least 2 stops", 400);
+    }
+
+    // 1️⃣ Validate order: phải là 1..n, không nhảy cóc
+    const orders = stops.map(s => s.order).sort((a, b) => a - b);
+
+    for (let i = 0; i < orders.length; i++) {
+      if (orders[i] !== i + 1) {
+        throwError("Stop orders must be sequential starting from 1", 400);
+      }
+    }
+
+    // 2️⃣ Tạo route
+    const route = await tx.route.create({
+      data: { name },
+    });
+
+    // 3️⃣ Tạo toàn bộ stops (KHÔNG shift order)
+    for (const stop of stops) {
+      const {
+        stationId,
+        order,
+        durationFromStart = 0,
+        distanceFromStart = 0,
+        price = 0,
+      } = stop;
+
+      // check station
+      const station = await tx.station.findUnique({
+        where: { id: stationId },
+      });
+      if (!station) {
+        throwError(`Station not found: ${stationId}`, 404);
+      }
+
+      // rule: stop đầu
+      if (
+        order === 1 &&
+        (durationFromStart !== 0 ||
+          distanceFromStart !== 0 ||
+          price !== 0)
+      ) {
+        throwError(
+          "For the first stop, durationFromStart, distanceFromStart and price must be 0",
+          400
+        );
+      }
+
+      await tx.route_Station.create({
+        data: {
+          routeId: route.id,
+          stationId,
+          order,
+          durationFromStart,
+          distanceFromStart,
+          price,
+        },
+      });
+    }
+
     return route;
   },
 
-  registerNewRoute: async (data) => {
-    await validatePayload.validateRoutePayload(data, { requireAll: true });
-    return prisma.route.create({ data });
-  },
-
-  createNewStop: async (data) => {
+  createNewStop: async (data, { skipOrderShift = false } = {}) => {
     const {
       routeId,
       stationId,
@@ -83,14 +178,14 @@ const routeService = {
     }
 
     // 2. Check station
-    const station = await prisma.station.findUnique({
+    const station = await prisma.station.findFirst({
       where: { id: stationId },
     });
     if (!station) {
       throwError("Station not found", 404);
     }
     // 4. check duplicate station in same route
-    const stationExists = await prisma.routeStop.findFirst({
+    const stationExists = await prisma.route_Station.findFirst({
       where: { routeId, stationId },
     });
     if (stationExists) {
@@ -116,20 +211,31 @@ const routeService = {
     }
     return prisma.$transaction(async (tx) => {
       // 6. Before creating, move all the orders >= this order up by 1
-      await tx.routeStop.updateMany({
-        where: {
-          routeId,
-          order: { gte: order },
-        },
-        data: {
-          order: { increment: 1 },
-        },
-      });
+      if (!skipOrderShift) {
+        const maxOrder = await prisma.route_Station.aggregate({
+          where: { routeId },
+          _max: { order: true },
+        });
 
-      return tx.routeStop.create({
+        if (order > (maxOrder._max.order ?? 0) + 1) {
+          throwError("Order is out of range", 400);
+        }
+
+        await tx.route_Station.updateMany({
+          where: {
+            routeId,
+            order: { gte: order },
+          },
+          data: {
+            order: { increment: 1 },
+          },
+        });
+      }
+
+      return tx.route_Station.create({
         data: {
           routeId,
-          stationId,
+          stationId: station.id,
           order,
           durationFromStart: durationFromStart ?? 0,
           distanceFromStart: distanceFromStart ?? 0,
@@ -139,97 +245,27 @@ const routeService = {
     });
   },
 
-  updateStop: async (stopId, data) => {
-    const { order, arrivalTime, departureTime, stationId } = data;
-
-    // 2. Nếu đổi station → check station tồn tại
-
-    if (order && order == 0) {
-      throwError("Order must be >= 1", 400);
-    }
-
-    // 4. Update
-    return prisma.$transaction(async (tx) => {
-      const existing = await tx.routeStop.findUnique({ where: { id: stopId } });
-
-      if (!existing) {
-        throwError("Stop not found", 404);
-      }
-
-      const routeId = existing.routeId;
-      const oldOrder = existing.order;
-
-      if (stationId) {
-        const station = await tx.station.findUnique({
-          where: { id: stationId },
-        });
-
-        if (!station) {
-          throwError("Station not found", 404);
-        }
-      }
-
-      // Handle reorder
-      if (order !== undefined && order !== oldOrder) {
-        if (order > oldOrder) {
-          // Kéo các stop ở giữa xuống
-          await tx.routeStop.updateMany({
-            where: {
-              routeId,
-              order: { gt: oldOrder, lte: order },
-            },
-            data: {
-              order: { decrement: 1 },
-            },
-          });
-        } else {
-          // Đẩy các stop ở giữa lên
-          await tx.routeStop.updateMany({
-            where: {
-              routeId,
-              order: { gte: order, lt: oldOrder },
-            },
-            data: {
-              order: { increment: 1 },
-            },
-          });
-        }
-      }
-
-      return tx.routeStop.update({
-        where: { id: stopId },
-        data: { ...data },
-      });
-    });
-  },
-
-  updateRoute: async (id, data) => {
-    const exists = await prisma.route.findUnique({ where: { id } });
-    if (!exists) {
-      const err = new Error("Not found: Route not found");
-      err.statusCode = 404;
-      throw err;
-    }
-
-    await validatePayload.validateRoutePayload(data, {
-      requireAll: false,
-      existingRoute: exists,
-    });
-    return prisma.route.update({
-      where: { id },
-      data,
-    });
-  },
-
   deleteRoute: async (id) => {
     const exists = await prisma.route.findUnique({ where: { id } });
-    if (!exists) {
-      const err = new Error("Not found: Route not found");
-      err.statusCode = 404;
-      throw err;
-    }
+    if (!exists) throwError("Route not found", 404);
 
-    return prisma.route.delete({ where: { id } });
+    // Dùng $transaction để đảm bảo tính toàn vẹn dữ liệu
+    return prisma.$transaction(async (tx) => {
+      // 1. Xóa tất cả các trạm dừng thuộc tuyến này
+      await tx.route_Station.deleteMany({
+        where: { routeId: id }
+      });
+
+      // 2. Xóa tất cả các chuyến xe thuộc tuyến này (Cẩn thận: nếu có vé thì phải xóa vé trước nữa)
+      await tx.trip.deleteMany({
+        where: { routeId: id }
+      });
+
+      // 3. Cuối cùng mới xóa Tuyến đường
+      return tx.route.delete({
+        where: { id }
+      });
+    });
   },
 };
 
