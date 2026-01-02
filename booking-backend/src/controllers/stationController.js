@@ -4,28 +4,10 @@ const handleError = require('../utils/handleError')
 const stationController = {
     getAllStations: async (req, res) => {
         try {
-            const { province, page, limit } = req.query
-            const result = await stationService.getStations(
-                province,
-                page,
-                limit
-            )
+            const result = await stationService.getStations()
             res.status(200).json({
                 message: 'Get station list successfully',
-                data: result
-            })
-        } catch (error) {
-            handleError(res, error)
-        }
-    },
-
-    getStationById: async (req, res) => {
-        try {
-            const { id } = req.params
-            const result = await stationService.getStationById(id)
-
-            res.status(200).json({
-                data: result
+                result
             })
         } catch (error) {
             handleError(res, error)
@@ -35,10 +17,10 @@ const stationController = {
     registerNewStation: async (req, res) => {
         try {
             const data = req.body
-            const newTrip = await stationService.registerNewStation(data)
+            const newStation = await stationService.registerNewStation(data)
             return res.status(201).json({
                 message: 'Station created successfully',
-                trip: newTrip,
+                station: newStation,
             })
         } catch (error) {
             handleError(res, error)
@@ -52,7 +34,7 @@ const stationController = {
             return res.status(200).json({
                 success: true,
                 message: 'Station updated successfully',
-                data: updated,
+                station: updated,
             })
         } catch (error) {
             handleError(res, error)

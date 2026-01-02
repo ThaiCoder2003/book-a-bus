@@ -7,6 +7,7 @@ interface Props {
   initialData?: Station | null;
   onSubmit: (data: Omit<Station, "id">) => void;
   onCancel: () => void;
+  isLoading?: boolean
 }
 
 export const StationForm = ({
@@ -14,6 +15,7 @@ export const StationForm = ({
   initialData,
   onSubmit,
   onCancel,
+  isLoading = false
 }: Props) => {
   const [name, setName] = React.useState(initialData?.name ?? "");
   const [address, setAddress] = React.useState(initialData?.address ?? "");
@@ -33,6 +35,7 @@ export const StationForm = ({
           </p>
         </div>
         <button
+          disabled={isLoading}
           onClick={onCancel}
           className="p-1 hover:bg-gray-100 rounded-full transition-colors"
         >
@@ -80,12 +83,14 @@ export const StationForm = ({
       {/* Action buttons: Đẩy sát xuống dưới */}
       <div className="flex gap-2.5 mt-2">
         <button
+          disabled={isLoading}
           className="flex-1 bg-[#121212] text-white rounded-xl py-3 text-[15px] font-bold hover:bg-black transition-colors"
           onClick={() => onSubmit({ name, address, province })}
         >
           {mode === "create" ? "Tạo" : "Cập nhật"}
         </button>
         <button
+          disabled={isLoading}
           className="px-5 py-3 rounded-xl border border-gray-200 text-[15px] font-semibold hover:bg-gray-50 transition-colors"
           onClick={onCancel}
         >

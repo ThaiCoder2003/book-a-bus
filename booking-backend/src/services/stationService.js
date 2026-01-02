@@ -2,68 +2,16 @@ const { validateStationPayload } = require('../utils/validate')
 const prisma = require('../configs/db')
 
 const stationService = {
-    getStations: async (province, page = 1, limit = 10) => {
-        const where = {}
-
-        if (province) {
-            where.province = province
-        }
-
-        const pageNum = parseInt(page) || 1
-        const size = parseInt(limit) || 10
-        const skip = (pageNum - 1) * size
-
+    getStations: async () => {
         const [stations, total] = await Promise.all([
-            prisma.station.findMany({
-                where,
-                include: {
-                    arrivingTrips: true,
-                    departingTrips: true,
-                },
-                skip,
-                take: size,
-            }),
-            prisma.station.count({
-                where, // Đếm dựa trên cùng điều kiện lọc
-            }),
+            prisma.station.findMany(),
+            prisma.station.count(),
         ])
 
         return {
-            data: stations,
-            pagination: {
-                page: pageNum,
-                limit: size,
-                totalItems: total,
-                totalPages: Math.ceil(total / size),
-            },
+            stations,
+            stationNumber: total
         }
-    },
-
-    findStationIdsByKeyword: async (keyword) => {
-        if (!keyword) return []
-
-        const stations = await prisma.station.findMany({
-            where: {
-                OR: [
-                    { name: { contains: keyword, mode: 'insensitive' } },
-                    { province: { contains: keyword, mode: 'insensitive' } },
-                    { address: { contains: keyword, mode: 'insensitive' } },
-                ],
-            },
-            select: { id: true },
-        })
-
-        return stations.map((s) => s.id)
-    },
-
-    getStationById: async (id) => {
-        return prisma.station.findUnique({
-            where: { id },
-            include: {
-                arrivingTrips: true,
-                departingTrips: true,
-            },
-        })
     },
 
     registerNewStation: async (data) => {
