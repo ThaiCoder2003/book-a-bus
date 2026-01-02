@@ -88,10 +88,7 @@ const routeService = {
     };
   },
   
-  createRouteWithStops: async (
-    tx,
-    payload
-  ) => {
+  createRouteWithStops: async (payload) => {
     const { name, stops } = payload;
 
     if (!name || !Array.isArray(stops) || stops.length < 2) {
@@ -107,55 +104,27 @@ const routeService = {
       }
     }
 
-    // 2️⃣ Tạo route
-    const route = await tx.route.create({
-      data: { name },
-    });
+    return await prisma.route.create({
+      data: {
+        name,
+        route_station: { // Lưu ý: Tên relation trong schema của bạn (có thể là route_station hoặc routeStations)
+          create: stops.map((stop) => {
+            // Rule cho trạm đầu
+            if (stop.order === 1 && (stop.distanceFromStart !== 0 || stop.durationFromStart !== 0)) {
+              throwError("First stop stats must be 0", 400);
+            }
 
-    // 3️⃣ Tạo toàn bộ stops (KHÔNG shift order)
-    for (const stop of stops) {
-      const {
-        stationId,
-        order,
-        durationFromStart = 0,
-        distanceFromStart = 0,
-        price = 0,
-      } = stop;
-
-      // check station
-      const station = await tx.station.findUnique({
-        where: { id: stationId },
-      });
-      if (!station) {
-        throwError(`Station not found: ${stationId}`, 404);
-      }
-
-      // rule: stop đầu
-      if (
-        order === 1 &&
-        (durationFromStart !== 0 ||
-          distanceFromStart !== 0 ||
-          price !== 0)
-      ) {
-        throwError(
-          "For the first stop, durationFromStart, distanceFromStart and price must be 0",
-          400
-        );
-      }
-
-      await tx.route_Station.create({
-        data: {
-          routeId: route.id,
-          stationId,
-          order,
-          durationFromStart,
-          distanceFromStart,
-          price,
+            return {
+              stationId: stop.stationId,
+              order: stop.order,
+              distanceFromStart: stop.distanceFromStart || 0,
+              durationFromStart: stop.durationFromStart || 0,
+              priceFromStart: stop.priceFromStart || 0,
+            };
+          }),
         },
-      });
-    }
-
-    return route;
+      },
+    });
   },
 
   createNewStop: async (data, { skipOrderShift = false } = {}) => {

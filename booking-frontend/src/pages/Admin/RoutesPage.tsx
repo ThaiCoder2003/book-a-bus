@@ -3,6 +3,8 @@
 import { useEffect, useState, type JSX } from "react";
 
 import routeService from "@/services/routeService";
+import stationService from "@/services/stationService";
+
 import RouteSearchBar from "@/components/Admin/routesManagement/RouteSearchBar";
 import CreateRouteButton from "@/components/Admin/routesManagement/CreateRouteButton";
 import RouteTable from "@/components/Admin/routesManagement/RouteTable";
@@ -11,31 +13,46 @@ import CreateRouteModal from "@/components/Admin/routesManagement/CreateRouteMod
 import Pagination from "@/components/Admin/ui/Pagination";
 
 import type { Route } from "@/types/route.type";
+import type { Station } from "@/types/station.type";
 
 export default function RoutesPage(): JSX.Element {
   const [selectedRoute, setSelectedRoute] = useState<Route | null>(null);
   const [isCreateRouteOpen, setIsCreateRouteOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState<string>('')
+  const [stations, setStations] = useState<Station[]>([]);
 
   const [routes, setRoutes] = useState<Route[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [isModalLoading, setIsModalLoading] = useState(false);
 
-  const fetchData = async () => {
+  const fetchStations = async () => {
+    try {
+      const result = await stationService.getStations();
+      setStations(result.stations);
+    } catch (error) {
+      console.error("Failed to fetch stations", error);
+    }
+  };
+
+  const fetchRoutes = async () => {
     try {
       // Nếu có search term thì gọi search, không thì getAll
-      const result = await routeService.getRoutes(searchTerm, currentPage)
+      const getRoutes = await routeService.getRoutes(searchTerm, currentPage)
 
-      setRoutes(result.routes);
-      setTotalItems(result.pagination.total)
+      setRoutes(getRoutes.routes);
+      setTotalItems(getRoutes.pagination.total)
     } catch (error) {
       console.error("Failed to fetch routes", error);
     }
   };
 
   useEffect(() => {
-    fetchData();
+    fetchStations();
+  }, []);
+
+  useEffect(() => {
+    fetchRoutes();
   }, [currentPage, searchTerm]);
 
   const handleSearch = (val: string) => {
@@ -80,7 +97,7 @@ const handleViewDetails = async (routeId: string) => {
 
       <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
         {/* RouteTable chỉ cần list route, khi click gọi onViewDetails(id) */}
-        <RouteTable routes={routes} onViewDetails={handleViewDetails} totalItems={totalItems} onDeleteSuccess={fetchData} />
+        <RouteTable routes={routes} onViewDetails={handleViewDetails} totalItems={totalItems} onDeleteSuccess={fetchRoutes} />
         <Pagination
           totalItems={totalItems}
           itemsPerPage={itemsPerPage}
@@ -96,8 +113,10 @@ const handleViewDetails = async (routeId: string) => {
 
       {/* Popup tạo tuyến đường */}
       <CreateRouteModal
+        stations={stations}
         isOpen={isCreateRouteOpen}
         onClose={() => setIsCreateRouteOpen(false)}
+        onSuccess={fetchRoutes}
       />
     </div>
   );

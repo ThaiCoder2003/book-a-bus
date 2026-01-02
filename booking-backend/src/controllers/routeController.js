@@ -42,9 +42,9 @@ const RouteController = {
           message: "Route must have at least 2 stops",
         });
       }
-      const result = await prisma.$transaction(async (tx) => {
-        routeService.createRouteWithStops(tx, req.body)
-      })
+      
+      
+      const result = await routeService.createRouteWithStops({ name, stops });
 
         return res.status(201).json({
           message: "Route created successfully",

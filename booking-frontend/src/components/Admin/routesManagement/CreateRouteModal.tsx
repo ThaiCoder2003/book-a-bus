@@ -3,14 +3,20 @@
 import { useState } from "react";
 import { X, Plus, Trash2 } from "lucide-react";
 import type { Station } from "@/types/station.type";
-import { mockStations } from "@/data/mockStations"; // Giả định path chứa file của bạn
 import type { RouteStationForm } from "@/types/routeStationForm.type";
+import routeService from "@/services/routeService";
+
+
 export default function CreateRouteModal({
   isOpen,
   onClose,
+  stations, // Nhận prop stations từ cha
+  onSuccess
 }: {
   isOpen: boolean;
   onClose: () => void;
+  stations: Station[];
+  onSuccess?: () => void;
 }) {
   const [routeName, setRouteName] = useState("");
 
@@ -81,6 +87,46 @@ export default function CreateRouteModal({
 
   if (!isOpen) return null;
 
+  const handleCloseAndReset = () => {
+    setRouteName("");
+    setStops([
+      { stationId: "", order: 1, distanceFromStart: 0, durationFromStart: 0, priceFromStart: 0 },
+      { stationId: "", order: 2, distanceFromStart: 0, durationFromStart: 0, priceFromStart: 0 },
+    ]);
+    onClose();
+  };
+
+  const handleSubmit = async () => {
+    if (!routeName.trim()) return alert("Vui lòng nhập tên tuyến!")
+    if (stops.length < 2) return alert("Tuyến đường phải có ít nhất 2 trạm");
+    if (stops.some(s => !s.stationId)) return alert("Vui lòng chọn đầy đủ trạm dừng");
+
+    try {
+      const payload = {
+        name: routeName,
+        // Chuyển đổi dữ liệu để chắc chắn là Number (tránh lỗi string từ input)
+        stops: stops.map((s, index) => ({
+          stationId: s.stationId,
+          order: index + 1,
+          distanceFromStart: Number(s.distanceFromStart || 0),
+          durationFromStart: Number(s.durationFromStart || 0),
+          priceFromStart: Number(s.priceFromStart || 0),
+        })),
+      };
+
+      await routeService.create(payload)
+
+      alert("Tạo tuyến đường thành công!");
+      if (onSuccess) onSuccess(); 
+      
+      handleCloseAndReset();
+    } catch (error: any) {
+      alert(error.response?.data?.message || "Lỗi khi tạo tuyến đường");
+    }
+  }
+
+
+
   return (
     <div className="fixed inset-0 rounded-3x1 bg-black/50 flex items-center justify-center z-50 p-4 ">
       <div className="bg-white w-full max-w-[500px] rounded-3x1 shadow-2xl flex flex-col font-sans overflow-hidden">
@@ -90,7 +136,7 @@ export default function CreateRouteModal({
             Tạo Tuyến Mới
           </h2>
           <button
-            onClick={onClose}
+            onClick={handleCloseAndReset}
             className="text-gray-400 hover:text-gray-600"
           >
             <X size={22} />
@@ -204,11 +250,16 @@ export default function CreateRouteModal({
                         }}
                       >
                         <option value="">-- Chọn trạm --</option>
-                        {mockStations.map((s: Station) => (
-                          <option key={s.id} value={s.id}>
-                            {s.name} ({s.province})
-                          </option>
-                        ))}
+                        {stations
+                            .filter((s) => 
+                              // Chỉ giữ lại trạm nếu nó chưa được chọn ở bất kỳ ô nào khác (trừ chính ô hiện tại)
+                              !stops.some((otherStop, otherIdx) => otherStop.stationId === s.id && otherIdx !== idx)
+                            )
+                            .map((s) => (
+                              <option key={s.id} value={s.id}>
+                                {s.name} ({s.province})
+                              </option>
+                            ))}
                       </select>
                     </div>
 
@@ -219,6 +270,7 @@ export default function CreateRouteModal({
                         </label>
                         <input
                           type="number"
+                          disabled={idx === 0}
                           className="w-full px-3 py-2 border border-gray-200 rounded-xl text-[15px] outline-none focus:border-blue-500"
                           value={stop.distanceFromStart}
                           onChange={(e) =>
@@ -236,6 +288,7 @@ export default function CreateRouteModal({
                         </label>
                         <input
                           type="number"
+                          disabled={idx === 0}
                           className="w-full px-3 py-2 border border-gray-200 rounded-xl text-[15px] outline-none focus:border-blue-500"
                           value={stop.durationFromStart}
                           onChange={(e) =>
@@ -274,11 +327,12 @@ export default function CreateRouteModal({
 
         {/* Footer */}
         <div className="p-6 bg-white flex gap-3 border-t border-gray-50">
-          <button className="flex-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-2xl text-[15px] transition-all shadow-lg shadow-blue-100">
+          <button className="flex-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-2xl text-[15px] transition-all shadow-lg shadow-blue-100"
+          onClick={handleSubmit}>
             Lưu Tuyến Đường
           </button>
           <button
-            onClick={onClose}
+            onClick={handleCloseAndReset}
             className="flex-1 bg-white border border-gray-200 text-gray-700 font-bold py-3.5 rounded-2xl text-[15px] hover:bg-gray-50"
           >
             Hủy
