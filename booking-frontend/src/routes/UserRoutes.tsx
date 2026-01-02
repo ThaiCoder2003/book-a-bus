@@ -5,7 +5,8 @@ import { Routes, Route } from 'react-router-dom'
 import DashboardPage from '@/pages/DashboardPage'
 import SchedulePage from '@/pages/SchedulePage'
 import TripDetailPage from '@/pages/TripDetailPage'
-import Contact from '@/pages/Contact'
+import ContactPage from '@/pages/ContactPage'
+import PaymentPage from '@/pages/PaymentPage'
 
 const AppRoutes = () => {
     return (
@@ -13,7 +14,8 @@ const AppRoutes = () => {
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/schedule" element={<SchedulePage />} />
             <Route path="/trip/:id" element={<TripDetailPage />} />
-            <Route path="/contact" element={<Contact />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/demo" element={<PaymentPage />} />
 
             <Route element={<PersistLogin />}>
                 <Route path="/dashboard" element={<DashboardPage />} />

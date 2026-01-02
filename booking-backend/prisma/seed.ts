@@ -5,58 +5,22 @@ import {
     BookingStatus,
     Prisma,
 } from '@prisma/client'
-import * as bcrypt from 'bcrypt' // Cần cài: npm install bcrypt @types/bcrypt
+import * as bcrypt from 'bcrypt'
 
 const prisma = new PrismaClient()
 
-// Hàm tạo ghế tự động cho xe
-const generateSeats = (
-    busId: string,
-    type: SeatType,
-    totalSeats: number,
-    floors: number = 2,
-) => {
-    const seats = []
-    const seatsPerFloor = Math.ceil(totalSeats / floors)
-    const rows = Math.ceil(seatsPerFloor / 3) // Giả sử 3 dãy (col)
-
-    let seatCount = 0
-
-    for (let floor = 1; floor <= floors; floor++) {
-        for (let row = 1; row <= rows; row++) {
-            for (let col = 1; col <= 3; col++) {
-                if (seatCount >= totalSeats) break
-                seatCount++
-
-                // Label ghế: A01, A02 (Tầng 1) - B01, B02 (Tầng 2)
-                const floorLabel = floor === 1 ? 'A' : 'B'
-                const seatLabel = `${floorLabel}${row
-                    .toString()
-                    .padStart(2, '0')}${col}`
-
-                // Logic: Tầng 1 là VIP/Double, Tầng 2 là Single/Seat
-                let specificType = type
-                if (type === SeatType.VIP && floor === 2)
-                    specificType = SeatType.SINGLE_BED
-
-                seats.push({
-                    busId,
-                    label: seatLabel,
-                    floor,
-                    row,
-                    col,
-                    type: specificType,
-                })
-            }
-        }
-    }
-    return seats
-}
+// --- HELPERS ---
+const getRandomInt = (min: number, max: number) =>
+    Math.floor(Math.random() * (max - min + 1)) + min
+const getRandomElement = <T>(arr: T[]): T =>
+    arr[Math.floor(Math.random() * arr.length)]
 
 async function main() {
-    console.log('🌱 Starting seed...')
+    console.log('🌱 Starting seeding process...')
 
-    // 1. Clean Database (Xóa dữ liệu cũ theo thứ tự quan hệ)
+    // 1. CLEANUP DATABASE
+    // Xóa theo thứ tự ngược lại của quan hệ để tránh lỗi khóa ngoại
+    console.log('🧹 Cleaning up database...')
     await prisma.ticket.deleteMany()
     await prisma.booking.deleteMany()
     await prisma.trip.deleteMany()
@@ -67,285 +31,354 @@ async function main() {
     await prisma.station.deleteMany()
     await prisma.user.deleteMany()
 
-    console.log('🧹 Database cleaned.')
+    // 2. SEED USERS
+    console.log('👤 Seeding users...')
+    const salt = await bcrypt.genSalt(10)
+    const passwordHash = await bcrypt.hash('Password123!', salt) // Mật khẩu chung
 
-    // 2. Create Users
-    const passwordHash = await bcrypt.hash('123456', 10)
+    const usersData: Prisma.UserCreateInput[] = []
 
-    const admin = await prisma.user.create({
-        data: {
-            email: 'admin@bus.com',
-            name: 'Admin System',
+    // Tạo 2 Admin
+    usersData.push(
+        {
+            email: 'admin@system.com',
+            name: 'Super Admin',
             passwordHash,
-            phone: '0900000000',
+            phone: '0900000001',
             role: Role.ADMIN,
         },
-    })
-
-    const user1 = await prisma.user.create({
-        data: {
-            email: 'khachhang@gmail.com',
-            name: 'Nguyễn Văn A',
+        {
+            email: 'manager@bus.com',
+            name: 'Manager Bob',
             passwordHash,
-            phone: '0911111111',
+            phone: '0900000002',
+            role: Role.ADMIN,
+        },
+    )
+
+    // Tạo 48 Users thường
+    for (let i = 1; i <= 48; i++) {
+        usersData.push({
+            email: `user${i}@example.com`,
+            name: `Customer User ${i}`,
+            passwordHash,
+            phone: `09${getRandomInt(10000000, 99999999)}`,
             role: Role.USER,
-        },
-    })
+        })
+    }
 
-    console.log('👤 Users created.')
+    // Dùng transaction để tạo nhanh
+    await prisma.$transaction(
+        usersData.map((user) => prisma.user.create({ data: user })),
+    )
+    const allUsers = await prisma.user.findMany() // Lấy lại user để dùng cho booking sau này
 
-    // 3. Create Stations
-    const stationData = [
-        {
-            name: 'Bến xe Miền Đông',
-            address: 'Bình Thạnh',
-            province: 'Hồ Chí Minh',
-        },
-        { name: 'Trạm Đồng Nai', address: 'Biên Hòa', province: 'Đồng Nai' },
-        { name: 'Trạm Bảo Lộc', address: 'Bảo Lộc', province: 'Lâm Đồng' },
-        {
-            name: 'Bến xe Liên Tỉnh Đà Lạt',
-            address: 'Đà Lạt',
-            province: 'Lâm Đồng',
-        },
-        {
-            name: 'Bến xe Phía Nam Nha Trang',
-            address: 'Nha Trang',
-            province: 'Khánh Hòa',
-        },
+    // 3. SEED STATIONS
+    console.log('🚏 Seeding stations...')
+    const stationList = [
+        { name: 'Bến xe Mỹ Đình', address: '20 Phạm Hùng', province: 'Hà Nội' },
+        { name: 'Bến xe Giáp Bát', address: 'Giải Phóng', province: 'Hà Nội' },
+        { name: 'Bến xe Nước Ngầm', address: 'Hoàng Mai', province: 'Hà Nội' },
         {
             name: 'Bến xe Trung Tâm Đà Nẵng',
-            address: 'Đà Nẵng',
+            address: 'Tôn Đức Thắng',
             province: 'Đà Nẵng',
         },
+        {
+            name: 'Bến xe Phía Nam',
+            address: 'Vĩnh Trung',
+            province: 'Nha Trang',
+        },
+        { name: 'Bến xe Liên Tỉnh', address: 'Đường 1/4', province: 'Đà Lạt' },
+        {
+            name: 'Bến xe Miền Đông',
+            address: 'Đinh Bộ Lĩnh',
+            province: 'Hồ Chí Minh',
+        },
+        {
+            name: 'Bến xe Miền Tây',
+            address: 'Kinh Dương Vương',
+            province: 'Hồ Chí Minh',
+        },
+        {
+            name: 'Bến xe Cần Thơ',
+            address: 'Nguyễn Văn Linh',
+            province: 'Cần Thơ',
+        },
+        {
+            name: 'Bến xe Vũng Tàu',
+            address: 'Nam Kỳ Khởi Nghĩa',
+            province: 'Vũng Tàu',
+        },
     ]
 
-    // Lưu lại map station để dùng ID sau này
-    const stations: Record<string, string> = {}
-
-    for (const s of stationData) {
-        const created = await prisma.station.create({ data: s })
-        stations[s.province] = created.id // Key theo tỉnh cho dễ lấy
-        // Lưu thêm key theo tên nếu cần
-        if (s.name.includes('Miền Đông')) stations['HCM'] = created.id
-        if (s.name.includes('Nha Trang')) stations['Nha Trang'] = created.id
-        if (s.name.includes('Đà Nẵng')) stations['Đà Nẵng'] = created.id
-        if (s.name.includes('Đà Lạt')) stations['Đà Lạt'] = created.id
-        if (s.name.includes('Đồng Nai')) stations['Đồng Nai'] = created.id
-        if (s.name.includes('Bảo Lộc')) stations['Bảo Lộc'] = created.id
+    const createdStations = []
+    for (const s of stationList) {
+        createdStations.push(await prisma.station.create({ data: s }))
     }
 
-    console.log('stations created', stations)
-
-    // 4. Create Buses & Seats
-    const busData = [
-        {
-            plateNumber: '51B-123.45',
-            name: 'Phương Trang Limousine',
-            totalSeats: 34,
-            type: SeatType.VIP,
-        },
-        {
-            plateNumber: '51B-678.90',
-            name: 'Thành Bưởi Sleeper',
-            totalSeats: 40,
-            type: SeatType.SINGLE_BED,
-        },
-        {
-            plateNumber: '29B-999.99',
-            name: 'Hà Sơn Hải Vân Royal',
-            totalSeats: 22,
-            type: SeatType.DOUBLE_BED,
-        },
+    // 4. SEED BUSES & SEATS
+    console.log('🚌 Seeding buses and seats...')
+    const busModels = [
+        { name: 'Thaco Mobihome Luxury', seats: 34 },
+        { name: 'Hyundai Universe', seats: 40 },
+        { name: 'Limousine Palace', seats: 22 },
     ]
 
-    const busIds: string[] = []
-
-    for (const b of busData) {
+    const buses = []
+    for (let i = 1; i <= 10; i++) {
+        const model = getRandomElement(busModels)
+        // Tạo Bus
         const bus = await prisma.bus.create({
             data: {
-                plateNumber: b.plateNumber,
-                name: b.name,
-                totalSeats: b.totalSeats,
+                name: model.name,
+                plateNumber: `59B-${getRandomInt(100, 999)}.${getRandomInt(
+                    10,
+                    99,
+                )}`, // Biển số ngẫu nhiên
+                totalSeats: model.seats,
             },
         })
-        busIds.push(bus.id)
+        buses.push(bus)
 
-        // Tạo ghế
-        const seats = generateSeats(bus.id, b.type, b.totalSeats)
-        await prisma.seat.createMany({ data: seats })
+        // Tạo Seats cho Bus này
+        const seatsData = []
+        const floors = 2
+        const rows = Math.ceil(model.seats / 6) // Ước lượng số hàng
+        const cols = 3
+
+        let seatCount = 0
+        for (let f = 1; f <= floors; f++) {
+            for (let r = 1; r <= rows; r++) {
+                for (let c = 1; c <= cols; c++) {
+                    if (seatCount >= model.seats) break
+
+                    // Logic loại ghế
+                    let type = SeatType.SINGLE_BED
+                    if (model.seats === 22)
+                        type = SeatType.VIP // Limousine toàn VIP
+                    else if (r <= 2) type = SeatType.VIP // Xe thường thì 2 hàng đầu VIP
+
+                    const colLabel = c === 1 ? 'A' : c === 2 ? 'B' : 'C'
+                    const floorPrefix = f === 1 ? 'A' : 'B' // Tầng 1 là A.., Tầng 2 là B..
+                    const label = `${floorPrefix}${r
+                        .toString()
+                        .padStart(2, '0')}${colLabel}`
+
+                    seatsData.push({
+                        busId: bus.id,
+                        label,
+                        floor: f,
+                        row: r,
+                        col: c,
+                        type,
+                    })
+                    seatCount++
+                }
+            }
+        }
+        await prisma.seat.createMany({ data: seatsData })
     }
 
-    console.log('🚌 Buses & Seats created.')
+    // 5. SEED ROUTES & ROUTE_STATIONS
+    console.log('🛣️ Seeding routes...')
 
-    // 5. Create Routes (Tuyến đường) & Route_Station
-    // Tuyến 1: HCM -> Đà Lạt
-    const routeDL = await prisma.route.create({
-        data: { name: 'Sài Gòn - Đà Lạt' },
-    })
+    // Định nghĩa các tuyến đường
+    // Helper tìm station id theo tên (giả sử tên unique trong seed này)
+    const getStationId = (name: string) =>
+        createdStations.find((s) => s.name === name)?.id || ''
 
-    await prisma.route_Station.createMany({
-        data: [
-            {
-                routeId: routeDL.id,
-                stationId: stations['HCM'],
-                order: 1,
-                durationFromStart: 0,
-                distanceFromStart: 0,
-                priceFromStart: 0,
-            },
-            {
-                routeId: routeDL.id,
-                stationId: stations['Đồng Nai'],
-                order: 2,
-                durationFromStart: 60,
-                distanceFromStart: 30,
-                priceFromStart: 50000,
-            },
-            {
-                routeId: routeDL.id,
-                stationId: stations['Bảo Lộc'],
-                order: 3,
-                durationFromStart: 240,
-                distanceFromStart: 180,
-                priceFromStart: 150000,
-            },
-            {
-                routeId: routeDL.id,
-                stationId: stations['Đà Lạt'],
-                order: 4,
-                durationFromStart: 420,
-                distanceFromStart: 300,
-                priceFromStart: 300000,
-            },
-        ],
-    })
+    const routesConfig = [
+        {
+            name: 'Hà Nội - Hồ Chí Minh (QL1A)',
+            stops: [
+                { name: 'Bến xe Nước Ngầm', dist: 0, price: 0, dur: 0 },
+                {
+                    name: 'Bến xe Trung Tâm Đà Nẵng',
+                    dist: 760,
+                    price: 450000,
+                    dur: 840,
+                },
+                {
+                    name: 'Bến xe Phía Nam',
+                    dist: 1280,
+                    price: 700000,
+                    dur: 1200,
+                },
+                {
+                    name: 'Bến xe Miền Đông',
+                    dist: 1720,
+                    price: 950000,
+                    dur: 1800,
+                },
+            ],
+        },
+        {
+            name: 'Hồ Chí Minh - Đà Lạt',
+            stops: [
+                { name: 'Bến xe Miền Đông', dist: 0, price: 0, dur: 0 },
+                {
+                    name: 'Bến xe Liên Tỉnh',
+                    dist: 300,
+                    price: 280000,
+                    dur: 360,
+                },
+            ],
+        },
+        {
+            name: 'Hồ Chí Minh - Cần Thơ',
+            stops: [
+                { name: 'Bến xe Miền Tây', dist: 0, price: 0, dur: 0 },
+                { name: 'Bến xe Cần Thơ', dist: 170, price: 160000, dur: 240 },
+            ],
+        },
+        {
+            name: 'Hồ Chí Minh - Vũng Tàu',
+            stops: [
+                { name: 'Bến xe Miền Đông', dist: 0, price: 0, dur: 0 },
+                { name: 'Bến xe Vũng Tàu', dist: 100, price: 120000, dur: 150 },
+            ],
+        },
+    ]
 
-    // Tuyến 2: HCM -> Nha Trang
-    const routeNT = await prisma.route.create({
-        data: { name: 'Sài Gòn - Nha Trang' },
-    })
+    const createdRoutes = []
 
-    await prisma.route_Station.createMany({
-        data: [
-            {
-                routeId: routeNT.id,
-                stationId: stations['HCM'],
-                order: 1,
-                durationFromStart: 0,
-                distanceFromStart: 0,
-                priceFromStart: 0,
-            },
-            {
-                routeId: routeNT.id,
-                stationId: stations['Đồng Nai'],
-                order: 2,
-                durationFromStart: 60,
-                distanceFromStart: 30,
-                priceFromStart: 50000,
-            },
-            {
-                routeId: routeNT.id,
-                stationId: stations['Nha Trang'],
-                order: 3,
-                durationFromStart: 480,
-                distanceFromStart: 430,
-                priceFromStart: 450000,
-            },
-        ],
-    })
+    for (const rConfig of routesConfig) {
+        const route = await prisma.route.create({
+            data: { name: rConfig.name },
+        })
+        createdRoutes.push(route)
 
-    console.log('🛣️ Routes created.')
-
-    // 6. Create Trips (Chuyến đi)
-    // Tạo chuyến đi cho 30 ngày tới
-    const tripIds: string[] = []
-    const today = new Date()
-
-    // Khung giờ chạy: 8h sáng, 13h chiều, 22h tối
-    const departureHours = [8, 13, 22]
-
-    for (let i = 0; i < 30; i++) {
-        const currentDate = new Date(today)
-        currentDate.setDate(today.getDate() + i)
-
-        for (const hour of departureHours) {
-            // Set giờ
-            const departureTime = new Date(currentDate)
-            departureTime.setHours(hour, 0, 0, 0)
-
-            // Chuyến đi Đà Lạt
-            const trip1 = await prisma.trip.create({
+        for (let i = 0; i < rConfig.stops.length; i++) {
+            const stop = rConfig.stops[i]
+            await prisma.route_Station.create({
                 data: {
-                    busId: busIds[Math.floor(Math.random() * busIds.length)], // Random bus
-                    routeId: routeDL.id,
-                    departureTime: departureTime,
+                    routeId: route.id,
+                    stationId: getStationId(stop.name),
+                    order: i,
+                    distanceFromStart: stop.dist,
+                    priceFromStart: stop.price,
+                    durationFromStart: stop.dur,
                 },
             })
-            tripIds.push(trip1.id)
-
-            // Chuyến đi Nha Trang
-            const trip2 = await prisma.trip.create({
-                data: {
-                    busId: busIds[Math.floor(Math.random() * busIds.length)], // Random bus
-                    routeId: routeNT.id,
-                    departureTime: departureTime,
-                },
-            })
-            tripIds.push(trip2.id)
         }
     }
 
-    console.log('📅 Trips created for next 30 days.')
+    // 6. SEED TRIPS
+    console.log('📅 Seeding trips...')
+    const trips = []
+    const today = new Date()
 
-    // 7. Create Bookings (Giả lập đặt vé)
-    // Đặt vé cho chuyến đầu tiên của Đà Lạt
-    const firstTrip = await prisma.trip.findFirst({
-        where: { routeId: routeDL.id },
-        include: { bus: { include: { seats: true } } },
-    })
+    // Tạo trip cho 3 ngày tới
+    for (let day = 0; day < 3; day++) {
+        const departureDate = new Date(today)
+        departureDate.setDate(today.getDate() + day)
 
-    if (firstTrip && firstTrip.bus.seats.length > 0) {
-        // Giả sử khách đi full tuyến HCM -> Đà Lạt
-        const ticketPrice = 300000
+        for (const route of createdRoutes) {
+            // Mỗi route có 2 chuyến mỗi ngày
+            for (let hour of [8, 20]) {
+                // 8h sáng và 8h tối
+                departureDate.setHours(hour, 0, 0, 0)
 
-        // Tạo Booking
-        const booking = await prisma.booking.create({
-            data: {
-                userId: user1.id,
-                tripId: firstTrip.id,
-                status: BookingStatus.CONFIRMED,
-                totalAmount: ticketPrice * 2, // Mua 2 vé
-                departureStationId: stations['HCM'],
-                arrivalStationId: stations['Đà Lạt'],
-                expiredAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours from now
-                tickets: {
-                    create: [
-                        {
-                            seatId: firstTrip.bus.seats[0].id, // Ghế A01
-                            tripId: firstTrip.id,
-                            fromOrder: 1,
-                            toOrder: 4,
-                        },
-                        {
-                            seatId: firstTrip.bus.seats[1].id, // Ghế A02
-                            tripId: firstTrip.id,
-                            fromOrder: 1,
-                            toOrder: 4,
-                        },
-                    ],
-                },
-            },
-        })
-        console.log(`🎫 Booking created: ${booking.id}`)
+                const randomBus = getRandomElement(buses)
+
+                const trip = await prisma.trip.create({
+                    data: {
+                        busId: randomBus.id,
+                        routeId: route.id,
+                        departureTime: new Date(departureDate),
+                    },
+                })
+                trips.push(trip)
+            }
+        }
     }
 
-    console.log('✅ Seed completed!')
+    // 7. SEED BOOKINGS & TICKETS
+    console.log('🎟️ Seeding bookings and tickets...')
+
+    for (const trip of trips) {
+        // Lấy thông tin route station của trip này để biết order
+        const routeStations = await prisma.route_Station.findMany({
+            where: { routeId: trip.routeId },
+            orderBy: { order: 'asc' },
+            include: { station: true }, // Lấy thông tin station để biết tên/id
+        })
+
+        if (routeStations.length < 2) continue
+
+        // Lấy danh sách ghế của xe
+        const seats = await prisma.seat.findMany({
+            where: { busId: trip.busId },
+        })
+
+        // Giả lập 5-10 booking cho mỗi chuyến
+        const numberOfBookings = getRandomInt(5, 10)
+
+        // Shuffle ghế để book không trùng nhau (đơn giản hóa)
+        const shuffledSeats = seats.sort(() => 0.5 - Math.random())
+        let seatIndex = 0
+
+        for (let k = 0; k < numberOfBookings; k++) {
+            if (seatIndex >= shuffledSeats.length) break
+
+            const user = getRandomElement(allUsers)
+
+            // Chọn điểm đi và điểm đến ngẫu nhiên trên hành trình
+            // Ví dụ: A -> B -> C -> D. Có thể book A->C, B->D, hoặc A->D
+            const startIndex = getRandomInt(0, routeStations.length - 2)
+            const endIndex = getRandomInt(
+                startIndex + 1,
+                routeStations.length - 1,
+            )
+
+            const startStation = routeStations[startIndex]
+            const endStation = routeStations[endIndex]
+
+            // Tính giá vé (đơn giản: giá đến - giá đi)
+            const price =
+                Number(endStation.priceFromStart) -
+                Number(startStation.priceFromStart)
+
+            // Tạo Booking
+            const booking = await prisma.booking.create({
+                data: {
+                    userId: user.id,
+                    tripId: trip.id,
+                    status: getRandomElement([
+                        BookingStatus.CONFIRMED,
+                        BookingStatus.PENDING,
+                        BookingStatus.CONFIRMED,
+                    ]), // Tỉ lệ confirmed cao hơn
+                    totalAmount: price,
+                    departureStationId: startStation.stationId,
+                    arrivalStationId: endStation.stationId,
+                    expiredAt: new Date(new Date().getTime() + 15 * 60000), // Hết hạn sau 15p
+                },
+            })
+
+            // Tạo Ticket (Book 1 ghế)
+            const seatToBook = shuffledSeats[seatIndex]
+            seatIndex++
+
+            await prisma.ticket.create({
+                data: {
+                    bookingId: booking.id,
+                    seatId: seatToBook.id,
+                    tripId: trip.id,
+                    fromOrder: startStation.order,
+                    toOrder: endStation.order,
+                },
+            })
+        }
+    }
+
+    console.log('✅ Seeding completed successfully!')
 }
 
 main()
     .catch((e) => {
-        console.error(e)
+        console.error('❌ Seeding failed:', e)
         process.exit(1)
     })
     .finally(async () => {

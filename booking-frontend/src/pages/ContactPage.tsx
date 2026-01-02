@@ -1,9 +1,7 @@
-'use client'
-
 import UserHeader from '@/components/helpers/UserHeader'
 import { Mail, Phone } from 'lucide-react'
 
-export default function Contact() {
+export default function ContactPage() {
     return (
         <main className="min-h-screen bg-slate-50">
             <style>{`
