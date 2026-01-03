@@ -3,6 +3,36 @@ const { validateTripPayload } = require('../utils/validate')
 const stationService = require('./stationService')
 
 const tripService = {
+    getAll: async(query) => {
+        return await prisma.trip.findMany({
+            where: query ? 
+            {
+                OR: [
+                    { route: { name: { contains: query, mode: 'insensitive' } } },
+                    { bus: { plateNumber: { contains: query, mode: 'insensitive' } } }
+                ]
+            }
+            : undefined,
+
+            include: {
+                bus: {
+                    select: {
+                        name: true,
+                        plateNumber: true
+                    }
+                },
+                route: {
+                    select: {
+                        name: true
+                    }
+                }
+            },
+            orderBy: {
+                departureTime: 'desc' // Chuyến mới nhất hiện lên đầu cho dễ quản lý
+            }
+        });
+    },
+
     getAllTrips: async (
         {
             from,
@@ -319,9 +349,16 @@ const tripService = {
         }
     },
 
-    registerNewTrip: async (data) => {
-        await validateTripPayload(data, { requireAll: true })
-        return prisma.trip.create({ data })
+    registerNewTrip: async (payload) => {
+        await validateTripPayload(payload, { requireAll: true })
+        return await prisma.trip.create({
+            data: {
+                routeId: payload.routeId,
+                busId: payload.busId,
+                departureTime: payload.departureTime,
+                // Nếu bạn có thêm các trường như price, status thì thêm ở đây
+            }
+        });
     },
 
     editTripInfo: async (id, data) => {
@@ -344,13 +381,7 @@ const tripService = {
     },
 
     deleteTrip: async (tripId) => {
-        const exists = await prisma.trip.findUnique({ where: { id } })
-        if (!exists) {
-            const err = new Error('Not found: Trip not found')
-            err.statusCode = 404
-            throw err
-        }
-
+        const exists = await prisma.trip.findUnique({ where: { tripId } })
         if (!exists) {
             const err = new Error('Not found: Trip not found')
             err.statusCode = 404
@@ -358,7 +389,7 @@ const tripService = {
         }
 
         return prisma.trip.delete({
-            where: { id },
+            where: { tripId },
         })
     },
 }

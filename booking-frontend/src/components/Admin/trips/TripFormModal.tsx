@@ -26,46 +26,57 @@ export function TripFormModal({
   const [form, setForm] = useState({
     routeId: "",
     busId: "",
-    departureTime: "",
+    departureDate: "", // Tách riêng để dễ quản lý
+    departureTime: "", // Tách riêng để dễ quản lý
   });
 
-  // Sync state với tripToEdit khi modal mở
-  useEffect(() => {
-    setTimeout(() => {
-      if (tripToEdit) {
-        setForm({
-          routeId: tripToEdit.routeId ?? "",
-          busId: tripToEdit.busId ?? "",
-          departureTime: tripToEdit.departureTime
-            ? tripToEdit.departureTime.slice(0, 16)
-            : "",
-        });
-      } else {
-        setForm({ routeId: "", busId: "", departureTime: "" });
-      }
-    }, 0);
-  }, [tripToEdit, open]);
+useEffect(() => {
+  if (open && tripToEdit) {
+    const d = new Date(tripToEdit.departureTime);
+    
+    // Ép về format YYYY-MM-DD
+    const dateForInput = d.toLocaleDateString('en-CA'); // 'en-CA' luôn trả về YYYY-MM-DD
+    
+    // Ép về format HH:mm
+    const timeForInput = d.toLocaleTimeString('it-IT', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
 
+    setForm({
+      routeId: tripToEdit.routeId || "",
+      busId: tripToEdit.busId || "",
+      departureDate: dateForInput, 
+      departureTime: timeForInput,
+    });
+  }
+}, [tripToEdit, open]);
   if (!open) return null;
 
   const handleSubmit = () => {
-    if (!form.routeId || !form.busId || !form.departureTime) {
+    // 1. Kiểm tra đủ field (Dùng form.departureDate và form.departureTime riêng)
+    if (!form.routeId || !form.busId || !form.departureTime || !form.departureDate) {
       alert("Vui lòng điền đầy đủ thông tin!");
       return;
     }
 
-    const trip: Trip = {
-      id:
-        tripToEdit?.id ??
-        (typeof crypto !== "undefined"
-          ? crypto.randomUUID()
-          : Math.random().toString(36)),
+    // 2. Ghép Date và Time thành một đối tượng Date duy nhất
+    // Ví dụ: "2023-11-20" + "T" + "08:00"
+    const combinedISO = new Date(`${form.departureDate}T${form.departureTime}`).toISOString();
+
+    // 3. Tạo Object gửi đi
+    const tripPayload: any = {
       routeId: form.routeId,
       busId: form.busId,
-      departureTime: new Date(form.departureTime).toISOString(),
+      departureTime: combinedISO,
     };
 
-    onSubmit(trip);
+    // Nếu là Edit thì mới đính kèm ID, Create thì để Backend tự sinh ID
+    if (tripToEdit?.id) {
+      tripPayload.id = tripToEdit.id;
+    }
+
+    onSubmit(tripPayload);
   };
 
   return (
@@ -132,13 +143,11 @@ export function TripFormModal({
             </label>
             <input
               type="date"
-              value={form.departureTime.split("T")[0]}
+              value={form.departureDate}
               onChange={(e) =>
                 setForm({
                   ...form,
-                  departureTime: `${e.target.value}T${
-                    form.departureTime.split("T")[1] || "00:00"
-                  }`,
+                  departureDate: e.target.value
                 })
               }
               className="w-full p-2.5 border border-slate-200 rounded-lg outline-none"
@@ -152,13 +161,11 @@ export function TripFormModal({
             </label>
             <input
               type="time"
-              value={form.departureTime.split("T")[1]?.slice(0, 5)}
+              value={form.departureTime}
               onChange={(e) =>
                 setForm({
                   ...form,
-                  departureTime: `${form.departureTime.split("T")[0]}T${
-                    e.target.value
-                  }`,
+                  departureTime: e.target.value,
                 })
               }
               className="w-full p-2.5 border border-slate-200 rounded-lg outline-none"

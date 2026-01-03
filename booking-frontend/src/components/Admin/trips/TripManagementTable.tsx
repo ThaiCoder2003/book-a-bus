@@ -34,7 +34,7 @@ export function TripManagementTable({
         <tbody className="divide-y divide-slate-100">
           {trips.map((trip) => (
             <tr key={trip.id} className="hover:bg-slate-50 transition-colors">
-              <td className="px-6 py-4 font-medium text-blue-600">{trip.id}</td>
+              <td className="px-6 py-4 font-medium text-blue-600">{trip.id.slice(0, 8)}</td>
               <td className="px-6 py-4 text-slate-700 font-medium">
                 {trip.route?.name}
               </td>
