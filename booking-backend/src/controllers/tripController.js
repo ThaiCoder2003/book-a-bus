@@ -49,6 +49,17 @@ const tripController = {
         }
     },
 
+    getAll: async (req, res) => {
+        try {
+            // Admin thường cần xem tất cả, phân trang đơn giản
+            const { query } = req.query;
+            const result = await tripService.getAll(query);
+            res.json(result);
+        } catch (error) {
+            res.status(500).json({ message: error.message });
+        }
+    },
+
     getTripDetail: async (req, res) => {
         try {
             const id = req.params.id
@@ -87,7 +98,7 @@ const tripController = {
             return res.status(200).json({
                 success: true,
                 message: 'Trip updated successfully',
-                data: updated,
+                trip: updated,
             })
         } catch (error) {
             handleError(res, error)
