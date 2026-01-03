@@ -130,7 +130,6 @@ const bookingService = {
                 }
 
                 // tạo booking
-                // Thời gian giữ ghế (ví dụ 10 phút)
                 const expiredAt = new Date(
                     new Date().getTime() + 10 * 60 * 1000,
                 )
@@ -226,7 +225,28 @@ const bookingService = {
             },
         })
 
-        return booking
+        if (!booking) return null
+
+        const routeStation = await prisma.route_Station.findUnique({
+            where: {
+                routeId_stationId: {
+                    routeId: booking.trip.routeId,
+                    stationId: booking.departureStationId,
+                },
+            },
+        })
+
+        const durationFromStart = routeStation
+            ? routeStation.durationFromStart
+            : 0
+
+        return {
+            ...booking,
+            departureStation: {
+                ...booking.departureStation,
+                durationFromStart: durationFromStart,
+            },
+        }
     },
 
     // toggleBooking: async (payload) => {

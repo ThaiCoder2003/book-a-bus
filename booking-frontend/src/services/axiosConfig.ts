@@ -2,8 +2,8 @@ import authAction from '@/actions/authAction'
 import axios, { AxiosError } from 'axios'
 import type { InternalAxiosRequestConfig } from 'axios'
 
-const BASE_URL = 'http://localhost:4000/api'
-// const BASE_URL = 'https://book-a-bus-backend-7p28.onrender.com/api'
+// const BASE_URL = 'http://localhost:3000/api'
+const BASE_URL = 'https://book-a-bus-backend-7p28.onrender.com/api'
 
 const axiosClient = axios.create({
     baseURL: BASE_URL,
@@ -50,7 +50,7 @@ axiosClient.interceptors.response.use(
 
                 if (!refreshToken) {
                     await authAction.clearToken()
-                    window.location.replace('/auth')
+                    window.location.replace('/schedule')
                     return Promise.reject(error)
                 }
 
@@ -74,7 +74,7 @@ axiosClient.interceptors.response.use(
                 return axiosClient(originalRequest)
             } catch (refreshError) {
                 await authAction.clearToken()
-                window.location.replace('/auth')
+                window.location.replace('/schedule')
                 return Promise.reject(refreshError)
             }
         }

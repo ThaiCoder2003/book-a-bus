@@ -1,31 +1,36 @@
-const paymentService = require("../services/paymentService");
-const handleError = require("../utils/handleError");
+const paymentService = require('../services/paymentService')
+const handleError = require('../utils/handleError')
 
 const paymentController = {
     createPayPayment: async (req, res) => {
         try {
-            const { bookingId } = req.params;
-            const { amount } = req.body;
-            const result = await paymentService.createZaloPayPayment({ bookingId, amount });
+            const { bookingId } = req.params
+            const result = await paymentService.createZaloPayPayment({
+                bookingId,
+            })
             res.status(201).json({
                 message: 'ZaloPay payment created successfully',
-                data: result
-            });
+                data: result,
+            })
         } catch (error) {
-            handleError(res, error);
+            handleError(res, error)
         }
     },
 
-    zaloCallback: async (req, res) => {
+    callbackZaloPay: async (req, res) => {
         try {
-            const { data, mac } = req.body;
+            const { data, mac } = req.body // ZaloPay gửi data và mac trong body
             const result = await paymentService.handleZaloPayCallback(data, mac)
-            res.status(200).json(result);
+
+            // ZaloPay yêu cầu response json
+            res.json(result)
         } catch (error) {
-            handleError(res, error);
+            res.status(500).json({
+                return_code: 0,
+                return_message: error.message,
+            })
         }
     },
+}
 
-};
-
-module.exports = paymentController;
+module.exports = paymentController

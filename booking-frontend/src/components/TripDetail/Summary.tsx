@@ -47,8 +47,8 @@ export function BookingSummary({
             seatIds: selectedSeatList.map((seat) => seat.id),
             fromOrder: fromTo.from,
             toOrder: fromTo.to,
-            depStationId: trip.routePoints[fromTo.from - 1].stationId,
-            arrStationId: trip.routePoints[fromTo.to - 1].stationId,
+            depStationId: trip.routePoints[fromTo.from].stationId,
+            arrStationId: trip.routePoints[fromTo.to].stationId,
         }
 
         try {
@@ -88,9 +88,7 @@ export function BookingSummary({
             if (response?.data?.success) {
                 // Điều hướng đến trang thanh toán
                 const booking = response.data.booking
-                navigate(`/payment?id=${booking.id}`, {
-                    state: { bookingData: booking },
-                })
+                navigate(`/payment/${booking.id}`)
             }
         } catch (error: any) {
             if (error.response) {

@@ -157,10 +157,10 @@ export default function ContactPage() {
                         <div className="member-card">
                             <div className="mb-6">
                                 <h3 className="text-xl font-bold mb-1">
-                                    Trần Thị B
+                                    Lê Phan Thanh Nhân
                                 </h3>
                                 <p className="text-sm text-slate-600 font-medium">
-                                    MSSV: 22127173
+                                    MSSV: 21127655
                                 </p>
                             </div>
 
@@ -171,10 +171,10 @@ export default function ContactPage() {
                                         style={{ color: 'var(--primary)' }}
                                     />
                                     <a
-                                        href="mailto:20210002@student.edu.vn"
+                                        href="mailto:lptnhan21@clc.fitus.edu.vn"
                                         className="contact-link text-sm break-all"
                                     >
-                                        20210002@student.edu.vn
+                                        lptnhan21@clc.fitus.edu.vn
                                     </a>
                                 </div>
                                 <div className="flex items-center gap-3">
@@ -183,10 +183,10 @@ export default function ContactPage() {
                                         style={{ color: 'var(--primary)' }}
                                     />
                                     <a
-                                        href="tel:+84987654321"
+                                        href="tel:+84878865174"
                                         className="contact-link text-sm"
                                     >
-                                        0987 654 321
+                                        0878 865 174
                                     </a>
                                 </div>
                             </div>
@@ -196,10 +196,10 @@ export default function ContactPage() {
                         <div className="member-card">
                             <div className="mb-6">
                                 <h3 className="text-xl font-bold mb-1">
-                                    Lê Văn C
+                                    Đặng Quốc Thái
                                 </h3>
                                 <p className="text-sm text-slate-600 font-medium">
-                                    MSSV: 22127173
+                                    MSSV: 21127545
                                 </p>
                             </div>
 
@@ -210,10 +210,10 @@ export default function ContactPage() {
                                         style={{ color: 'var(--primary)' }}
                                     />
                                     <a
-                                        href="mailto:20210003@student.edu.vn"
+                                        href="mailto:dqthai21@clc.fitus.edu.vn"
                                         className="contact-link text-sm break-all"
                                     >
-                                        20210003@student.edu.vn
+                                        dqthai21@clc.fitus.edu.vn
                                     </a>
                                 </div>
                                 <div className="flex items-center gap-3">

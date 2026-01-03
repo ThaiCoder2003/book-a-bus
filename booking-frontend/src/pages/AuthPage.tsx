@@ -9,6 +9,7 @@ const AuthPage: FC = () => {
     const [isLogin, setIsLogin] = useState(true)
     const [name, setName] = useState('')
     const [email, setEmail] = useState('')
+    const [phone, setPhone] = useState('')
     const [password, setPassword] = useState('')
     const [confirmPassword, setConfirmPassword] = useState('')
 
@@ -22,12 +23,18 @@ const AuthPage: FC = () => {
         try {
             if (e) e.preventDefault()
 
-            const res = await authService.register({ name, email, password })
+            const res = await authService.register({
+                name,
+                email,
+                phone,
+                password,
+            })
 
             if (res && res.data.id) {
                 toast.success('Đăng kí tài khoản thành công')
                 setName('')
                 setEmail('')
+                setPhone('')
                 setPassword('')
                 setConfirmPassword('')
             }
@@ -136,6 +143,7 @@ const AuthPage: FC = () => {
                                 className="w-full border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
+                                required
                             />
                         </div>
                     )}
@@ -147,8 +155,22 @@ const AuthPage: FC = () => {
                             className="w-full border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
+                            required
                         />
                     </div>
+                    {/* Phone */}
+                    {!isLogin && (
+                        <div className="mb-4">
+                            <input
+                                type="text"
+                                placeholder="Số điện thoại"
+                                className="w-full border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                value={phone}
+                                onChange={(e) => setPhone(e.target.value)}
+                                required
+                            />
+                        </div>
+                    )}
                     {/* Password */}
                     <div className="mb-4">
                         <input
@@ -157,6 +179,7 @@ const AuthPage: FC = () => {
                             className="w-full border p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
+                            required
                         />
                     </div>
                     {/* Confirmation (only visible when sign up) */}
@@ -170,6 +193,7 @@ const AuthPage: FC = () => {
                                 onChange={(e) =>
                                     setConfirmPassword(e.target.value)
                                 }
+                                required
                             />
                         </div>
                     )}
