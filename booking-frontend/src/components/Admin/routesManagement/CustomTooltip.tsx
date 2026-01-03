@@ -8,7 +8,7 @@ interface CustomTooltipProps {
   children: ReactNode; // Phần tử được bọc (ví dụ: <button><Pencil /></button>)
 }
 
-export default function CustomTooltip({ content, children }: CustomTooltipProps): JSX.Element {
+export default function CustomTooltip({ content, children }: CustomTooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
 
   return (
