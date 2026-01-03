@@ -1,23 +1,74 @@
 const prisma = require('../configs/db');
-const { getAll } = require('../controllers/seatController');
+const bcrypt = require('bcrypt')
 
 const userService = {
-    getAllUsers: async () => {
-        return await prisma.user.findMany({
-            select: {
-                id: true,
-                email: true,
-                name: true,
-                phone: true,
-                role: true,
-                createdAt: true,
-                // Không trả về passwordHash để bảo mật
-            },
+    getAllUsers: async (query, page = 1, limit = 10) => {
+        const skip = (page - 1) * limit;
+        const [users, total] = await prisma.$transaction([
+            prisma.user.findMany({
+                where: query ? 
+                {
+                    OR: [
+                        { name: { contains: query, mode: 'insensitive' } },
+                        { email: { contains: query, mode: 'insensitive' } },
+                        { phone: { contains: query, mode: 'insensitive' } }
+                    ],
+                }  : {},
+                skip,
+                take: limit,
+                select: {
+                    id: true,
+                    email: true,
+                    name: true,
+                    phone: true,
+                    role: true,
+                    createdAt: true,
+                    bookings: {
+                        select: {
+                            totalAmount: true
+                        }
+                    },
+                    _count: {
+                        select: {
+                            bookings: true
+                        }
+                    }
+                },
+            }),
+
+            prisma.user.count()
+        ]);
+
+        const usersWithTotalspend = users.map(user => {
+            const totalSpent = user.bookings.reduce((sum, booking) => {
+                return sum + (Number(booking.totalAmount) || 0);
+            }, 0);
+
+            const orders = user._count?.bookings || 0
+
+            const { bookings, _count, ...userWithoutBookings } = user;
+            
+            return {
+                ...userWithoutBookings,
+                totalSpent,
+                orders
+            };
         });
+
+        return {
+            users: usersWithTotalspend,
+            pagination: {
+                total,
+                page: Number(page),
+                limit: Number(limit),
+                totalPages: Math.ceil(total / limit)
+            },
+            total
+        }
     },
 
-    getProfile: async (req, res) => {
-        return await prisma.user.findUnique({
+    getProfile: async (userId) => {
+        const user = await prisma.user.findUnique({
             where: { id: userId },
             select: {
                 id: true,
@@ -26,9 +77,39 @@ const userService = {
                 phone: true,
                 role: true,
                 createdAt: true,
+
+                bookings: {
+                    include: {
+                        trip: {
+                            include: {
+                                bus: true
+                            }
+                        }
+                    }
+                },
+
+                _count: {
+                    select: {
+                        bookings: true
+                    }
+                }
                 // Không trả về passwordHash để bảo mật
             },
         });
+
+        const totalSpent = user.bookings.reduce((sum, booking) => {
+            return sum + (Number(booking.totalAmount) || 0);
+        }, 0);
+
+        const orders = user._count?.bookings || 0
+
+        const { _count, ...userWithoutCount } = user;
+        
+        return {
+            user: userWithoutCount,
+            totalSpent,
+            orders
+        };
     },
 
     editProfile: async (userId, profileData) => {
@@ -152,6 +233,21 @@ const userService = {
             }).format(Number(b.totalAmount)),
         }));
     },
+
+    resetPassword: async (userId, newRawPassword) => {
+    // 1. Tạo salt và hash mật khẩu mới
+        const salt = await bcrypt.genSalt(10);
+        const passwordHash = await bcrypt.hash(newRawPassword, salt);
+
+        // 2. Cập nhật vào DB
+        return await prisma.user.update({
+            where: { id: userId },
+            data: {
+                passwordHash: passwordHash, // Lưu chuỗi đã mã hóa
+                // requirePasswordChange: true (Nếu bạn có field này)
+            }
+        });
+    }
 }
 
 module.exports = userService

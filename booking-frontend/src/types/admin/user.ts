@@ -1,18 +1,12 @@
-export interface Booking {
-  id: string;
-  date: string;
-  service: string;
-  amount: number;
-}
+import type { Booking } from "../booking.type";
 
 export interface User {
   id: string;
   name: string;
   email: string;
   phone: string;
-  status: string;
-  orders: number;
-  totalSpent: number;
+  orders?: number;
+  totalSpent?: number;
   createdAt: string;
-  bookingHistory?: Booking[];
+  bookings?: Booking[];
 }

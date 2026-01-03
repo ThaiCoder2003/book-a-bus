@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
 import Button from "../../components/Admin/ui/Button";
 import UserTable from "../../components/Admin/userManagement/UserTable";
 import UserAddModal from "../../components/Admin/userManagement/UserAddModal";
@@ -6,67 +6,48 @@ import { Input } from "../../components/Admin/ui/Input";
 // FIXED: Removed 'Filter' which was defined but never used
 import { Search } from "lucide-react";
 
-// Define the structure for Booking History to replace 'any'
-interface Booking {
-  id: string;
-  date: string;
-  service: string;
-  amount: number;
-}
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  status: string;
-  orders: number;
-  totalSpent: number;
-  createdAt: string;
-  bookingHistory?: Booking[]; // FIXED: Replaced any[] with Booking[]
-}
-
-const initialUsers: User[] = [
-  {
-    id: "1",
-    name: "Nguyễn Văn A",
-    email: "a@example.com",
-    phone: "0123456789",
-    status: "Hoạt động",
-    orders: 5,
-    totalSpent: 1250000,
-    createdAt: "2025-12-01",
-  },
-  {
-    id: "2",
-    name: "Trần Thị B",
-    email: "b@example.com",
-    phone: "0987654321",
-    status: "Không hoạt động",
-    orders: 2,
-    totalSpent: 700000,
-    createdAt: "2025-12-05",
-  },
-];
+import type { User } from "@/types/admin/user";
+import userService from "@/services/userService";
 
 const UserManagementPage = () => {
-  const [users, setUsers] = useState<User[]>(initialUsers);
+  const [users, setUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchInput, setSearchInput] = useState("")
+  const [query, setQuery] = useState("");
 
-  const totalUsers = users.length;
-  const activeUsers = users.filter((u) => u.status === "Hoạt động").length;
-  const inactiveUsers = users.filter((u) => u.status !== "Hoạt động").length;
+  const [currentPage, setCurrentPage] = useState<number>(1)
 
-  const filteredUsers = useMemo(() => {
-    if (!searchTerm.trim()) return users;
-    return users.filter(
-      (u) =>
-        u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        u.phone.includes(searchTerm),
-    );
-  }, [searchTerm, users]);
+  const [totalUsers, setTotalUsers] = useState<number>(0)
+
+  const fetchUsers = async () => {
+    setIsLoading(true);
+    try {
+      // Nếu có search term thì gọi search, không thì getAll
+      const getUsers = await userService.getUsers(query, currentPage)
+
+      setUsers(getUsers.users);
+      setTotalUsers(getUsers.total)
+    } catch (error) {
+      console.error("Failed to fetch routes", error);
+    } finally {
+      setIsLoading(false); // 🆕 Kết thúc fetch
+    }
+  };
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setQuery(searchInput);
+      setCurrentPage(1); // Reset về trang 1 mỗi khi search cái mới
+    }, 300);
+
+    return () => clearTimeout(handler);
+  }, [searchInput]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [currentPage, query]);
+
 
   // FIXED: Replaced 'any' with Omit<User, 'id' | 'status' | 'createdAt' | 'orders' | 'totalSpent'>
   // This ensures the data coming from the modal matches the required input fields.
@@ -76,7 +57,6 @@ const UserManagementPage = () => {
       {
         ...newUser,
         id: (users.length + 1).toString(),
-        status: "Hoạt động",
         createdAt: new Date().toISOString().split("T")[0],
         orders: 0,
         totalSpent: 0,
@@ -105,18 +85,6 @@ const UserManagementPage = () => {
           <p className="text-gray-600">Tổng người dùng</p>
           <p className="text-2xl font-bold mt-1">{totalUsers}</p>
         </div>
-        <div className="bg-white p-4 rounded-md shadow-sm border">
-          <p className="text-gray-600">Đang hoạt động</p>
-          <p className="text-2xl font-bold text-green-600 mt-1">
-            {activeUsers}
-          </p>
-        </div>
-        <div className="bg-white p-4 rounded-md shadow-sm border">
-          <p className="text-gray-600">Không hoạt động</p>
-          <p className="text-2xl font-bold text-orange-600 mt-1">
-            {inactiveUsers}
-          </p>
-        </div>
       </div>
 
       <div className="bg-white p-3 rounded-md shadow-sm border flex items-center gap-2">
@@ -125,13 +93,13 @@ const UserManagementPage = () => {
             icon={<Search className="w-4 h-4" />}
             placeholder="Tìm kiếm theo tên, email, số điện thoại..."
             className="w-full"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
           />
         </div>
       </div>
 
-      <UserTable users={filteredUsers} onUpdateUser={handleUpdateUser} />
+      <UserTable users={users} isLoading={isLoading} totalUser={totalUsers} onUpdateUser={handleUpdateUser} onPageChange={setCurrentPage} currentPage={currentPage} />
 
       <UserAddModal
         open={addOpen}

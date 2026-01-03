@@ -10,16 +10,19 @@ const seatRoutes = require('./seatRoute')
 const dashboardRoutes = require('./dashboardRoute')
 const paymentRoutes = require('./paymentRoute')
 const bookingRoutes = require('./bookingRoute')
+const userRoute = require('./userRoute')
 
 router.use('/auth', authRoutes)
 router.use('/trips', tripRoutes)
 router.use('/routes', routeRoutes)
+
 router.use('/bus', busRoutes)
 router.use('/station', stationRoutes)
 router.use('/seats', seatRoutes)
 router.use('/adminDashboard', dashboardRoutes)
 router.use('/payment', paymentRoutes)
 router.use('/bookings', bookingRoutes)
+router.use('/user', userRoute)
 
 // health check (API kiểm tra server còn sống không)
 router.get('/health', (req, res) => {

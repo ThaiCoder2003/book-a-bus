@@ -10,5 +10,8 @@ router.get('/booking-history', authMiddleware.verifyToken, userController.getBoo
 router.put('/profile', authMiddleware.verifyToken, userController.editUserProfile);
 
 router.get('/', authMiddleware.verifyToken, authMiddleware.requireAdmin, userController.getAllUsers);
+router.get('/:id', authMiddleware.verifyToken, authMiddleware.requireAdmin, userController.getUserById);
+router.put('/password/:id', authMiddleware.verifyToken, authMiddleware.requireAdmin, userController.resetPassword)
+router.put('/:id', authMiddleware.verifyToken, authMiddleware.requireAdmin, userController.editUserProfileAsAdmin)
 
 module.exports = router
