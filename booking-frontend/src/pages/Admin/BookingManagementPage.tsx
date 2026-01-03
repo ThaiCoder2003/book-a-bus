@@ -65,7 +65,15 @@ const BookingManagementPage: React.FC = () => {
     setSelectedBooking(null);
     setIsModalOpen(false);
   };
+  const handleUpdateBooking = (updatedBooking: Booking) => {
+    // 1. Update booking đang được chọn
+    setSelectedBooking(updatedBooking);
 
+    // 2. Update list bookings (để table đổi theo)
+    setFilteredBookings((prev) =>
+      prev.map((b) => (b.id === updatedBooking.id ? updatedBooking : b)),
+    );
+  };
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
       {/* Header */}
@@ -77,7 +85,7 @@ const BookingManagementPage: React.FC = () => {
           <p className="text-sm text-gray-500 mt-1">
             Tổng cộng:{" "}
             <span className="font-bold text-blue-600">
-              {mockBookings.length}
+              {filteredBookings.length}
             </span>{" "}
             đơn đặt vé
           </p>
@@ -122,6 +130,7 @@ const BookingManagementPage: React.FC = () => {
           isOpen={isModalOpen}
           onClose={handleCloseModal}
           booking={selectedBooking}
+          onUpdateBooking={handleUpdateBooking}
         />
       )}
     </div>

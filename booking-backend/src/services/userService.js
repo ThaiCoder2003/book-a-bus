@@ -1,34 +1,112 @@
 const prisma = require('../configs/db');
-const { getAll } = require('../controllers/seatController');
+const bcrypt = require('bcrypt')
 
 const userService = {
-    getAllUsers: async () => {
-        return await prisma.user.findMany({
-            select: {
-                id: true,
-                email: true,
-                name: true,
-                phone: true,
-                role: true,
-                createdAt: true,
-                // Không trả về passwordHash để bảo mật
-            },
+    getAllUsers: async (query, page = 1, limit = 10) => {
+        const skip = (page - 1) * limit;
+        const [users, total] = await prisma.$transaction([
+            prisma.user.findMany({
+                where: query ? 
+                {
+                    OR: [
+                        { name: { contains: query, mode: 'insensitive' } },
+                        { email: { contains: query, mode: 'insensitive' } },
+                        { phone: { contains: query, mode: 'insensitive' } }
+                    ],
+                }  : {},
+                skip,
+                take: limit,
+                select: {
+                    id: true,
+                    email: true,
+                    name: true,
+                    phone: true,
+                    role: true,
+                    createdAt: true,
+                    bookings: {
+                        select: {
+                            totalAmount: true
+                        }
+                    },
+                    _count: {
+                        select: {
+                            bookings: true
+                        }
+                    }
+                },
+            }),
+
+            prisma.user.count()
+        ]);
+
+        const usersWithTotalspend = users.map(user => {
+            const totalSpent = user.bookings.reduce((sum, booking) => {
+                return sum + (Number(booking.totalAmount) || 0);
+            }, 0);
+
+            const orders = user._count?.bookings || 0
+
+            const { bookings, _count, ...userWithoutBookings } = user;
+            
+            return {
+                ...userWithoutBookings,
+                totalSpent,
+                orders
+            };
         });
+
+        return {
+            users: usersWithTotalspend,
+            pagination: {
+                total,
+                page: Number(page),
+                limit: Number(limit),
+                totalPages: Math.ceil(total / limit)
+            },
+            total
+        }
     },
 
-    getProfile: async (req, res) => {
-        return await prisma.user.findUnique({
+    getProfile: async (userId) => {
+        const user = await prisma.user.findUnique({
             where: { id: userId },
-            select: {
-                id: true,
-                email: true,
-                name: true,
-                phone: true,
-                role: true,
-                createdAt: true,
+            include: {
+                bookings: {
+                    include: {
+                        trip: {
+                            include: {
+                                bus: true
+                            }
+                        },
+
+                        arrivalStation: true,
+                        departureStation: true,
+                        
+                    },
+                },
+
+                _count: {
+                    select: {
+                        bookings: true
+                    }
+                }
                 // Không trả về passwordHash để bảo mật
             },
         });
+
+        const totalSpent = user.bookings.reduce((sum, booking) => {
+            return sum + (Number(booking.totalAmount) || 0);
+        }, 0);
+
+        const orders = user._count?.bookings || 0
+
+        const { _count, ...userWithoutCount } = user;
+        
+        return {
+            ...userWithoutCount,
+            totalSpent,
+            orders
+        };
     },
 
     editProfile: async (userId, profileData) => {
@@ -76,51 +154,64 @@ const userService = {
     nextTrip: async (userId) => {
         const nextBooking = await prisma.booking.findFirst({
             where: {
-            userId: userId,
-            status: 'CONFIRMED',
-            trip: {
-                departureTime: {
-                gt: new Date(), // Chỉ lấy các chuyến trong tương lai
+                userId: userId,
+                status: 'CONFIRMED',
+                trip: {
+                    departureTime: {
+                        gt: new Date(), // Lấy chuyến trong tương lai
+                    },
                 },
-            },
             },
             include: {
-            trip: {
-                include: {
-                bus: true,   // Lấy biển số xe, loại xe
-                route: true, // Lấy tên tuyến đường
+                trip: {
+                    include: {
+                        bus: true,
+                        route: true,
+                    },
                 },
-            },
-            departureStation: true, // Điểm đi
-            arrivalStation: true,   // Điểm đến
-            tickets: {
-                include: {
-                seat: true, // Lấy số ghế (label)
+                departureStation: true, // Quan hệ BookingDep
+                arrivalStation: true,   // Quan hệ BookingArr
+                tickets: {
+                    include: {
+                        seat: true,
+                    },
                 },
-            },
             },
             orderBy: {
-            trip: {
-                departureTime: 'asc', // Chuyến gần nhất sẽ lên đầu
-            },
+                trip: {
+                    departureTime: 'asc',
+                },
             },
         });
 
-        if (!nextBooking) {
-            return null; // Không có chuyến tiếp theo
-        }
+        if (!nextBooking) return null;
+
+        // Tính toán hiển thị
+        const depTime = new Date(nextBooking.trip.departureTime);
 
         return {
             bookingId: nextBooking.id,
-            ticketCode: nextBooking.id.split('-')[0].toUpperCase(), // Giả lập mã vé ngắn
+            // Mã vé lấy 8 ký tự đầu của UUID cho gọn
+            ticketCode: nextBooking.id.split('-')[0].toUpperCase(), 
+            
+            // Địa điểm (Lấy từ model Station qua relation BookingDep/Arr)
             departure: nextBooking.departureStation.name,
             departureProvince: nextBooking.departureStation.province,
             arrival: nextBooking.arrivalStation.name,
             arrivalProvince: nextBooking.arrivalStation.province,
-            departureTime: nextBooking.trip.departureTime,
+            
+            // Thời gian
+            departureTime: depTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+            departureDate: depTime.toLocaleDateString('vi-VN'),
+            
+            // Xe & Ghế
             busPlate: nextBooking.trip.bus.plateNumber,
             busType: nextBooking.trip.bus.name,
+            // Map qua mảng tickets để lấy label của từng ghế
             seats: nextBooking.tickets.map(t => t.seat.label).join(', '),
+            
+            // Tổng tiền (Decimal trong Prisma cần ép kiểu Number)
+            totalAmount: Number(nextBooking.totalAmount)
         };
     },
 
@@ -152,6 +243,21 @@ const userService = {
             }).format(Number(b.totalAmount)),
         }));
     },
+
+    resetPassword: async (userId, newRawPassword) => {
+    // 1. Tạo salt và hash mật khẩu mới
+        const salt = await bcrypt.genSalt(10);
+        const passwordHash = await bcrypt.hash(newRawPassword, salt);
+
+        // 2. Cập nhật vào DB
+        return await prisma.user.update({
+            where: { id: userId },
+            data: {
+                passwordHash: passwordHash, // Lưu chuỗi đã mã hóa
+                // requirePasswordChange: true (Nếu bạn có field này)
+            }
+        });
+    }
 }
 
 module.exports = userService

@@ -54,20 +54,7 @@ const UserDetailModal: FC<UserDetailModalProps> = ({ open, onClose, user }) => {
                 <span className="font-medium">Số điện thoại:</span> {user.phone}
               </p>
               <p>
-                <span className="font-medium">Trạng thái:</span>{" "}
-                <Badge
-                  variant="outline"
-                  className={
-                    user.status === "Hoạt động"
-                      ? "bg-green-100 text-green-700"
-                      : "bg-orange-100 text-orange-700"
-                  }
-                >
-                  {user.status}
-                </Badge>
-              </p>
-              <p>
-                <span className="font-medium">Ngày tạo:</span> {user.createdAt}
+                <span className="font-medium">Ngày tạo:</span> {user.createdAt ? new Date(user.createdAt).toLocaleDateString("vi-VN") : "---"}
               </p>
             </div>
           </div>
@@ -85,7 +72,7 @@ const UserDetailModal: FC<UserDetailModalProps> = ({ open, onClose, user }) => {
               <div>
                 <p className="text-gray-600 text-sm">Tổng tiền chi tiêu</p>
                 <p className="text-green-600 font-semibold text-lg">
-                  {user.totalSpent.toLocaleString("vi-VN")} ₫
+                  {user.totalSpent?.toLocaleString("vi-VN")} ₫
                 </p>
               </div>
             </div>
@@ -95,14 +82,14 @@ const UserDetailModal: FC<UserDetailModalProps> = ({ open, onClose, user }) => {
           <div className="border rounded-lg p-4 shadow-sm">
             <h3 className="font-semibold text-base mb-2">Lịch sử đặt vé</h3>
             <div className="max-h-72 overflow-y-auto pr-1 space-y-3">
-              {user.bookingHistory?.length ? (
-                user.bookingHistory.map((booking) => (
+              {user.bookings?.length ? (
+                user.bookings.map((booking) => (
                   <div
                     key={booking.id}
                     className="border rounded-md p-3 hover:bg-gray-50 transition"
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <p className="font-medium">Mã đơn: {booking.id}</p>
+                      <p className="font-medium">Mã đơn: {booking.id.slice(0, 8)}</p>
                       <Badge
                         className={`${getStatusColor(booking.status)} text-xs`}
                       >
@@ -111,14 +98,14 @@ const UserDetailModal: FC<UserDetailModalProps> = ({ open, onClose, user }) => {
                     </div>
                     <p className="text-gray-600">
                       <span className="font-medium">Đặt lúc:</span>{" "}
-                      {booking.date}
+                      {booking.createdAt}
                     </p>
                     <p className="text-gray-600">
                       <span className="font-medium">Dịch vụ:</span>{" "}
-                      {booking.service}
+                      {booking.trip?.bus?.name}
                     </p>
                     <p className="text-green-600 font-semibold mt-1">
-                      Tổng tiền: {booking.amount.toLocaleString("vi-VN")} ₫
+                      Tổng tiền: {booking.totalAmount.toLocaleString("vi-VN")} ₫
                     </p>
                   </div>
                 ))

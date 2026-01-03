@@ -134,7 +134,7 @@ const validatePayload = {
     data,
     options = { requireAll: true, existingBus: null },
   ) => {
-    const { plateNumber, name, totalSeats, type } = data;
+    const { plateNumber, name, totalSeats } = data;
 
     const existing = options.existingBus;
 
@@ -142,7 +142,7 @@ const validatePayload = {
     // 0. Required field enforcement
     //
     if (options.requireAll) {
-      if (!plateNumber || !type || totalSeats === undefined) {
+      if (!plateNumber || !name || totalSeats === undefined) {
         throwError("Bad Request: Missing required bus fields", 400);
       }
     }
@@ -161,7 +161,6 @@ const validatePayload = {
       const conflict = await prisma.bus.findFirst({
         where: {
           plateNumber,
-          type,
           // exclude current bus on update
           NOT: existing ? { id: existing.id } : undefined,
         },
@@ -176,17 +175,7 @@ const validatePayload = {
     }
 
     //
-    // 2. Validate type
-    //
-    if (type) {
-      const validTypes = ["SEAT", "SINGLE_BED", "DOUBLE_BED"];
-      if (!validTypes.includes(type)) {
-        throwError("Bad Request: Invalid bus seat type", 400);
-      }
-    }
-
-    //
-    // 3. Validate totalSeats
+    // 2. Validate totalSeats
     //
     if (totalSeats !== undefined) {
       if (!Number.isInteger(totalSeats) || totalSeats < 0) {

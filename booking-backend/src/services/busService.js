@@ -1,9 +1,11 @@
 const validatePayload = require("../utils/validate");
 const prisma = require("../configs/db");
 
+const { SeatType } = require('@prisma/client')
+
 const busService = {
-getBuses: async (searchTerm) => {
-    const [buses, total] = await Promise.all([
+  getBuses: async (searchTerm) => {
+    const [buses, countBus] = await Promise.all([
         prisma.bus.findMany({
             where: searchTerm
       ? {
@@ -16,86 +18,70 @@ getBuses: async (searchTerm) => {
         include: {
           _count: {
             select: {
-              trips: true,
               seats: true // Thêm cái này để FE biết xe đã vẽ sơ đồ chưa
             }
           }
         },
         orderBy: { name: 'asc' }
       }),
-      prisma.bus.count({ where: whereCondition }),
+      prisma.bus.count(),
     ]);
 
-    return { buses, total };
+    const countSeat = await prisma.seat.count()
+
+    return { buses, countBus, countSeat };
   },
+
   getBusById: async (busId) => {
     return prisma.bus.findUnique({
       where: { id: busId },
       include: {
         seats: true,
+        trips: true
       },
     });
   },
 
-  registerNewBus: async (data) => {
-    await validatePayload.validateBusPayload(data, { requireAll: true });
+  registerNewBus: async (payload) => {
+    await validatePayload.validateBusPayload(payload, { requireAll: true });
 
-    const { type, totalSeats } = data;
     return prisma.$transaction(async (tx) => {
-      // 1️⃣ Create Bus
+      // 1. Tạo Bus
       const bus = await tx.bus.create({
-        data,
+        data: {
+          name: payload.name,
+          plateNumber: payload.plateNumber,
+          totalSeats: Number(payload.totalSeats),
+        },
       });
 
-      // 2️⃣ Generate Seats
+      // 2. Tạo ghế mặc định (Hàng dọc 4 ghế, tất cả là SEAT)
       const seats = [];
-      // 1. generate seat layout
+      const total = Number(payload.totalSeats);
 
-      if (type === "SEAT") {
-        for (let i = 1; i <= totalSeats; i++) {
-          seats.push({
-            label: `A${i}`,
-            floor: 1,
-            row: Math.ceil(i / 4),
-            col: ((i - 1) % 4) + 1,
-            type: "SEAT",
-          });
-        }
+      for (let i = 1; i <= total; i++) {
+        seats.push({
+          busId: bus.id,
+          label: `S${i}`, 
+          floor: 1,
+          row: Math.ceil(i / 4), // Mặc định chia 4 cột để Admin dễ nhìn
+          col: ((i - 1) % 4) + 1,
+          type: SeatType.SEAT, 
+        });
       }
 
-      if (type === "BED") {
-        const half = totalSeats / 2;
-
-        for (let i = 1; i <= totalSeats; i++) {
-          const isLower = i <= half;
-          const index = isLower ? i : i - half;
-
-          seats.push({
-            label: `B${i}`,
-            floor: isLower ? 1 : 2,
-            row: Math.ceil(index / 2),
-            col: index % 2 === 0 ? 2 : 1,
-            type: "SINGLE_BED",
-            busId: bus.id,
-          });
-        }
-      }
-
-      const seatsWithBusId = seats.map((seat) => ({
-        ...seat,
-        busId: bus.id,
-      }));
-
-      await tx.seat.createMany({
-        data: seatsWithBusId,
-      });
+      await tx.seat.createMany({ data: seats });
 
       return bus;
     });
   },
 
   editBusInfo: async (id, data) => {
-    const exists = await prisma.bus.findUnique({ where: { id } });
+    const exists = await prisma.bus.findUnique({ 
+      where: { id },
+      include: { _count: { select: { trips: true } } } 
+    });
+
     if (!exists) {
       const err = new Error("Not found: Bus not found");
       err.statusCode = 404;
@@ -108,8 +94,11 @@ getBuses: async (searchTerm) => {
     });
 
     return prisma.bus.update({
-      where: { id: busId },
-      data,
+      where: { id },
+      data: {
+        name: data.name,
+        plateNumber: data.plateNumber,
+      }
     });
   },
 
@@ -121,10 +110,33 @@ getBuses: async (searchTerm) => {
       throw err;
     }
 
-    return prisma.bus.delete({
-      where: { id },
+    if (exists._count.trips > 0) {
+      const err = new Error("Không thể xóa xe đã có lịch trình chuyến đi!");
+      err.statusCode = 400;
+      throw err;
+    }
+
+    return prisma.$transaction(async (tx) => {
+      await tx.seat.deleteMany({ where: { busId: id } });
+      return tx.bus.delete({ where: { id } });
     });
   },
+
+  updateBusSeats: async (busId, seatsArray) => {
+    return prisma.$transaction(async (tx) => {
+      await tx.seat.deleteMany({ where: { busId } });
+      return tx.seat.createMany({
+        data: seatsArray.map(s => ({
+          busId: busId,
+          label: s.label,
+          row: s.row,
+          col: s.col,
+          floor: s.floor || 1,
+          type: s.type
+        }))
+      });
+    });
+  }
 };
 
 module.exports = busService;

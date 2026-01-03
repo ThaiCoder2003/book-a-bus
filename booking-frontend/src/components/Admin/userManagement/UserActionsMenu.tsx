@@ -5,13 +5,14 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "../ui/dropdown-menu";
-import { MoreVertical, Eye, Edit, Trash2, Unlock } from "lucide-react";
+import { MoreVertical, Eye, Edit, Trash2, Unlock, Loader2 } from "lucide-react";
 
 interface UserActionsMenuProps {
   onView: () => void;
   onEdit: () => void;
   onDelete: () => void;
   onDisable: () => void;
+  isLoading?: boolean;
 }
 
 const UserActionsMenu: FC<UserActionsMenuProps> = ({
@@ -19,6 +20,7 @@ const UserActionsMenu: FC<UserActionsMenuProps> = ({
   onEdit,
   onDelete,
   onDisable,
+  isLoading
 }) => {
   return (
     <DropdownMenu>
@@ -26,10 +28,17 @@ const UserActionsMenu: FC<UserActionsMenuProps> = ({
       <DropdownMenuTrigger>
         <button
           type="button"
-          className="p-2 rounded-md hover:bg-gray-100 transition"
+          disabled={isLoading}
+          className={`p-2 rounded-md transition ${
+            isLoading ? "cursor-not-allowed opacity-50" : "hover:bg-gray-100"
+          }`}
           aria-label="Mở menu hành động"
         >
-          <MoreVertical className="w-5 h-5 text-gray-600" />
+          {isLoading ? (
+            <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+          ) : (
+            <MoreVertical className="w-5 h-5 text-gray-600" />
+          )}
         </button>
       </DropdownMenuTrigger>
 

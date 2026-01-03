@@ -2,38 +2,13 @@ import { CheckCircle2, Clock, History } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import type { Booking } from "@/types/booking.type";
 
-export default function BookingHistory() {
-  const history = [
-    {
-      id: 1,
-      date: "10/11/2025",
-      route: "Sài Gòn → Vũng Tàu",
-      status: "Hoàn thành",
-      price: "180.000đ",
-    },
-    {
-      id: 2,
-      date: "01/11/2025",
-      route: "Vũng Tàu → Sài Gòn",
-      status: "Hoàn thành",
-      price: "180.000đ",
-    },
-    {
-      id: 3,
-      date: "15/10/2025",
-      route: "Sài Gòn → Cần Thơ",
-      status: "Đã hủy",
-      price: "160.000đ",
-    },
-    {
-      id: 4,
-      date: "05/10/2025",
-      route: "Cần Thơ → Sài Gòn",
-      status: "Hoàn thành",
-      price: "160.000đ",
-    },
-  ];
+interface BookingHistoryProps {
+  bookings?: Booking[]; // Đây là user.bookings từ API của bạn
+}
+
+export default function BookingHistory({ bookings }: BookingHistoryProps) {
 
   return (
     <Card className="h-full shadow-sm hover:shadow-md transition-shadow">
@@ -46,35 +21,35 @@ export default function BookingHistory() {
       <CardContent>
         <ScrollArea className="h-60 pr-4">
           <div className="space-y-4">
-            {history.map((item) => (
+            {bookings?.map((item) => (
               <div
                 key={item.id}
                 className="flex items-center justify-between p-3 rounded-lg border bg-muted/20 hover:bg-muted/50 transition-colors cursor-pointer"
               >
                 <div className="space-y-1">
-                  <p className="font-medium text-sm">{item.route}</p>
+                  <p className="font-medium text-sm">{item.departureStation?.province} → {item.arrivalStation?.province}</p>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Clock className="h-3 w-3" />
-                    {item.date}
+                    {new Date(item.createdAt).toLocaleDateString('vi-VN')}
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-1">
                   <Badge
                     variant={
-                      item.status === "Hoàn thành" ? "secondary" : "outline"
+                      item.status === 'CONFIRMED' ? "secondary" : "outline"
                     }
                     className={
-                      item.status === "Hoàn thành"
+                      item.status === "CONFIRMED"
                         ? "bg-green-100 text-green-700 border-green-200"
                         : "text-muted-foreground"
                     }
                   >
-                    {item.status === "Hoàn thành" && (
+                    {item.status === "CONFIRMED" && (
                       <CheckCircle2 className="mr-1 h-3 w-3" />
                     )}
-                    {item.status}
+                    {item.status == "CONFIRMED" ? "Hoàn thành" : "Đã hủy"}
                   </Badge>
-                  <span className="text-xs font-medium">{item.price}</span>
+                  <span className="text-xs font-medium">{item.totalAmount}</span>
                 </div>
               </div>
             ))}

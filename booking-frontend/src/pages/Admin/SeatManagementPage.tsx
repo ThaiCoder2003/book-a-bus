@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus, Search } from "lucide-react";
 
 import StatisticCard from "@/components/Admin/fleets/StatisticCard";
@@ -7,17 +7,17 @@ import BusModal from "@/components/Admin/fleets/BusModal";
 import SeatConfigModal from "@/components/Admin/fleets/SeatConfigModal";
 
 import type { Bus } from "@/types/bus.type";
+import busService from "@/services/busService";
 import type { Seat } from "@/types/seat.type";
-import { mockBuses, mockSeats } from "@/data/seatMock/seat.mock";
 
 const SeatManagementPage: React.FC = () => {
   /* ===================== STATE ===================== */
-  const [buses, setBuses] = useState<Bus[]>(mockBuses);
-  const [seatMap, setSeatMap] = useState<Record<string, Seat[]>>({
-    "bus-001": mockSeats,
-  });
+  const [buses, setBuses] = useState<Bus[]>([]);
+  const [busNum, setBusNum] = useState<number>(0);
+  const [seatNum, setSeatNum] = useState<number>(0);
+  const [searchInput, setSearchInput] = useState(""); 
 
-  const [search, setSearch] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [editingBus, setEditingBus] = useState<Bus | null>(null);
   const [selectedBus, setSelectedBus] = useState<Bus | null>(null);
 
@@ -25,6 +25,31 @@ const SeatManagementPage: React.FC = () => {
   const [isSeatModalOpen, setIsSeatModalOpen] = useState(false);
 
   /* ===================== HANDLERS ===================== */
+
+  const fetchBuses = async () => {
+    try {
+      const data = await busService.getBuses(searchTerm)
+
+      setBuses(data.buses)
+      setBusNum(data.countBus)
+      setSeatNum(data.countSeat)
+    } catch (error) {
+      console.error("Failed to fetch routes", error);
+    }
+  }
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setSearchTerm(searchInput);
+    }, 300);
+
+    return () => clearTimeout(handler);
+  }, [searchInput]);
+
+  useEffect(() => {
+    fetchBuses();
+  }, [searchTerm]);
+
 
   const handleAddBus = () => {
     setEditingBus(null);
@@ -38,43 +63,69 @@ const SeatManagementPage: React.FC = () => {
 
   const handleDeleteBus = (bus: Bus) => {
     setBuses((prev) => prev.filter((b) => b.id !== bus.id));
-
-    setSeatMap((prev) => {
-      const { [bus.id]: _, ...rest } = prev;
-      return rest;
-    });
   };
 
-  const handleSubmitBus = (bus: Bus) => {
+const handleSubmitBus = async (busData: Bus) => {
+  try {
+    let resultBus: Bus;
+
+    if (editingBus) {
+      // TRƯỜNG HỢP EDIT
+      resultBus = await busService.updateBus(editingBus.id, busData);
+    } else {
+      // TRƯỜNG HỢP ADD NEW
+      resultBus = await busService.registernewBus(busData);
+    }
+
+    // Sau khi có kết quả từ Server, mới cập nhật UI
     setBuses((prev) => {
-      const exists = prev.some((b) => b.id === bus.id);
-      return exists
-        ? prev.map((b) => (b.id === bus.id ? bus : b))
-        : [...prev, bus];
+      const exists = prev.some((b) => b.id === resultBus.id);
+      if (exists) {
+        return prev.map((b) => (b.id === resultBus.id ? resultBus : b));
+      }
+      return [...prev, resultBus];
     });
+
+    setIsBusModalOpen(false);
+    setEditingBus(null);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    alert("Lỗi: " + errorMessage);
+  }
+};
+
+// 2. Khi nhấn Cấu hình ghế
+  const handleConfigSeat = async (bus: Bus) => {
+    try {
+      // Dùng bus.id để fetch lấy danh sách ghế chi tiết
+      const fullData = await busService.getBusById(bus.id); 
+      setSelectedBus(fullData); // Lưu data có kèm seats
+      setIsSeatModalOpen(true);
+    }  catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      alert("Lỗi: " + errorMessage);
+    }
   };
 
-  const handleConfigSeat = (bus: Bus) => {
-    setSelectedBus(bus);
-    setIsSeatModalOpen(true);
+  const handleSaveSeats = async (busId: string, updatedSeats: Seat[]) => {
+    try {
+      // 1. Gọi API gửi mảng ghế mới lên
+      await busService.updateBusSeats(busId, updatedSeats);
+      
+      // 2. Thông báo thành công
+      alert("Lưu cấu hình ghế thành công!");
+      
+      // 3. Đóng Modal và reset state
+      setIsSeatModalOpen(false);
+      setSelectedBus(null);
+      
+      // 4. Refresh lại danh sách bus để Statistic (tổng số ghế) cập nhật đúng
+      fetchBuses(); 
+    } catch (error) {
+      console.error("Lỗi lưu ghế:", error);
+      alert("Không thể lưu cấu hình ghế. Vui lòng thử lại!");
+    }
   };
-
-  const handleSaveSeats = (busId: string, updatedSeats: Seat[]) => {
-    setSeatMap((prev) => ({
-      ...prev,
-      [busId]: updatedSeats,
-    }));
-
-    setIsSeatModalOpen(false);
-    setSelectedBus(null);
-  };
-
-  /* ===================== FILTER ===================== */
-  const filteredBuses = buses.filter(
-    (b) =>
-      b.name.toLowerCase().includes(search.toLowerCase()) ||
-      b.plateNumber.toLowerCase().includes(search.toLowerCase()),
-  );
 
   /* ===================== UI ===================== */
   return (
@@ -93,10 +144,10 @@ const SeatManagementPage: React.FC = () => {
 
       {/* Statistic */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatisticCard title="Tổng số xe" value={buses.length} />
+        <StatisticCard title="Tổng số xe" value={busNum} />
         <StatisticCard
           title="Tổng số ghế"
-          value={buses.reduce((sum, b) => sum + b.totalSeats, 0)}
+          value={seatNum}
         />
       </div>
 
@@ -104,8 +155,8 @@ const SeatManagementPage: React.FC = () => {
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
         <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
           placeholder="Tìm theo tên xe hoặc biển số..."
           className="pl-10 pr-4 py-2 w-full border rounded-lg"
         />
@@ -113,7 +164,7 @@ const SeatManagementPage: React.FC = () => {
 
       {/* List */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {filteredBuses.map((bus) => (
+        {buses.map((bus) => (
           <BusCard
             key={bus.id}
             bus={bus}
@@ -136,7 +187,7 @@ const SeatManagementPage: React.FC = () => {
       {isSeatModalOpen && selectedBus && (
         <SeatConfigModal
           bus={selectedBus}
-          seats={seatMap[selectedBus.id] ?? []}
+          seats={selectedBus.seats ?? []}
           onClose={() => setIsSeatModalOpen(false)}
           onSave={handleSaveSeats}
         />
