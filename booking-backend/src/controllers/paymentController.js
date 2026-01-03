@@ -19,6 +19,7 @@ const paymentController = {
 
     callbackZaloPay: async (req, res) => {
         try {
+            console.log("zalo is calinggggg......")
             const { data, mac } = req.body // ZaloPay gửi data và mac trong body
             const result = await paymentService.handleZaloPayCallback(data, mac)
 
