@@ -50,7 +50,7 @@ axiosClient.interceptors.response.use(
 
                 if (!refreshToken) {
                     await authAction.clearToken()
-                    window.location.replace('/auth')
+                    window.location.replace('/schedule')
                     return Promise.reject(error)
                 }
 
@@ -74,7 +74,7 @@ axiosClient.interceptors.response.use(
                 return axiosClient(originalRequest)
             } catch (refreshError) {
                 await authAction.clearToken()
-                window.location.replace('/auth')
+                window.location.replace('/schedule')
                 return Promise.reject(refreshError)
             }
         }
