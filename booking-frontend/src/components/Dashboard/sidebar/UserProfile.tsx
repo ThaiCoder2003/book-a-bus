@@ -1,18 +1,35 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Settings, Star, Save, X } from "lucide-react";
+import type { User } from '@/types/user.type'
 
-export default function UserProfile() {
+interface UserProfileProps {
+  user: User | null; // Có thể null khi đang load
+  isLoading: boolean;
+  onEdit: (payload: any) => void
+}
+
+export default function UserProfile({ user, isLoading, onEdit }: UserProfileProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [profile, setProfile] = useState({
-    name: "User",
-    email: "user@vexere.com",
-    phone: "0123 456 789",
+    name: user?.name,
+    email: user?.email,
+    phone: user?.phone,
   });
 
-  const handleInputChange = (e) => {
+  useEffect(() => {
+    if (user) {
+      setProfile({
+        name: user.name || "",
+        email: user.email || "",
+        phone: user.phone || "",
+      });
+    }
+  }, [user]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setProfile((prev) => ({ ...prev, [name]: value }));
   };
@@ -21,11 +38,40 @@ export default function UserProfile() {
     setIsEditing((prev) => !prev);
   };
 
-  const saveProfile = () => {
-    // Add API call here if needed
-    console.log("Profile saved:", profile);
-    setIsEditing(false);
+  const handleCancel = () => {
+    if (user) {
+      setProfile({
+        name: user.name || "",
+        email: user.email || "",
+        phone: user.phone || "",
+      });
+    }
+
+    toggleEdit()
+  }
+
+  const saveProfile = async () => {
+    try {
+      await onEdit(profile)
+
+      toggleEdit()
+    }
+
+    catch (error) {
+      console.error("Lỗi lấy chi tiết:", error);
+      alert("Cập nhật thất bại, vui lòng kiểm tra lại!");
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-xl p-6 border animate-pulse">
+        <div className="w-20 h-20 bg-gray-200 rounded-full mx-auto mb-4"></div>
+        <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto mb-2"></div>
+        <div className="h-3 bg-gray-200 rounded w-1/2 mx-auto"></div>
+      </div>
+    )
+  }
 
   return (
     <Card className="shadow-sm border-none ring-1 ring-slate-200">
@@ -101,7 +147,7 @@ export default function UserProfile() {
 
         {/* Edit or Save Profile Button */}
         <Button
-          variant={isEditing ? "solid" : "outline"}
+          variant={isEditing ? "default" : "outline"}
           onClick={isEditing ? saveProfile : toggleEdit}
           className="w-full justify-center gap-2 text-ms font-medium border-slate-200 bg-white cursor-pointer hover:bg-[#EAF4FF] hover:text-[#0064D2] hover:border-[#C2DFFF] h-9 rounded-lg active:scale-[0.98]"
         >
@@ -120,7 +166,7 @@ export default function UserProfile() {
         {isEditing && (
           <Button
             variant="outline"
-            onClick={toggleEdit}
+            onClick={handleCancel}
             className="w-full justify-center gap-2 text-ms font-medium border-slate-200 bg-white cursor-pointer hover:bg-red-50 hover:text-red-500 hover:border-red-200 h-9 rounded-lg active:scale-[0.98] mt-2"
           >
             <X className="h-3.5 w-3.5" /> Hủy bỏ

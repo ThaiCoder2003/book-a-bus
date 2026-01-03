@@ -70,22 +70,19 @@ const userService = {
     getProfile: async (userId) => {
         const user = await prisma.user.findUnique({
             where: { id: userId },
-            select: {
-                id: true,
-                email: true,
-                name: true,
-                phone: true,
-                role: true,
-                createdAt: true,
-
+            include: {
                 bookings: {
                     include: {
                         trip: {
                             include: {
                                 bus: true
                             }
-                        }
-                    }
+                        },
+
+                        arrivalStation: true,
+                        departureStation: true,
+                        
+                    },
                 },
 
                 _count: {
@@ -106,7 +103,7 @@ const userService = {
         const { _count, ...userWithoutCount } = user;
         
         return {
-            user: userWithoutCount,
+            ...userWithoutCount,
             totalSpent,
             orders
         };
@@ -157,51 +154,64 @@ const userService = {
     nextTrip: async (userId) => {
         const nextBooking = await prisma.booking.findFirst({
             where: {
-            userId: userId,
-            status: 'CONFIRMED',
-            trip: {
-                departureTime: {
-                gt: new Date(), // Chỉ lấy các chuyến trong tương lai
+                userId: userId,
+                status: 'CONFIRMED',
+                trip: {
+                    departureTime: {
+                        gt: new Date(), // Lấy chuyến trong tương lai
+                    },
                 },
-            },
             },
             include: {
-            trip: {
-                include: {
-                bus: true,   // Lấy biển số xe, loại xe
-                route: true, // Lấy tên tuyến đường
+                trip: {
+                    include: {
+                        bus: true,
+                        route: true,
+                    },
                 },
-            },
-            departureStation: true, // Điểm đi
-            arrivalStation: true,   // Điểm đến
-            tickets: {
-                include: {
-                seat: true, // Lấy số ghế (label)
+                departureStation: true, // Quan hệ BookingDep
+                arrivalStation: true,   // Quan hệ BookingArr
+                tickets: {
+                    include: {
+                        seat: true,
+                    },
                 },
-            },
             },
             orderBy: {
-            trip: {
-                departureTime: 'asc', // Chuyến gần nhất sẽ lên đầu
-            },
+                trip: {
+                    departureTime: 'asc',
+                },
             },
         });
 
-        if (!nextBooking) {
-            return null; // Không có chuyến tiếp theo
-        }
+        if (!nextBooking) return null;
+
+        // Tính toán hiển thị
+        const depTime = new Date(nextBooking.trip.departureTime);
 
         return {
             bookingId: nextBooking.id,
-            ticketCode: nextBooking.id.split('-')[0].toUpperCase(), // Giả lập mã vé ngắn
+            // Mã vé lấy 8 ký tự đầu của UUID cho gọn
+            ticketCode: nextBooking.id.split('-')[0].toUpperCase(), 
+            
+            // Địa điểm (Lấy từ model Station qua relation BookingDep/Arr)
             departure: nextBooking.departureStation.name,
             departureProvince: nextBooking.departureStation.province,
             arrival: nextBooking.arrivalStation.name,
             arrivalProvince: nextBooking.arrivalStation.province,
-            departureTime: nextBooking.trip.departureTime,
+            
+            // Thời gian
+            departureTime: depTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+            departureDate: depTime.toLocaleDateString('vi-VN'),
+            
+            // Xe & Ghế
             busPlate: nextBooking.trip.bus.plateNumber,
             busType: nextBooking.trip.bus.name,
+            // Map qua mảng tickets để lấy label của từng ghế
             seats: nextBooking.tickets.map(t => t.seat.label).join(', '),
+            
+            // Tổng tiền (Decimal trong Prisma cần ép kiểu Number)
+            totalAmount: Number(nextBooking.totalAmount)
         };
     },
 

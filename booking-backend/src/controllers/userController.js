@@ -4,11 +4,11 @@ const handleError = require('../utils/handleError')
 const userController = {
     getUserProfile: async (req, res) => {
         try {
-            const userId = req.user.id
+            const userId = req.user.userId
             const userProfile = await userService.getProfile(userId)
             return res.status(200).json({
                 message: 'Lấy thông tin người dùng thành công',
-                data: userProfile,
+                profile: userProfile,
             })
         } catch (error) {
             handleError(res, error)
@@ -30,12 +30,12 @@ const userController = {
 
     editUserProfile: async (req, res) => {
         try {
-            const userId = req.user.id
+            const userId = req.user.userId
             const profileData = req.body
             const updatedProfile = await userService.editProfile(userId, profileData)
             return res.status(200).json({
                 message: 'Cập nhật thông tin người dùng thành công',
-                data: updatedProfile,
+                profile: updatedProfile,
             })
         } catch (error) {
             handleError(res, error)
@@ -44,11 +44,11 @@ const userController = {
 
     getUserStatOverview: async (req, res) => {
         try {
-            const userId = req.user.id
+            const userId = req.user.userId
             const overview = await userService.statOverview(userId)
             return res.status(200).json({
                 message: 'Lấy thông tin tổng quan người dùng thành công',
-                data: overview,
+                ...overview,
             })
         } catch (error) {
             handleError(res, error)
@@ -57,11 +57,11 @@ const userController = {
 
     getNextTrip: async (req, res) => {
         try {
-            const userId = req.user.id
+            const userId = req.user.userId
             const nextTrip = await userService.nextTrip(userId)
             return res.status(200).json({
                 message: 'Lấy chuyến đi tiếp theo thành công',
-                data: nextTrip,
+                trip: nextTrip,
             })
         } catch (error) {
             handleError(res, error)

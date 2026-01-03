@@ -1,19 +1,34 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Ticket, TrendingUp, Gift } from "lucide-react";
 
-export default function StatsOverview() {
+interface StatsOverview {
+  totalBookings: number,
+  totalSpent: number
+}
+
+export default function StatsOverview(statsOverview: StatsOverview ) {
+const formatCompactNumber = (number: number) => {
+  if (number >= 1000000) {
+    return (number / 1000000).toFixed(1) + 'M';
+  }
+  if (number >= 1000) {
+    return (number / 1000).toFixed(1) + 'K';
+  }
+  return number.toString();
+};
+
   const stats = [
     {
       icon: Ticket,
       label: "Tổng chuyến đi",
-      value: "35",
+      value: statsOverview.totalBookings,
       bgColor: "bg-[#E8F3FF]",
       iconColor: "text-[#0064D2]",
     },
     {
       icon: TrendingUp,
       label: "Tổng chi tiêu",
-      value: "6.3M",
+      value: formatCompactNumber(statsOverview.totalSpent),
       bgColor: "bg-[#D1F2EB]",
       iconColor: "text-[#1ABC9C]",
     },
