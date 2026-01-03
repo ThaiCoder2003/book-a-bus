@@ -25,7 +25,7 @@ const BookingTableRow: React.FC<BookingTableRowProps> = ({
   booking,
   onActionClick,
 }) => {
-  const totalTickets = booking.tickets.length;
+  const totalTickets = booking.tickets?.length;
 
   return (
     <tr className="hover:bg-gray-50 transition duration-150">
@@ -33,13 +33,13 @@ const BookingTableRow: React.FC<BookingTableRowProps> = ({
         {booking.id}
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-        {booking.user.name}
+        {booking.user?.name}
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-        {booking.trip.route.name}
+        {booking.trip?.route?.name}
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-        {booking.trip.departureTime}
+        {booking?.trip?.departureTime}
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
         {booking.totalAmount}
