@@ -34,7 +34,10 @@ const tripService = {
     },
 
     deleteTrip: async(id: string) => {
-        return await axiosClient.delete(`/trips/delete/${id}`,)
+        console.log("VÀO ĐƯỢC CONTROLLER RỒI")
+        const response = await axiosClient.delete(`/trips/delete/${id}`,)
+        return response.data;
+
     },
 
     getById: (tripId: string) => {
