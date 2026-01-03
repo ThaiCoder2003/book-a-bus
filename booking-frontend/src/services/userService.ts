@@ -70,13 +70,8 @@ const userService = {
     getUserById: async (id: string): Promise<User> => {
         const response = await axiosClient.get(`/user/${id}`);
         // response.data lúc này là { user: {...}, totalSpent: 100, orders: 5 }
-        const { user, totalSpent, orders } = response.data;
         
-        return {
-            ...user,
-            totalSpent,
-            orders
-        };
+        return response.data;
     },
 
     updateUserById: async (id: string, payload: any): Promise<User> => {

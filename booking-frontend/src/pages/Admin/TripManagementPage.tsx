@@ -92,11 +92,22 @@ export function TripManagementPage() {
     setShowModal(true);
   };
 
-  const handleDeleteTrip = (tripId: string) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa chuyến đi ${tripId}?`)) {
-
-      setTrips(trips.filter((t) => t.id !== tripId));
+  const handleDeleteTrip = async (tripId: string) => {
+    try {
+      if (window.confirm(`Bạn có chắc chắn muốn xóa chuyến đi ${tripId}?`)) {
+        await tripService.deleteTrip(tripId)
+        toast.success('Xóa thành công!')
+        setTrips(trips.filter((t) => t.id !== tripId));
+      }
     }
+// TripManagementPage.tsx
+catch (error: any) {
+    console.log("--- FRONTEND CATCH ---");
+    console.log("Status:", error.response?.status);
+    console.log("Data:", error.response?.data); // Đây là nơi chứa tin nhắn lỗi thật
+    console.error("Full Error:", error);
+    toast.error(error.response?.data?.message || "Lỗi xóa chuyến đi");
+}
   };
 
   const handleSubmitTrip = async (data: any) => {

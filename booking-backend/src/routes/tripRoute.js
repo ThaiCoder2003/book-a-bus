@@ -8,6 +8,6 @@ router.get('/getAll', tripController.getAllTrips)
 router.get('/:id', tripController.getTripDetail)
 router.post('/register', authMiddleware.verifyToken, authMiddleware.requireAdmin, tripController.registerNewTrip);
 router.post('/update/:id', authMiddleware.verifyToken, authMiddleware.requireAdmin, tripController.updateTrip);
-router.delete('/delete/:id', authMiddleware.verifyToken, authMiddleware.requireAdmin, tripController.deleteTrip);
+router.delete('/delete/:id', tripController.deleteTrip);
 
 module.exports = router
