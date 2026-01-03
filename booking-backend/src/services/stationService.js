@@ -10,13 +10,30 @@ const stationService = {
 
         return {
             stations,
-            stationNumber: total
+            stationNumber: total,
         }
     },
 
     registerNewStation: async (data) => {
         await validateStationPayload(data, { requireAll: true })
         return prisma.station.create({ data })
+    },
+
+    findStationIdsByKeyword: async (keyword) => {
+        if (!keyword) return []
+
+        const stations = await prisma.station.findMany({
+            where: {
+                OR: [
+                    { name: { contains: keyword, mode: 'insensitive' } },
+                    { province: { contains: keyword, mode: 'insensitive' } },
+                    { address: { contains: keyword, mode: 'insensitive' } },
+                ],
+            },
+            select: { id: true },
+        })
+
+        return stations.map((s) => s.id)
     },
 
     updateStation: async (id, data) => {
