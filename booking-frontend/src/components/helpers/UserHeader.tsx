@@ -5,12 +5,14 @@ import { Link, NavLink, useLocation } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { useEffect, useState } from 'react'
 import authAction from '@/actions/authAction'
-import { toast } from 'react-toastify'
 
 export default function UserHeader() {
     const location = useLocation()
+
+    // Logic riêng cho Home vì nó bao gồm cả path '/' và '/dashboard'
     const isHomeActive =
         location.pathname === '/' || location.pathname === '/dashboard'
+
     const [username, setUsername] = useState('')
 
     useEffect(() => {
@@ -28,13 +30,21 @@ export default function UserHeader() {
                     await authAction.clearToken()
                     window.location.replace('/schedule')
                 }
-            } else {
-                toast.error("Can't get necessary token")
             }
         }
 
         checkToken()
     }, [])
+
+    // Helper function: Trả về chuỗi class dựa trên trạng thái active
+    const getNavLinkClass = (isActive: boolean) => {
+        return cn(
+            'text-sm font-medium transition-colors',
+            isActive
+                ? 'text-foreground font-semibold' // Style khi Active
+                : 'text-muted-foreground hover:text-primary', // Style khi Inactive
+        )
+    }
 
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
@@ -55,12 +65,8 @@ export default function UserHeader() {
                         <NavLink
                             to="/dashboard"
                             end
-                            className={cn(
-                                'text-sm font-medium transition-colors',
-                                isHomeActive
-                                    ? 'text-foreground font-semibold'
-                                    : 'text-muted-foreground hover:text-primary',
-                            )}
+                            // Sử dụng biến isHomeActive tự tính toán
+                            className={() => getNavLinkClass(isHomeActive)}
                         >
                             Trang chủ
                         </NavLink>
@@ -68,19 +74,16 @@ export default function UserHeader() {
 
                     <NavLink
                         to="/schedule"
-                        className="text-sm font-medium text-muted-foreground hover:text-primary"
+                        // Sử dụng isActive có sẵn của NavLink
+                        className={({ isActive }) => getNavLinkClass(isActive)}
                     >
                         Chuyến xe
                     </NavLink>
-                    <NavLink
-                        to="/sales"
-                        className="text-sm font-medium text-muted-foreground hover:text-primary"
-                    >
-                        Ưu đãi
-                    </NavLink>
+
                     <NavLink
                         to="/contact"
-                        className="text-sm font-medium text-muted-foreground hover:text-primary"
+                        // Sử dụng isActive có sẵn của NavLink
+                        className={({ isActive }) => getNavLinkClass(isActive)}
                     >
                         Liên hệ
                     </NavLink>
@@ -108,9 +111,13 @@ export default function UserHeader() {
                         <Avatar className="h-9 w-9 border cursor-pointer ml-1">
                             <AvatarImage
                                 src="/path-to-your-avatar.jpg"
-                                alt="Admin"
+                                alt="User Avatar"
                             />
-                            <AvatarFallback>A</AvatarFallback>
+                            <AvatarFallback>
+                                {username
+                                    ? username.charAt(0).toUpperCase()
+                                    : 'U'}
+                            </AvatarFallback>
                         </Avatar>
                     )}
 

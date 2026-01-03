@@ -3,10 +3,10 @@ const router = express.Router();
 const authMiddleware = require('../middlewares/authMiddleware');
 const paymentController = require('../controllers/paymentController');
 
-router.post('/payment/zalopay/:bookingId', paymentController.createPayPayment);
+router.post('/zalopay/:bookingId', authMiddleware.verifyToken, paymentController.createPayPayment);
 
 // ZaloPay gọi tự động (Webhook)
-router.post('/payment/zalopay/callback', paymentController.zaloCallback);
+router.post('/zalopay/callback', paymentController.callbackZaloPay);
 
 module.exports = router;
 

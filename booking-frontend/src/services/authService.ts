@@ -4,15 +4,18 @@ const authService = {
     register: async ({
         name,
         email,
+        phone,
         password,
     }: {
         name: string
         email: string
+        phone: string
         password: string
     }) => {
         return await axiosClient.post('/auth/register', {
             name,
             email,
+            phone,
             password,
         })
     },
@@ -22,7 +25,9 @@ const authService = {
     },
 
     refreshToken: async (refreshToken: string | null) => {
-        return await axiosClient.post('/auth/refresh', { refreshToken: refreshToken })
+        return await axiosClient.post('/auth/refresh', {
+            refreshToken: refreshToken,
+        })
     },
 }
 

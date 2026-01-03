@@ -1,7 +1,7 @@
 import axiosClient from './axiosConfig'
 
 const bookingService = {
-    create: async (payload: {
+    create: (payload: {
         tripId: string
         seatIds: string[]
         fromOrder: number
@@ -11,6 +11,10 @@ const bookingService = {
     }) => {
         return axiosClient.post('/bookings/create', payload)
     },
+
+    getById: (bookingId: string) => {
+        return axiosClient.get(`/bookings/${bookingId}`)
+    }
 }
 
 export default bookingService
