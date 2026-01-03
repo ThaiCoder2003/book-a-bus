@@ -85,9 +85,7 @@ export default function TripDetailPage() {
                                 if (response?.data?.success) {
                                     // Điều hướng đến trang thanh toán
                                     const booking = response.data.booking
-                                    navigate(`/payment?id=${booking.id}`, {
-                                        state: { bookingData: booking },
-                                    })
+                                    navigate(`/payment/${booking.id}`)
                                 }
                             }
                         }

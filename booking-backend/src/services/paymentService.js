@@ -1,7 +1,7 @@
 const axios = require('axios')
 const crypto = require('crypto')
 const moment = require('moment')
-const prisma = require('../configs/db') // Đảm bảo đường dẫn đúng
+const prisma = require('../configs/db')
 const { BookingStatus } = require('@prisma/client')
 
 // Destructuring environment variables
@@ -127,7 +127,7 @@ const paymentService = {
             } else {
                 // 2. Parse dữ liệu
                 const dataJson = JSON.parse(dataStr)
-                const { app_trans_id, amount } = dataJson // Lấy thêm amount để check nếu cần
+                const { app_trans_id } = dataJson
 
                 console.log(`Callback received for TransID: ${app_trans_id}`)
 
@@ -146,8 +146,6 @@ const paymentService = {
                         result.return_message = 'Already processed'
                     } else {
                         // 5. Cập nhật trạng thái thành công
-                        // Có thể check thêm: if (amount !== booking.totalAmount) { ... }
-
                         await prisma.booking.update({
                             where: { id: booking.id },
                             data: {
