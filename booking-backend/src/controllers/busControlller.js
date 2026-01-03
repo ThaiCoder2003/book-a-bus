@@ -4,15 +4,11 @@ const handleError = require('../utils/handleError')
 const busController = {
     getAllBuses: async (req, res) => {
         try {
-            const { type, page, limit } = req.query
-            const result = await busService.getBuses(
-                type,
-                page,
-                limit
-            )
+            const { searchTerm } = req.query
+            const result = await busService.getBuses(searchTerm)
             res.status(200).json({
                 message: 'Get bus list successfully',
-                data: result
+                busData: result
             })
         } catch (error) {
             handleError(res, error)
@@ -24,9 +20,7 @@ const busController = {
             const { id } = req.params
             const result = await busService.getBusById(id)
 
-            res.status(200).json({
-                data: result
-            })
+            res.status(200).json(result)
         } catch (error) {
             handleError(res, error)
         }
@@ -79,7 +73,7 @@ const busController = {
             return res.status(200).json({
                 success: true,
                 message: 'Bus updated successfully',
-                data: updated,
+                bus: updated,
             })
         } catch (error) {
             handleError(res, error)
@@ -98,6 +92,19 @@ const busController = {
             handleError(res, error)
         }
     },
+
+    updateBusSeats: async (req, res) => {
+        try {
+            const { id } = req.params
+            await busService.updateBusSeats(id, req.body)
+            return res.status(200).json({
+                success: true,
+                message: 'Seats edited successfully',
+            })
+        } catch (error) {
+            handleError(res, error)
+        }
+    }
 }
 
 module.exports = busController

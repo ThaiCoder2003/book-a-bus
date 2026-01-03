@@ -17,7 +17,7 @@ const EMPTY_BUS: Bus = {
 
 const BusModal: React.FC<BusModalProps> = ({ bus, onClose, onSubmit }) => {
   const [form, setForm] = useState<Bus>(EMPTY_BUS);
-
+  const [submitting, setSubmitting] = useState(false);
   useEffect(() => {
     setForm(bus ?? EMPTY_BUS);
   }, [bus]);
@@ -30,16 +30,19 @@ const BusModal: React.FC<BusModalProps> = ({ bus, onClose, onSubmit }) => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitting(true);
+    
+    try {
+      // Gọi hàm của Cha và đợi nó chạy xong (API call nằm ở đây)
+      onSubmit(form); 
+      // Nếu thành công, Page sẽ đóng Modal hoặc bạn có thể gọi onClose() ở đây
+    } 
 
-    const finalBus: Bus = {
-      ...form,
-      id: form.id || crypto.randomUUID(),
-    };
-
-    onSubmit(finalBus);
-    onClose();
+    finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -50,7 +53,7 @@ const BusModal: React.FC<BusModalProps> = ({ bus, onClose, onSubmit }) => {
           <h2 className="text-xl font-semibold">
             {bus ? "Chỉnh sửa xe" : "Thêm xe mới"}
           </h2>
-          <button onClick={onClose}>
+          <button onClick={onClose} disabled={submitting}>
             <X size={20} />
           </button>
         </div>
@@ -96,6 +99,7 @@ const BusModal: React.FC<BusModalProps> = ({ bus, onClose, onSubmit }) => {
               type="number"
               name="totalSeats"
               min={1}
+              disabled={!!bus} // Chỉ cho nhập số ghế khi tạo mới
               value={form.totalSeats}
               onChange={handleChange}
               required
@@ -114,9 +118,10 @@ const BusModal: React.FC<BusModalProps> = ({ bus, onClose, onSubmit }) => {
             </button>
             <button
               type="submit"
+              disabled={submitting}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg"
             >
-              {bus ? "Lưu thay đổi" : "Thêm xe"}
+              {submitting ? "Đang lưu..." : (bus ? "Lưu thay đổi" : "Thêm xe")}
             </button>
           </div>
         </form>

@@ -15,7 +15,7 @@ interface Props {
 
 const SeatConfigModal: React.FC<Props> = (props) => {
   const { bus, seats, onClose, onSave } = props;
-
+  const [isLoading, setIsLoading] = useState(false);
   const [currentSeats, setCurrentSeats] = useState<Seat[]>(seats);
   const [currentType, setCurrentType] = useState<SeatType>("SEAT");
 
@@ -30,12 +30,14 @@ const SeatConfigModal: React.FC<Props> = (props) => {
   const handleSave = () => {
     if (!bus) return;
 
+    setIsLoading(true);
     const normalizedSeats = currentSeats.map((s) => ({
       ...s,
       busId: bus.id,
     }));
 
     onSave(bus.id, normalizedSeats);
+    setIsLoading(false);
   };
 
   const handleSeatClick = (seatId: string) => {
@@ -124,7 +126,7 @@ const SeatConfigModal: React.FC<Props> = (props) => {
 
         {/* Footer */}
         <div className="p-4 border-t flex justify-end gap-3">
-          <button onClick={onClose} className="px-4 py-2 border rounded-lg">
+          <button onClick={onClose} className="px-4 py-2 border rounded-lg disabled:bg-gray-100" disabled={isLoading}>
             Huỷ
           </button>
           <button

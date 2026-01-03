@@ -18,7 +18,9 @@ import type { Station } from "@/types/station.type";
 export default function RoutesPage(): JSX.Element {
   const [selectedRoute, setSelectedRoute] = useState<Route | null>(null);
   const [isCreateRouteOpen, setIsCreateRouteOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState<string>('')
+  const [searchInput, setSearchInput] = useState(""); 
+
+  const [searchTerm, setSearchTerm] = useState("");
   const [stations, setStations] = useState<Station[]>([]);
 
   const [routes, setRoutes] = useState<Route[]>([]);
@@ -52,11 +54,20 @@ export default function RoutesPage(): JSX.Element {
   }, []);
 
   useEffect(() => {
+    const handler = setTimeout(() => {
+      setSearchTerm(searchInput);
+      setCurrentPage(1); // Reset về trang 1 mỗi khi search cái mới
+    }, 300);
+
+    return () => clearTimeout(handler);
+  }, [searchInput]);
+
+  useEffect(() => {
     fetchRoutes();
   }, [currentPage, searchTerm]);
 
   const handleSearch = (val: string) => {
-    setSearchTerm(val);
+    setSearchInput(val);
     setCurrentPage(1); 
   };
 
