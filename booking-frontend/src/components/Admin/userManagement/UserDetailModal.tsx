@@ -45,7 +45,7 @@ const UserDetailModal: FC<UserDetailModalProps> = ({ open, onClose, user }) => {
             <h3 className="font-semibold text-base mb-2">Thông tin cá nhân</h3>
             <div className="grid grid-cols-2 gap-y-1">
               <p>
-                <span className="font-medium">Họ và tên:</span> {user?.name}
+                <span className="font-medium">Họ và tên:</span> {user.name}
               </p>
               <p>
                 <span className="font-medium">Email:</span> {user.email}

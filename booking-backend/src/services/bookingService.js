@@ -1,4 +1,4 @@
-const { Prisma } = require('@prisma/client')
+const { Prisma, BookingStatus } = require('@prisma/client')
 const prisma = require('../configs/db')
 
 const bookingService = {
@@ -63,115 +63,80 @@ const bookingService = {
         return finalTotalAmount
     },
 
-    create: async (payload) => {
-        const {
-            userId,
-            tripId,
-            seatIds,
-            fromOrder,
-            toOrder,
-            depStationId,
-            arrStationId,
-        } = payload
+    getAll: async(params) => {
+        const { page, limit, status, route, startDate, endDate, query } = params;
 
-        if (seatIds.length > 5 || seatIds.length < 1) {
-            throw new Error('INVALID_NUMBER_SEATS')
-        }
-
-        const finalTotalAmount = await bookingService.calculatePrice(
-            tripId,
-            seatIds,
-            depStationId,
-            arrStationId,
-        )
-
-        try {
-            return await prisma.$transaction(async (tx) => {
-                const now = new Date()
-
-                // Tìm tất cả các vé (Ticket) đang nằm trong khoảng ghế và chặng này
-                const blockingTickets = await tx.ticket.findMany({
-                    where: {
-                        tripId: tripId,
-                        seatId: { in: seatIds }, // Các ghế user đang chọn
-                        fromOrder: { lt: toOrder }, // Logic giao nhau (Overlap)
-                        toOrder: { gt: fromOrder },
-                    },
-                    include: {
-                        booking: true, // Lấy thông tin booking để check hạn
-                    },
-                })
-
-                // Duyệt qua các vé đang chắn đường để xử lý
-                for (const ticket of blockingTickets) {
-                    const { booking } = ticket
-
-                    // Check xem booking này đã hết hạn chưa
-                    const isExpired =
-                        booking.status === 'PENDING' &&
-                        new Date(booking.expiredAt) < now
-
-                    // Booking được coi là hợp lệ (đang giữ chỗ)
-                    const isValidBlocking =
-                        booking.status === 'CONFIRMED' ||
-                        (booking.status === 'PENDING' && !isExpired)
-
-                    if (isValidBlocking) {
-                        // Nếu gặp chướng ngại vật hợp lệ => Báo lỗi ngay
-                        throw new Error('SEAT_ALREADY_TAKEN')
+        const where = {
+        // --- PHẦN 1: SEARCH (Dùng OR để tìm trên nhiều trường) ---
+            ...(query && {
+                OR: [
+                    { 
+                        user: { 
+                            OR: [
+                                { name: { contains: query, mode: 'insensitive' } },
+                                { email: { contains: query, mode: 'insensitive' } },
+                                { phone: { contains: query, mode: 'insensitive' } }
+                            ]
+                        } 
                     }
+                ]
+            }),
 
-                    if (isExpired) {
-                        // Nếu gặp chướng ngại vật là "Rác" (PENDING đã hết hạn)
-                        await tx.booking.deleteMany({
-                            where: { id: booking.id },
-                        })
-                    }
-                }
+            // --- PHẦN 2: FILTER (Các điều kiện kết hợp đồng thời - AND) ---
+            AND: [
+                status ? { status } : {},
+                route ? { trip: { route: { name: { contains: route } } } } : {},
+                startDate ? { trip : { departureTime: { gte: new Date(startDate + "T00:00:00Z") } } } : {},
+                endDate ? { trip: { departureTime: { lte: new Date(endDate + "T23:59:59Z") } } } : {},
+            ].filter(Boolean)
+        };
 
-                // tạo booking
-                const expiredAt = new Date(
-                    new Date().getTime() + 10 * 60 * 1000,
-                )
-
-                const newBooking = await tx.booking.create({
-                    data: {
-                        userId,
-                        tripId,
-                        departureStationId: depStationId,
-                        arrivalStationId: arrStationId,
-                        totalAmount: finalTotalAmount,
-                        status: 'PENDING',
-                        expiredAt: expiredAt,
-                        // Tạo luôn các vé (Tickets) liên kết
-                        tickets: {
-                            create: seatIds.map((seatId) => ({
-                                seatId: seatId,
-                                tripId: tripId, // Quan trọng để query nhanh
-                                fromOrder: fromOrder,
-                                toOrder: toOrder,
-                            })),
-                        },
+        const [totalBooking, total, bookings] = await Promise.all([
+            prisma.booking.count(),
+            prisma.booking.count({ where }),
+            prisma.booking.findMany({
+                where,
+                skip: (page - 1) * limit,
+                take: limit,
+                include: {
+                    trip: {
+                        include: { route: true, bus: true }
                     },
-                    include: {
-                        tickets: true, // Trả về vé để hiển thị
+                    user: {
+                        select: { name: true, email: true, phone: true }
                     },
-                })
+                    _count: { select: { tickets: true } },
+                },
 
-                return newBooking
+                orderBy: { createdAt: 'desc' } // Mới nhất hiện lên đầu
             })
-        } catch (error) {
-            // Check mã lỗi của Prisma trả về từ Postgres
-            if (
-                error.code === 'P2010' ||
-                error.message.includes('ticket_seat_overlap_check')
-            ) {
-                throw new Error('SEAT_ALREADY_TAKEN')
-            }
+        ]);
 
-            // Các lỗi khác
-            throw error
-        }
+        const formattedBookings = bookings.map(booking => ({
+            ...booking,
+            ticketCount: booking._count?.tickets || 0 // Chuyển từ _count.tickets thành ticketCount
+        }));
+
+        return {
+            bookings: formattedBookings,
+            totalBooking,
+            pagination: {
+                total,
+                page: Number(page),
+                totalPages: Math.ceil(total / limit)
+            }
+        };
+    },
+
+    editBooking: async(bookingId, data) => {
+        const exists = await prisma.booking.findUnique({
+            where: { id: bookingId }
+        })
+
+        return await prisma.booking.update({
+            where: { id: bookingId },
+            data
+        })
     },
 
     getByUser: async (userId) => {
@@ -189,6 +154,43 @@ const bookingService = {
             console.error('Lỗi khi lấy booking theo userId:', error)
             throw new Error('Không thể lấy danh sách booking của người dùng.')
         }
+    },
+
+    cancelTicket: async (bookingId) => {
+        const updatedBooking = await prisma.booking.update({
+            where: { id: bookingId },
+            data: { status: BookingStatus.CANCELLED }, // status truyền vào là 'CANCELLED' hoặc 'CONFIRMED'
+            include: {
+                trip: { include: { route: true, bus: true } },
+                user: { select: { name: true, email: true, phone: true } },
+                departureStation: true,
+                arrivalStation: true,
+                _count: { select: { tickets: true } }
+            }
+        });
+
+        return updatedBooking
+    },
+
+    getBookingById: async (bookingId) => {
+        const booking = await prisma.booking.findUnique({
+            where: { id: bookingId },
+            include: {
+                trip: { include: { route: true, bus: true } },
+                user: { select: { name: true, email: true, phone: true } },
+                departureStation: true,
+                arrivalStation: true,
+                _count: { select: { tickets: true } }
+            }
+        })
+
+        if (!booking) return null;
+
+            // Map lại để khớp với Interface Booking của bạn
+        return {
+            ...booking,
+            ticketCount: booking._count?.tickets || 0
+        };
     },
 
     getById: async (bookingId) => {

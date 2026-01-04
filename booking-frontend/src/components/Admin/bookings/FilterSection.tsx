@@ -1,10 +1,12 @@
 // FilterSection.tsx
-import React, { useState, forwardRef } from "react";
+import React, { useState, forwardRef, useEffect } from "react";
 import { ChevronUp, ChevronDown, Calendar } from "lucide-react";
 import ReactDatePicker from "react-datepicker";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import "react-datepicker/dist/react-datepicker.css";
+import type { Route } from "@/types/route.type";
+import routeService from "@/services/routeService";
 
 export interface Filters {
   status?: "CONFIRMED" | "PENDING" | "CANCELLED";
@@ -64,7 +66,22 @@ const FilterButton: React.FC<{
 );
 
 const FilterSection: React.FC<FilterSectionProps> = ({ onFilterChange }) => {
+  const [routes, setRoutes] = useState<Route[]>([])
   const [isExpanded, setIsExpanded] = useState(false);
+
+  const loadRoutes = async () => {
+      try {
+        const response = await routeService.getRoutes('', 1, 10)
+  
+        setRoutes(response.routes)
+      } catch (error) {
+        console.error("Lỗi tải chuyến đi:", error);
+      }
+    }
+
+      useEffect(() => {
+    loadRoutes()
+  }, []);
 
   const statusMap: Record<string, Filters["status"] | undefined> = {
     "Tất cả": undefined,
@@ -73,12 +90,6 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onFilterChange }) => {
     "Đã hủy": "CANCELLED",
   };
 
-  const routeOptions = [
-    "Tất cả",
-    "Hà Nội - TPHCM",
-    "Hà Nội - Hải Phòng",
-    "TPHCM - Cần Thơ",
-  ];
 
   const [filters, setFilters] = useState<{
     status?: Filters["status"];
@@ -159,12 +170,17 @@ const FilterSection: React.FC<FilterSectionProps> = ({ onFilterChange }) => {
               Tuyến đường
             </p>
             <div className="flex flex-wrap gap-2">
-              {routeOptions.map((route) => (
+              <FilterButton
+                label="Tất cả"
+                active={filters.route === "Tất cả"}
+                onClick={() => updateFilter("route", "Tất cả")}
+              />
+              {routes.map((route) => (
                 <FilterButton
-                  key={route}
-                  label={route}
-                  active={filters.route === route}
-                  onClick={() => updateFilter("route", route)}
+                  key={route.id}
+                  label={route.name}
+                  active={filters.route === route.name}
+                  onClick={() => updateFilter("route", route.name)}
                 />
               ))}
             </div>

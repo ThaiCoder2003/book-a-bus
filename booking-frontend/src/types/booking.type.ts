@@ -21,7 +21,7 @@ export interface Booking {
   // --- Payment info ---
   paymentTime?: string | null; // ISO Date String, thời điểm thanh toán ZaloPay
   paymentRef?: string | null; // reference transaction từ ZaloPay Sandbox
-
+  ticketCount: number | 0;
   // Relations
   user?: User; // Muốn lấy tên/sđt người đặt thì lấy từ đây: booking.user.name
   trip?: Trip;

@@ -14,6 +14,11 @@ app.use(express.urlencoded({ extended: true }))
 
 app.use('/api', routes)
 
+app.use((req, res, next) => {
+  console.log(`[DEBUG] Request URL: ${req.url} | Method: ${req.method}`);
+  next();
+});
+
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`)
 })
