@@ -108,10 +108,10 @@ const bookingService = {
 
                     // Check xem booking này đã hết hạn chưa
                     const isExpired =
-                        booking.status === 'PENDING' &&
-                        new Date(booking.expiredAt) < now
+                        (booking.status === 'PENDING' &&
+                        new Date(booking.expiredAt) < now) || booking.status === 'CANCELLED'
 
-                    // Booking được coi là hợp lệ (đang giữ chỗ)
+                        // Booking được coi là hợp lệ (đang giữ chỗ)
                     const isValidBlocking =
                         booking.status === 'CONFIRMED' ||
                         (booking.status === 'PENDING' && !isExpired)
@@ -131,7 +131,7 @@ const bookingService = {
 
                 // tạo booking
                 const expiredAt = new Date(
-                    new Date().getTime() + 10 * 60 * 1000,
+                    new Date().getTime() + 15 * 60 * 1000,
                 )
 
                 const newBooking = await tx.booking.create({

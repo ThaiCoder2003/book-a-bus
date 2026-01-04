@@ -90,12 +90,12 @@ export default function NextTripCard({ booking }: NextTripCardProps) {
                                     {booking?.duration}
                                 </span>
                                 <div className="flex items-center text-muted-foreground">
-                                    <div className="h-[2px] w-12 bg-border relative">
+                                    <div className="h-0.5 w-12 bg-border relative">
                                         <div className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-primary" />
                                         <div className="absolute -left-1 -top-1 h-2 w-2 rounded-full bg-primary" />
                                     </div>
                                     <Bus className="mx-2 h-5 w-5 text-primary" />
-                                    <div className="h-[2px] w-12 bg-border relative">
+                                    <div className="h-0.5 w-12 bg-border relative">
                                         <div className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-primary" />
                                         <div className="absolute -left-1 -top-1 h-2 w-2 rounded-full bg-primary" />
                                     </div>

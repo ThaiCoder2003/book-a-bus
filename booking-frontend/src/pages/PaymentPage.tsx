@@ -16,11 +16,11 @@ import bookingService from '@/services/bookingService'
 import { useParams, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import paymentService from '@/services/paymentService'
+import type { ZaloPayOrderResponse } from '@/types/zalopayOrderResponse'
 
-// 1. CẬP NHẬT TYPE CHUẨN
 interface BookingPayment {
     id: string
-    status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' // Bỏ EXPIRED
+    status: 'PENDING' | 'CONFIRMED' | 'CANCELLED'
     totalAmount: string
     expiredAt: string
     paymentRef: string | null
@@ -100,17 +100,22 @@ export default function PaymentPage() {
 
             const res = await paymentService.createZaloPayUrl(currentBookingId)
 
-            // Backend trả về: { message: "...", data: { return_code, order_url, ... } }
-            if (res.data && res.data.data && res.data.data.order_url) {
-                setPaymentUrl(res.data.data.order_url)
+            const zpData = res.data.data as ZaloPayOrderResponse
+
+            if (zpData.return_code === 1 && zpData.order_url) {
+                setPaymentUrl(zpData.order_url)
             } else {
-                toast.error('Không lấy được link thanh toán từ ZaloPay')
+                toast.error(
+                    zpData.return_message || 'Không lấy được link thanh toán',
+                )
+                hasCreatedPayment.current = false // Reset để cho phép thử lại nếu lỗi
             }
         } catch (error: any) {
             console.error('Lỗi tạo thanh toán:', error)
             toast.error(
                 error.response?.data?.message || 'Lỗi khởi tạo thanh toán',
             )
+            hasCreatedPayment.current = false // Reset nếu lỗi mạng
         } finally {
             setIsCreatingPayment(false)
         }
@@ -131,7 +136,11 @@ export default function PaymentPage() {
                     // Nếu trạng thái đã đổi sang CONFIRMED
                     if (data.status === 'CONFIRMED') {
                         setBooking(data) // Cập nhật state để UI tự đổi sang Success
-                        toast.success(`Thanh toán thành công số tiền ${formatCurrency(booking.totalAmount)}!`)
+                        toast.success(
+                            `Thanh toán thành công số tiền ${formatCurrency(
+                                booking.totalAmount,
+                            )}!`,
+                        )
                         clearInterval(interval) // Dừng check
                     }
 
@@ -371,10 +380,6 @@ export default function PaymentPage() {
                                         <p className="font-bold text-green-900">
                                             Thanh toán thành công
                                         </p>
-                                        <p className="text-sm text-green-700">
-                                            Vé điện tử đã được gửi tới email của
-                                            bạn.
-                                        </p>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -432,7 +437,7 @@ export default function PaymentPage() {
                             </CardContent>
                         </Card>
 
-                        {/* 3. THÔNG TIN KHÁCH (Không đổi) */}
+                        {/* 3. THÔNG TIN KHÁCH */}
                         <Card className="shadow-sm">
                             <CardContent className="pt-6 grid grid-cols-2 gap-4">
                                 <div>

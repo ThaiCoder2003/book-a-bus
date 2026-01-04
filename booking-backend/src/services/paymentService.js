@@ -45,7 +45,6 @@ const paymentService = {
 
         // 4. Cấu hình Embed Data & Items
         const embed_data = {
-            bookingId: bookingId,
             // Redirect về trang PaymentPage để frontend tự check status
             redirecturl: `${FRONTEND_URL}/payment/${bookingId}`,
         }
@@ -62,7 +61,7 @@ const paymentService = {
         const order = {
             app_id: parseInt(ZALOPAY_APP_ID),
             app_trans_id: appTransId,
-            app_user: `user_${booking.userId}`,
+            app_user: `${booking.userId}`,
             app_time: Date.now(), // milliseconds
             item: JSON.stringify(items),
             embed_data: JSON.stringify(embed_data),
@@ -70,6 +69,7 @@ const paymentService = {
             description: `Thanh toan ve xe #${bookingId.slice(0, 8)}...`,
             bank_code: '',
             callback_url: ZALOPAY_CALLBACK_URL,
+            mac: '',
         }
 
         // 6. Tạo chữ ký MAC (HMAC-SHA256)
