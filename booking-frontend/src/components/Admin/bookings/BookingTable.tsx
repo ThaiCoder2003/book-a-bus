@@ -1,5 +1,5 @@
 // BookingTable.tsx
-import React, { useState, useMemo } from "react";
+import React from "react";
 import type { Booking } from "@/types/booking.type";
 import BookingTableRow from "./BookingTableRow";
 import Pagination from "../ui/Pagination";
@@ -7,20 +7,21 @@ import Pagination from "../ui/Pagination";
 interface BookingTableProps {
   bookings: Booking[];
   onRowClick: (booking: Booking) => void; // nhận từ page cha
+  paginationData?: {
+    total: number;
+    page: number;
+    totalPages: number;
+  };
+  onPageChange: (page: number) => void;
 }
 
 const BookingTable: React.FC<BookingTableProps> = ({
   bookings,
   onRowClick,
+  paginationData,
+  onPageChange
 }) => {
-  const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-
-  const currentData = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return bookings.slice(startIndex, endIndex);
-  }, [bookings, currentPage]);
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col">
@@ -55,7 +56,7 @@ const BookingTable: React.FC<BookingTableProps> = ({
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {currentData.map((booking) => (
+            {bookings.map((booking) => (
               <BookingTableRow
                 key={booking.id}
                 booking={booking}
@@ -69,18 +70,10 @@ const BookingTable: React.FC<BookingTableProps> = ({
       {/* Pagination */}
       <div className="px-6 py-4 border-t border-gray-100">
         <Pagination
-          totalItems={bookings.length}
+          totalItems={paginationData?.total || 0}
           itemsPerPage={itemsPerPage}
-          currentPage={currentPage}
-          onPageChange={(page) => {
-            if (
-              page >= 1 &&
-              page <= Math.ceil(bookings.length / itemsPerPage)
-            ) {
-              setCurrentPage(page);
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }
-          }}
+          currentPage={paginationData?.page || 1}
+          onPageChange={onPageChange}
         />
       </div>
     </div>

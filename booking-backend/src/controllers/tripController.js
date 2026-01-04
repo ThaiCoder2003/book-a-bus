@@ -108,7 +108,6 @@ const tripController = {
 
     deleteTrip: async (req, res) => {
         try {
-            console.log("===> ĐÃ CHẠM VÀO CONTROLLER. ID =", req.params.id);
             const { id } = req.params
             await tripService.deleteTrip(id)
             return res.status(200).json({
@@ -117,14 +116,14 @@ const tripController = {
             })
         } catch (error) {
         // ÉP HIỆN LỖI RA TERMINAL VS CODE
-console.error(error.code);
-console.error(error.meta);
-console.error(error.message);
-        return res.status(500).json({ 
-            success: false, 
-            error: error.message,
-            stack: error.stack // Hiện cả dòng bị lỗi cho Admin xem luôn
-        });
+            console.error(error.code);
+            console.error(error.meta);
+            console.error(error.message);
+            return res.status(500).json({ 
+                success: false, 
+                error: error.message,
+                stack: error.stack // Hiện cả dòng bị lỗi cho Admin xem luôn
+            });
         }
     },
 }

@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import UpdatePaymentSection from "./UpdatePaymentSection";
 import type { Booking } from "../../../types/booking.type";
 import { X, Send, Pencil, XCircle } from "lucide-react";
+import bookingService from "@/services/bookingService";
 
 const getStatusBadgeClass = (status: Booking["status"]) => {
   switch (status) {
@@ -41,6 +42,18 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
   onUpdateBooking,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
+
+  const handleCancel = async () => {
+    try {
+      if (window.confirm("Bạn có chắc chắn muốn hủy đơn đặt vé này không?")) {
+        const updated = await bookingService.cancel(booking.id);
+        onUpdateBooking(updated)
+        alert("Đã hủy thành công")
+      } 
+    } catch (error) {
+      alert("Lỗi khi hủy đơn");
+    }
+  }
 
   if (!isOpen) return null;
 
@@ -105,7 +118,7 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
                   label="Tên khách hàng"
                   value={booking.user?.name ?? "-"}
                 />
-                <InfoRow label="Số vé" value={booking.tickets?.length ?? 0} />
+                <InfoRow label="Số vé" value={booking.ticketCount ?? 0} />
                 <InfoRow
                   label="Tuyến đường"
                   value={booking.trip?.route?.name ?? "-"}
@@ -141,7 +154,7 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
                   }
                 />
 
-                <InfoRow label="Số vé" value={booking.tickets?.length ?? 0} />
+                <InfoRow label="Số vé" value={booking.ticketCount} />
 
                 <InfoRow
                   label="Hết hạn"
@@ -192,7 +205,7 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
               </button>
 
               <button
-                onClick={() => alert("Cancel booking")}
+                onClick={handleCancel}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition"
               >
                 <XCircle className="w-4 h-4" strokeWidth={1.5} />

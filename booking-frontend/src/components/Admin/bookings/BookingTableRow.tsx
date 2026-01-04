@@ -3,6 +3,9 @@ import React from "react";
 import type { Booking } from "@/types/booking.type";
 import { Info } from "lucide-react";
 
+import { format } from "date-fns";
+import { vi } from "date-fns/locale";
+
 interface BookingTableRowProps {
   booking: Booking;
   onActionClick: () => void;
@@ -25,12 +28,15 @@ const BookingTableRow: React.FC<BookingTableRowProps> = ({
   booking,
   onActionClick,
 }) => {
-  const totalTickets = booking.tickets?.length;
-
+  const displayDate = (dateString: string) => {
+    const date = new Date(dateString);
+    // Format thành: 08:00, 01/01/2026
+    return format(date, "HH:mm, dd/MM/yyyy", { locale: vi });
+  };
   return (
     <tr className="hover:bg-gray-50 transition duration-150">
       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
-        {booking.id}
+        {booking.id.slice(0, 8)}
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
         {booking.user?.name}
@@ -39,7 +45,7 @@ const BookingTableRow: React.FC<BookingTableRowProps> = ({
         {booking.trip?.route?.name}
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-        {booking?.trip?.departureTime}
+        {displayDate(booking?.trip?.departureTime || new Date().toISOString())}
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
         {booking.totalAmount}
@@ -54,7 +60,7 @@ const BookingTableRow: React.FC<BookingTableRowProps> = ({
         </span>
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-        {totalTickets}
+        {booking.ticketCount}
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
         <button

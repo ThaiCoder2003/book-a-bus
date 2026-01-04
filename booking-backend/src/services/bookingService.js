@@ -1,4 +1,4 @@
-const { Prisma } = require('@prisma/client')
+const { Prisma, BookingStatus } = require('@prisma/client')
 const prisma = require('../configs/db')
 
 const bookingService = {
@@ -174,6 +174,82 @@ const bookingService = {
         }
     },
 
+    getAll: async(params) => {
+        const { page, limit, status, route, startDate, endDate, query } = params;
+
+        const where = {
+        // --- PHẦN 1: SEARCH (Dùng OR để tìm trên nhiều trường) ---
+            ...(query && {
+                OR: [
+                    { 
+                        user: { 
+                            OR: [
+                                { name: { contains: query, mode: 'insensitive' } },
+                                { email: { contains: query, mode: 'insensitive' } },
+                                { phone: { contains: query, mode: 'insensitive' } }
+                            ]
+                        } 
+                    }
+                ]
+            }),
+
+            // --- PHẦN 2: FILTER (Các điều kiện kết hợp đồng thời - AND) ---
+            AND: [
+                status ? { status } : {},
+                route ? { trip: { route: { name: { contains: route } } } } : {},
+                startDate ? { trip : { departureTime: { gte: new Date(startDate + "T00:00:00Z") } } } : {},
+                endDate ? { trip: { departureTime: { lte: new Date(endDate + "T23:59:59Z") } } } : {},
+            ].filter(Boolean)
+        };
+
+        const [totalBooking, total, bookings] = await Promise.all([
+            prisma.booking.count(),
+            prisma.booking.count({ where }),
+            prisma.booking.findMany({
+                where,
+                skip: (page - 1) * limit,
+                take: limit,
+                include: {
+                    trip: {
+                        include: { route: true, bus: true }
+                    },
+                    user: {
+                        select: { name: true, email: true, phone: true }
+                    },
+                    _count: { select: { tickets: true } },
+                },
+
+                orderBy: { createdAt: 'desc' } // Mới nhất hiện lên đầu
+            })
+        ]);
+
+        const formattedBookings = bookings.map(booking => ({
+            ...booking,
+            ticketCount: booking._count?.tickets || 0 // Chuyển từ _count.tickets thành ticketCount
+        }));
+
+        return {
+            bookings: formattedBookings,
+            totalBooking,
+            pagination: {
+                total,
+                page: Number(page),
+                totalPages: Math.ceil(total / limit)
+            }
+        };
+    },
+
+    editBooking: async(bookingId, data) => {
+        const exists = await prisma.booking.findUnique({
+            where: { id: bookingId }
+        })
+
+        return await prisma.booking.update({
+            where: { id: bookingId },
+            data
+        })
+    },
+
     getByUser: async (userId) => {
         if (!userId) {
             throw new Error('Không nhận được thông tin người dùng')
@@ -189,6 +265,43 @@ const bookingService = {
             console.error('Lỗi khi lấy booking theo userId:', error)
             throw new Error('Không thể lấy danh sách booking của người dùng.')
         }
+    },
+
+    cancelTicket: async (bookingId) => {
+        const updatedBooking = await prisma.booking.update({
+            where: { id: bookingId },
+            data: { status: BookingStatus.CANCELLED }, // status truyền vào là 'CANCELLED' hoặc 'CONFIRMED'
+            include: {
+                trip: { include: { route: true, bus: true } },
+                user: { select: { name: true, email: true, phone: true } },
+                departureStation: true,
+                arrivalStation: true,
+                _count: { select: { tickets: true } }
+            }
+        });
+
+        return updatedBooking
+    },
+
+    getBookingById: async (bookingId) => {
+        const booking = await prisma.booking.findUnique({
+            where: { id: bookingId },
+            include: {
+                trip: { include: { route: true, bus: true } },
+                user: { select: { name: true, email: true, phone: true } },
+                departureStation: true,
+                arrivalStation: true,
+                _count: { select: { tickets: true } }
+            }
+        })
+
+        if (!booking) return null;
+
+            // Map lại để khớp với Interface Booking của bạn
+        return {
+            ...booking,
+            ticketCount: booking._count?.tickets || 0
+        };
     },
 
     getById: async (bookingId) => {

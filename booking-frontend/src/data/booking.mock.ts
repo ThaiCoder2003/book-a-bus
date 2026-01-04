@@ -18,7 +18,7 @@ export const mockBookings: Booking[] = [
     createdAt: "2024-12-01T08:00:00Z",
     updatedAt: "2024-12-01T09:00:00Z",
     expiredAt: "2024-12-31T23:59:59Z",
-
+    ticketCount: 4,
     user: {
       id: "user-1",
       name: "Nguyễn Văn A",
@@ -68,7 +68,7 @@ export const mockBookings: Booking[] = [
     createdAt: "2024-12-10T14:00:00Z",
     updatedAt: "2024-12-10T14:00:00Z",
     expiredAt: "2024-12-10T14:00:00Z",
-
+    ticketCount: 2,
     user: {
       id: "user-2",
       name: "Trần Thị B",

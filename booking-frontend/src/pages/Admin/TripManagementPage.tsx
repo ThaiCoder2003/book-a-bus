@@ -101,13 +101,9 @@ export function TripManagementPage() {
       }
     }
 // TripManagementPage.tsx
-catch (error: any) {
-    console.log("--- FRONTEND CATCH ---");
-    console.log("Status:", error.response?.status);
-    console.log("Data:", error.response?.data); // Đây là nơi chứa tin nhắn lỗi thật
-    console.error("Full Error:", error);
-    toast.error(error.response?.data?.message || "Lỗi xóa chuyến đi");
-}
+    catch (error: any) {
+        toast.error(error.response?.data?.message || "Lỗi xóa chuyến đi");
+    }
   };
 
   const handleSubmitTrip = async (data: any) => {

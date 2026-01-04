@@ -381,22 +381,15 @@ const tripService = {
     },
 
     deleteTrip: async (id) => {
-        return await prisma.$transaction(async (tx) => {
-        const bookingCount = await tx.booking.count({
-            where: { tripId: id }
-        })
-
-        const ticketCount = await tx.ticket.count({
-            where: { tripId: id }
-        })
-
-        console.log({ bookingCount, ticketCount })
-
-        if (bookingCount || ticketCount) {
-            throw new Error("Trip không hề cô đơn như bạn nghĩ")
+        const exists = await prisma.trip.findUnique({ where: { id } })
+        if (!exists) {
+            const err = new Error('Not found: Trip not found')
+            err.statusCode = 404
+            throw err
         }
 
-        return tx.trip.delete({ where: { id } })
+        return prisma.trip.delete({
+            where: { id }
         })
     },
 }
