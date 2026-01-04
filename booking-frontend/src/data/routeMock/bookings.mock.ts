@@ -24,5 +24,6 @@ export const BOOKINGS_MOCK: Booking[] = [
     departureStation: STATIONS_MOCK[0],
     arrivalStation: STATIONS_MOCK[2],
     tickets: [],
+    ticketCount: 0
   },
 ];
