@@ -12,7 +12,6 @@ const bookingController = {
 
             return res.json({
                 success: true,
-                // paymentUrl: `https://payment-gateway...?bookingId=${booking.id}`,
                 booking,
             })
         } catch (error) {
@@ -88,8 +87,8 @@ const bookingController = {
         }
     },
 
-    getByIdForAdmin: async(req, res) => {
-                try {
+    getByIdForAdmin: async (req, res) => {
+        try {
             const bookingId = req.params.id
 
             if (!bookingId) {
@@ -121,15 +120,15 @@ const bookingController = {
 
     getAll: async (req, res) => {
         try {
-            const { 
-                page = 1, 
-                limit = 10, 
-                status, 
-                route, 
-                startDate, 
+            const {
+                page = 1,
+                limit = 10,
+                status,
+                route,
+                startDate,
                 endDate,
-                query
-            } = req.query;
+                query,
+            } = req.query
 
             const result = await bookingService.getAll({
                 page: parseInt(page),
@@ -138,12 +137,12 @@ const bookingController = {
                 route,
                 startDate,
                 endDate,
-                query
-            });
+                query,
+            })
 
-            res.status(200).json(result);
+            res.status(200).json(result)
         } catch (error) {
-            res.status(500).json({ message: error.message });
+            res.status(500).json({ message: error.message })
         }
     },
 
@@ -151,16 +150,16 @@ const bookingController = {
         try {
             const bookingId = req.params.bookingId
 
-            const cancelled = await bookingService.cancelTicket(bookingId);
+            const cancelled = await bookingService.cancelTicket(bookingId)
 
             return res.status(200).json({
                 message: 'Hủy Đăng ký thành công',
-                updated: cancelled
+                updated: cancelled,
             })
-        }  catch (error) {
-            res.status(500).json({ message: error.message });
+        } catch (error) {
+            res.status(500).json({ message: error.message })
         }
-    }
+    },
 }
 
 module.exports = bookingController

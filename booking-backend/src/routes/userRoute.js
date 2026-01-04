@@ -7,10 +7,10 @@ router.get('/profile', authMiddleware.verifyToken, userController.getUserProfile
 router.get('/stat-overview', authMiddleware.verifyToken, userController.getUserStatOverview);
 router.get('/next-trip', authMiddleware.verifyToken, userController.getNextTrip);
 router.get('/booking-history', authMiddleware.verifyToken, userController.getBookingHistory);
-router.put('/profile', authMiddleware.verifyToken, userController.editUserProfile);
-
-router.get('/', authMiddleware.verifyToken, authMiddleware.requireAdmin, userController.getAllUsers);
 router.get('/:id', authMiddleware.verifyToken, authMiddleware.requireAdmin, userController.getUserById);
+router.get('/', authMiddleware.verifyToken, authMiddleware.requireAdmin, userController.getAllUsers);
+
+router.put('/profile', authMiddleware.verifyToken, userController.editUserProfile);
 router.put('/password/:id', authMiddleware.verifyToken, authMiddleware.requireAdmin, userController.resetPassword)
 router.put('/:id', authMiddleware.verifyToken, authMiddleware.requireAdmin, userController.editUserProfileAsAdmin)
 

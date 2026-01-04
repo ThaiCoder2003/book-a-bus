@@ -2,6 +2,7 @@ const { Prisma, BookingStatus } = require('@prisma/client')
 const prisma = require('../configs/db')
 
 const bookingService = {
+    // helper
     calculatePrice: async (tripId, seatIds, depStationId, arrStationId) => {
         // 1. Lấy thông tin giá vé từ Route_Station
         const routeStations = await prisma.route_Station.findMany({
@@ -62,7 +63,8 @@ const bookingService = {
 
         return finalTotalAmount
     },
-
+    
+    // main service
     create: async (payload) => {
         const {
             userId,
@@ -109,9 +111,10 @@ const bookingService = {
                     // Check xem booking này đã hết hạn chưa
                     const isExpired =
                         (booking.status === 'PENDING' &&
-                        new Date(booking.expiredAt) < now) || booking.status === 'CANCELLED'
+                            new Date(booking.expiredAt) < now) ||
+                        booking.status === 'CANCELLED'
 
-                        // Booking được coi là hợp lệ (đang giữ chỗ)
+                    // Booking được coi là hợp lệ (đang giữ chỗ)
                     const isValidBlocking =
                         booking.status === 'CONFIRMED' ||
                         (booking.status === 'PENDING' && !isExpired)
@@ -174,33 +177,64 @@ const bookingService = {
         }
     },
 
-    getAll: async(params) => {
-        const { page, limit, status, route, startDate, endDate, query } = params;
+    getAll: async (params) => {
+        const { page, limit, status, route, startDate, endDate, query } = params
 
         const where = {
-        // --- PHẦN 1: SEARCH (Dùng OR để tìm trên nhiều trường) ---
+            // --- PHẦN 1: SEARCH (Dùng OR để tìm trên nhiều trường) ---
             ...(query && {
                 OR: [
-                    { 
-                        user: { 
+                    {
+                        user: {
                             OR: [
-                                { name: { contains: query, mode: 'insensitive' } },
-                                { email: { contains: query, mode: 'insensitive' } },
-                                { phone: { contains: query, mode: 'insensitive' } }
-                            ]
-                        } 
-                    }
-                ]
+                                {
+                                    name: {
+                                        contains: query,
+                                        mode: 'insensitive',
+                                    },
+                                },
+                                {
+                                    email: {
+                                        contains: query,
+                                        mode: 'insensitive',
+                                    },
+                                },
+                                {
+                                    phone: {
+                                        contains: query,
+                                        mode: 'insensitive',
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                ],
             }),
 
             // --- PHẦN 2: FILTER (Các điều kiện kết hợp đồng thời - AND) ---
             AND: [
                 status ? { status } : {},
                 route ? { trip: { route: { name: { contains: route } } } } : {},
-                startDate ? { trip : { departureTime: { gte: new Date(startDate + "T00:00:00Z") } } } : {},
-                endDate ? { trip: { departureTime: { lte: new Date(endDate + "T23:59:59Z") } } } : {},
-            ].filter(Boolean)
-        };
+                startDate
+                    ? {
+                          trip: {
+                              departureTime: {
+                                  gte: new Date(startDate + 'T00:00:00Z'),
+                              },
+                          },
+                      }
+                    : {},
+                endDate
+                    ? {
+                          trip: {
+                              departureTime: {
+                                  lte: new Date(endDate + 'T23:59:59Z'),
+                              },
+                          },
+                      }
+                    : {},
+            ].filter(Boolean),
+        }
 
         const [totalBooking, total, bookings] = await Promise.all([
             prisma.booking.count(),
@@ -211,22 +245,22 @@ const bookingService = {
                 take: limit,
                 include: {
                     trip: {
-                        include: { route: true, bus: true }
+                        include: { route: true, bus: true },
                     },
                     user: {
-                        select: { name: true, email: true, phone: true }
+                        select: { name: true, email: true, phone: true },
                     },
                     _count: { select: { tickets: true } },
                 },
 
-                orderBy: { createdAt: 'desc' } // Mới nhất hiện lên đầu
-            })
-        ]);
+                orderBy: { createdAt: 'desc' }, // Mới nhất hiện lên đầu
+            }),
+        ])
 
-        const formattedBookings = bookings.map(booking => ({
+        const formattedBookings = bookings.map((booking) => ({
             ...booking,
-            ticketCount: booking._count?.tickets || 0 // Chuyển từ _count.tickets thành ticketCount
-        }));
+            ticketCount: booking._count?.tickets || 0, // Chuyển từ _count.tickets thành ticketCount
+        }))
 
         return {
             bookings: formattedBookings,
@@ -234,19 +268,19 @@ const bookingService = {
             pagination: {
                 total,
                 page: Number(page),
-                totalPages: Math.ceil(total / limit)
-            }
-        };
+                totalPages: Math.ceil(total / limit),
+            },
+        }
     },
 
-    editBooking: async(bookingId, data) => {
+    editBooking: async (bookingId, data) => {
         const exists = await prisma.booking.findUnique({
-            where: { id: bookingId }
+            where: { id: bookingId },
         })
 
         return await prisma.booking.update({
             where: { id: bookingId },
-            data
+            data,
         })
     },
 
@@ -276,9 +310,9 @@ const bookingService = {
                 user: { select: { name: true, email: true, phone: true } },
                 departureStation: true,
                 arrivalStation: true,
-                _count: { select: { tickets: true } }
-            }
-        });
+                _count: { select: { tickets: true } },
+            },
+        })
 
         return updatedBooking
     },
@@ -291,17 +325,17 @@ const bookingService = {
                 user: { select: { name: true, email: true, phone: true } },
                 departureStation: true,
                 arrivalStation: true,
-                _count: { select: { tickets: true } }
-            }
+                _count: { select: { tickets: true } },
+            },
         })
 
-        if (!booking) return null;
+        if (!booking) return null
 
-            // Map lại để khớp với Interface Booking của bạn
+        // Map lại để khớp với Interface Booking của bạn
         return {
             ...booking,
-            ticketCount: booking._count?.tickets || 0
-        };
+            ticketCount: booking._count?.tickets || 0,
+        }
     },
 
     getById: async (bookingId) => {

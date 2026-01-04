@@ -1,8 +1,9 @@
-import { Bus, Calendar, Clock, MapPin, QrCode, X, Ticket } from 'lucide-react'
+import { Bus, Calendar, Clock, MapPin, QrCode, Ticket } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Link } from 'react-router-dom'
+import TicketQRCodeModal from './TicketQrCodeModal'
 
 interface NextTripCardProps {
     booking: {
@@ -60,14 +61,6 @@ export default function NextTripCard({ booking }: NextTripCardProps) {
                         Mã vé: {booking?.ticketCode}
                     </span>
                 </div>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    className="cursor-pointer text-muted-foreground hover:text-destructive"
-                >
-                    <X className="mr-1 h-4 w-4" />
-                    Hủy vé
-                </Button>
             </CardHeader>
 
             <CardContent className="p-6">
@@ -177,13 +170,17 @@ export default function NextTripCard({ booking }: NextTripCardProps) {
                         <div className="bg-white p-2 rounded-lg border shadow-sm mb-3">
                             <QrCode className="h-32 w-32 text-foreground" />
                         </div>
-                        <Button
+                        {/* <Button
                             className="cursor-pointer w-full bg-transparent"
                             variant="outline"
                         >
                             <QrCode className="mr-2 h-4 w-4" />
                             Hiện mã vé
-                        </Button>
+                        </Button> */}
+                        <TicketQRCodeModal
+                            bookingId={booking.bookingId}
+                            ticketCode={booking.ticketCode}
+                        />
                     </div>
                 </div>
             </CardContent>

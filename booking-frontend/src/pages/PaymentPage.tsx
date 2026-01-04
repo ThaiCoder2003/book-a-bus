@@ -513,10 +513,12 @@ export default function PaymentPage() {
                                     {/* NÚT THANH TOÁN CHO MOBILE */}
                                     {paymentUrl && (
                                         <Button
-                                            className="w-full bg-blue-600 hover:bg-blue-700 text-white mt-2"
+                                            className="w-full bg-blue-600 hover:bg-blue-700 text-white mt-2 cursor-pointer"
                                             onClick={() =>
-                                                (window.location.href =
-                                                    paymentUrl)
+                                                window.open(
+                                                    paymentUrl,
+                                                    '_blank',
+                                                )
                                             }
                                         >
                                             <ExternalLink className="mr-2 h-4 w-4" />
@@ -597,15 +599,25 @@ export default function PaymentPage() {
                                         </p>
                                     </div>
 
-                                    <Button
-                                        variant="outline"
-                                        className="w-full"
-                                        onClick={() => navigate('/schedule')}
-                                    >
-                                        {showSuccessUI
-                                            ? 'Về trang chủ'
-                                            : 'Tìm chuyến xe khác'}
-                                    </Button>
+                                    {showSuccessUI ? (
+                                        <Button
+                                            variant="outline"
+                                            className="w-full"
+                                            onClick={() => navigate('/')}
+                                        >
+                                            Về trang chủ
+                                        </Button>
+                                    ) : (
+                                        <Button
+                                            variant="outline"
+                                            className="w-full"
+                                            onClick={() =>
+                                                navigate('/schedule')
+                                            }
+                                        >
+                                            Tìm chuyến xe khác
+                                        </Button>
+                                    )}
                                 </CardContent>
                             </Card>
                         )}
