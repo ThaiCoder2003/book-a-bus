@@ -2,8 +2,8 @@ import authAction from '@/actions/authAction'
 import axios, { AxiosError } from 'axios'
 import type { InternalAxiosRequestConfig } from 'axios'
 
-const BASE_URL = 'http://localhost:4000/api'
-// const BASE_URL = 'https://book-a-bus-backend-7p28.onrender.com/api'
+// const BASE_URL = 'http://localhost:4000/api'
+const BASE_URL = 'https://book-a-bus-backend-7p28.onrender.com/api'
 
 const axiosClient = axios.create({
     baseURL: BASE_URL,
