@@ -44,5 +44,6 @@ export const paymentMock: Booking[] = [
       province: "",
     },
     tickets: [],
+    ticketCount: 0
   },
 ];
