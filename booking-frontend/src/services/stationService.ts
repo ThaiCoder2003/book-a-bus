@@ -12,7 +12,7 @@ const stationService = {
         axiosClient.get('/station').then(res => res.data.result),
 
     registerNewStation: async (data: Omit<Station, "id">): Promise<Station> => 
-        axiosClient.post('/station', data).then(res => res.data.station),
+        axiosClient.post('/station/register', data).then(res => res.data.station),
 
     updateStation: async (data: Partial<Station>, id: string) => 
         axiosClient.put(`/station/${id}`, data).then(res => res.data.station),
