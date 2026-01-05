@@ -115,7 +115,7 @@ export default function FilterSidebar({
                 </div>
 
                 {/* Departure Time Filter (Radio Logic) */}
-                <div className="mb-6 pb-6 border-b border-border">
+                {/* <div className="mb-6 pb-6 border-b border-border">
                     {!filters.date && (
                         <p className="text-red-500 text-sm mb-2 italic">
                             * Vui lòng chọn ngày đi trước
@@ -158,7 +158,7 @@ export default function FilterSidebar({
                             ))}
                         </div>
                     </div>
-                </div>
+                </div> */}
 
                 {/* Reset Button */}
                 <Button
