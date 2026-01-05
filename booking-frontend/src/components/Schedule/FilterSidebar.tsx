@@ -27,13 +27,13 @@ export default function FilterSidebar({
         { key: 'ALL', value: 'Tất cả' }
     ]
 
-    const timeRanges = [
-        { id: 'morning', label: 'Sáng (6:00 - 11:59)' },
-        { id: 'afternoon', label: 'Chiều (12:00 - 17:59)' },
-        { id: 'evening', label: 'Tối (18:00 - 23:59)' },
-        { id: 'night', label: 'Đêm (00:00 - 5:59)' },
-        { id: 'all', label: 'Cả ngày' },
-    ]
+    // const timeRanges = [
+    //     { id: 'morning', label: 'Sáng (6:00 - 11:59)' },
+    //     { id: 'afternoon', label: 'Chiều (12:00 - 17:59)' },
+    //     { id: 'evening', label: 'Tối (18:00 - 23:59)' },
+    //     { id: 'night', label: 'Đêm (00:00 - 5:59)' },
+    //     { id: 'all', label: 'Cả ngày' },
+    // ]
 
     // Xử lý chọn loại xe (String)
     const handleBusTypeChange = (type: string) => {
@@ -43,10 +43,10 @@ export default function FilterSidebar({
     }
 
     // Xử lý chọn giờ (String)
-    const handleTimeChange = (time: string) => {
-        const newValue = filters.departureTime === time ? '' : time
-        onFiltersChange({ ...filters, departureTime: newValue })
-    }
+    // const handleTimeChange = (time: string) => {
+    //     const newValue = filters.departureTime === time ? '' : time
+    //     onFiltersChange({ ...filters, departureTime: newValue })
+    // }
 
     const handleSortChange = (sortBy: string) => {
         onFiltersChange({ ...filters, sortBy })
@@ -115,7 +115,7 @@ export default function FilterSidebar({
                 </div>
 
                 {/* Departure Time Filter (Radio Logic) */}
-                <div className="mb-6 pb-6 border-b border-border">
+                {/* <div className="mb-6 pb-6 border-b border-border">
                     {!filters.date && (
                         <p className="text-red-500 text-sm mb-2 italic">
                             * Vui lòng chọn ngày đi trước
@@ -158,7 +158,7 @@ export default function FilterSidebar({
                             ))}
                         </div>
                     </div>
-                </div>
+                </div> */}
 
                 {/* Reset Button */}
                 <Button
