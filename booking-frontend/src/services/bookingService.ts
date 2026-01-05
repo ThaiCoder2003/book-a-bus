@@ -46,7 +46,7 @@ const bookingService = {
     },
 
     update: async(bookingId: string, newAmount: number): Promise<Booking> => {
-        const response = await axiosClient.put(`/bookings/resend/${bookingId}`, { newAmount })
+        const response = await axiosClient.put(`/bookings/update/${bookingId}`, { newAmount })
         return response.data.updated
     }
 }
