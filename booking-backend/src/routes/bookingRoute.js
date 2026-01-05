@@ -11,4 +11,6 @@ router.get('/:bookingId', authMiddleware.verifyToken, bookingController.getById)
 router.get('/', bookingController.getAll)
 
 router.put('/cancel/:bookingId', authMiddleware.verifyToken, bookingController.cancel)
+router.put('/resend/:bookingId', authMiddleware.verifyToken, authMiddleware.requireAdmin, bookingController.resend)
+router.put('/update/:bookingId', authMiddleware.verifyToken, authMiddleware.requireAdmin, bookingController.updateAmount)
 module.exports = router

@@ -15,6 +15,7 @@ import Pagination from "../ui/Pagination";
 // ✅ Dùng type chung
 import type { User } from "../../../types/admin/user";
 import userService from "@/services/userService";
+import { toast } from "react-toastify";
 
 interface UserTableProps {
   users: User[];
@@ -67,7 +68,7 @@ const UserTable: FC<UserTableProps> = ({ users, isLoading, totalUser, onUpdateUs
         const resetInfo = await userService.resetPassword(updatedUser.id, password);
         // Tiếp tục trộn để đảm bảo không mất field nào
         finalUserData = { ...finalUserData, ...resetInfo };
-        alert(`Đã reset mật khẩu thành công về: ${password}`);
+        toast.success(`Đã reset mật khẩu thành công về: ${password}`);
       }
 
       // 5. Cập nhật state ở Cha
@@ -75,7 +76,7 @@ const UserTable: FC<UserTableProps> = ({ users, isLoading, totalUser, onUpdateUs
       setEditOpen(false);
     } catch (error) {
       console.error("Lỗi lấy chi tiết:", error);
-      alert("Cập nhật thất bại, vui lòng kiểm tra lại!");
+      toast.error("Cập nhật thất bại, vui lòng kiểm tra lại!");
     } finally {
       setLoadingId(null);
     }

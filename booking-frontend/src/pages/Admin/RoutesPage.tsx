@@ -14,6 +14,7 @@ import Pagination from "@/components/Admin/ui/Pagination";
 
 import type { Route } from "@/types/route.type";
 import type { Station } from "@/types/station.type";
+import { toast } from "react-toastify";
 
 export default function RoutesPage(): JSX.Element {
   const [selectedRoute, setSelectedRoute] = useState<Route | null>(null);
@@ -78,7 +79,7 @@ const handleViewDetails = async (routeId: string) => {
     const fullRouteData = await routeService.getById(routeId);
     setSelectedRoute(fullRouteData);
   } catch (error) {
-    alert("Không thể tải thông tin chi tiết tuyến đường");
+    toast.error("Không thể tải thông tin chi tiết tuyến đường");
   } finally {
     setIsModalLoading(false); // Tắt loading
   }

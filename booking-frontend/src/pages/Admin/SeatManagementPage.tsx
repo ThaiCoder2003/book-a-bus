@@ -9,6 +9,7 @@ import SeatConfigModal from "@/components/Admin/fleets/SeatConfigModal";
 import type { Bus } from "@/types/bus.type";
 import busService from "@/services/busService";
 import type { Seat } from "@/types/seat.type";
+import { toast } from "react-toastify";
 
 const SeatManagementPage: React.FC = () => {
   /* ===================== STATE ===================== */
@@ -90,7 +91,7 @@ const handleSubmitBus = async (busData: Bus) => {
     setEditingBus(null);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    alert("Lỗi: " + errorMessage);
+    toast.error("Lỗi: " + errorMessage);
   }
 };
 
@@ -103,7 +104,7 @@ const handleSubmitBus = async (busData: Bus) => {
       setIsSeatModalOpen(true);
     }  catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      alert("Lỗi: " + errorMessage);
+      toast.error("Lỗi: " + errorMessage);
     }
   };
 
@@ -113,7 +114,7 @@ const handleSubmitBus = async (busData: Bus) => {
       await busService.updateBusSeats(busId, updatedSeats);
       
       // 2. Thông báo thành công
-      alert("Lưu cấu hình ghế thành công!");
+      toast.success("Lưu cấu hình ghế thành công!");
       
       // 3. Đóng Modal và reset state
       setIsSeatModalOpen(false);
@@ -123,7 +124,7 @@ const handleSubmitBus = async (busData: Bus) => {
       fetchBuses(); 
     } catch (error) {
       console.error("Lỗi lưu ghế:", error);
-      alert("Không thể lưu cấu hình ghế. Vui lòng thử lại!");
+      toast.error("Không thể lưu cấu hình ghế. Vui lòng thử lại!");
     }
   };
 

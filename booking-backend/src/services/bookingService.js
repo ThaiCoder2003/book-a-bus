@@ -302,9 +302,71 @@ const bookingService = {
     },
 
     cancelTicket: async (bookingId) => {
+        const exists = await prisma.booking.findUnique({ where: { id: bookingId } })
+
+        if (!exists) {
+            throw new Error('Booking không tồn tại!', 400)
+        }
+
+        if (exists.status == BookingStatus.CONFIRMED) {
+            throw new Error('Không thể hủy đơn đã xác nhận!', 400)
+        }
+
         const updatedBooking = await prisma.booking.update({
             where: { id: bookingId },
             data: { status: BookingStatus.CANCELLED }, // status truyền vào là 'CANCELLED' hoặc 'CONFIRMED'
+            include: {
+                trip: { include: { route: true, bus: true } },
+                user: { select: { name: true, email: true, phone: true } },
+                departureStation: true,
+                arrivalStation: true,
+                _count: { select: { tickets: true } },
+            },
+        })
+
+        return updatedBooking
+    },
+
+    resendTicket: async (bookingId) => {
+        const exists = await prisma.booking.findUnique({ where: { id: bookingId } })
+
+        if (!exists) {
+            throw new Error('Booking không tồn tại!', 400)
+        }
+
+        if (exists.status != BookingStatus.CANCELLED) {
+            throw new Error('Không thể gửi lại đơn không bị hủy!', 400)
+        }
+
+        const updatedBooking = await prisma.booking.update({
+            where: { id: bookingId },
+            data: { status: BookingStatus.PENDING }, // status truyền vào là 'CANCELLED' hoặc 'CONFIRMED'
+            include: {
+                trip: { include: { route: true, bus: true } },
+                user: { select: { name: true, email: true, phone: true } },
+                departureStation: true,
+                arrivalStation: true,
+                _count: { select: { tickets: true } },
+            },
+        })
+
+        return updatedBooking
+    },
+
+    updateAmount: async (bookingId, newAmount) => {
+        const exists = await prisma.booking.findUnique({ where: { id: bookingId } })
+
+        if (!exists) {
+            throw new Error('Booking không tồn tại!', 400)
+        }
+
+        if (exists.status != BookingStatus.CANCELLED) {
+            throw new Error('Không thể gửi lại đơn không bị hủy!', 400)
+        }
+
+        const updatedBooking = await prisma.booking.update({
+            where: { id: bookingId },
+            data: { totalAmount: newAmount }, // status truyền vào là 'CANCELLED' hoặc 'CONFIRMED'
             include: {
                 trip: { include: { route: true, bus: true } },
                 user: { select: { name: true, email: true, phone: true } },

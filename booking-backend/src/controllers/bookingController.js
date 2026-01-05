@@ -160,6 +160,39 @@ const bookingController = {
             res.status(500).json({ message: error.message })
         }
     },
+
+    resend: async (req, res) => {
+        try {
+            const bookingId = req.params.bookingId
+
+            const resent = await bookingService.resendTicket(bookingId)
+
+            return res.status(200).json({
+                message: 'Gửi lại thành công',
+                updated: resent,
+            })
+        } catch (error) {
+            res.status(500).json({ message: error.message })
+        }
+    },
+
+    updateAmount: async (req, res) => {
+        try {
+            const bookingId = req.params.bookingId
+            const newAmount = Number(req.body.newAmount)
+            if (isNaN(newAmount) || newAmount < 0) {
+                return res.status(400).json({ message: 'Số tiền không hợp lệ' });
+            }
+            const updated = await bookingService.updateAmount(bookingId, newAmount)
+
+            return res.status(200).json({
+                message: 'Cập nhật thành công',
+                updated: updated,
+            })
+        } catch (error) {
+            res.status(500).json({ message: error.message })
+        }
+    },
 }
 
 module.exports = bookingController

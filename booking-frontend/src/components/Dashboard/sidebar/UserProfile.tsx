@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Settings, Star, Save, X } from "lucide-react";
 import type { User } from '@/types/user.type'
+import { toast } from "react-toastify";
 
 interface UserProfileProps {
   user: User | null; // Có thể null khi đang load
@@ -59,7 +60,7 @@ export default function UserProfile({ user, isLoading, onEdit }: UserProfileProp
 
     catch (error) {
       console.error("Lỗi lấy chi tiết:", error);
-      alert("Cập nhật thất bại, vui lòng kiểm tra lại!");
+      toast.error("Cập nhật thất bại, vui lòng kiểm tra lại!");
     }
   };
 

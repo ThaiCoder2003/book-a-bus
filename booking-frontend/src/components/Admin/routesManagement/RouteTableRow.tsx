@@ -2,6 +2,7 @@ import { MapPin, Trash2 } from "lucide-react";
 import CustomTooltip from "./CustomTooltip";
 import type { Route } from "@/types/route.type";
 import routeService from "@/services/routeService";
+import { toast } from "react-toastify";
 
 interface Props {
   route: Route;
@@ -19,9 +20,10 @@ export default function RouteTableRow({ route, onViewDetails, onDeleteSuccess }:
         await routeService.delete(route.id);
         
         // Quan trọng: Phải gọi lại hàm fetchData() ở trang cha để cập nhật lại bảng
+        toast.success("Xóa thành công!")
         onDeleteSuccess();
       } catch (error) {
-        alert("Không thể xóa tuyến đường này!");
+        toast.error("Không thể xóa tuyến đường này!");
       }
     }
   };
