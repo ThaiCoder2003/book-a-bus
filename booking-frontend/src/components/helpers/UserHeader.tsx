@@ -115,7 +115,7 @@ export default function UserHeader() {
                         <Link to="/auth">
                             <Button className="cursor-pointer bg-[#0064D2] hover:bg-[#0055b3] text-white font-semibold rounded-lg px-6 h-10 flex items-center justify-center transition-all">
                                 <span className="leading-none">
-                                    Đặt vé ngay
+                                    Đăng nhập/Đăng ký ngay
                                 </span>
                             </Button>
                         </Link>
