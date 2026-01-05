@@ -257,7 +257,7 @@ export default function PaymentPage() {
         }).format(Number(val))
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text)
-        alert(`Đã sao chép: ${text}`)
+        toast.success(`Đã sao chép: ${text}`)
     }
 
     const formatTime = (isoString: string) => {

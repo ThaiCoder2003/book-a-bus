@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import type { Trip } from "@/types/trip.type";
 import type { Route } from "@/types/route.type";
 import type { Bus } from "@/types/bus.type";
+import { toast } from "react-toastify";
 
 interface Props {
   open: boolean;
@@ -56,7 +57,7 @@ useEffect(() => {
   const handleSubmit = () => {
     // 1. Kiểm tra đủ field (Dùng form.departureDate và form.departureTime riêng)
     if (!form.routeId || !form.busId || !form.departureTime || !form.departureDate) {
-      alert("Vui lòng điền đầy đủ thông tin!");
+      toast.error("Vui lòng điền đầy đủ thông tin!");
       return;
     }
 

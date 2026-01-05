@@ -4,6 +4,7 @@ import UpdatePaymentSection from "./UpdatePaymentSection";
 import type { Booking } from "../../../types/booking.type";
 import { X, Send, Pencil, XCircle } from "lucide-react";
 import bookingService from "@/services/bookingService";
+import { toast } from "react-toastify";
 
 const getStatusBadgeClass = (status: Booking["status"]) => {
   switch (status) {
@@ -48,10 +49,34 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
       if (window.confirm("Bạn có chắc chắn muốn hủy đơn đặt vé này không?")) {
         const updated = await bookingService.cancel(booking.id);
         onUpdateBooking(updated)
-        alert("Đã hủy thành công")
+        toast.success("Đã hủy thành công")
       } 
     } catch (error) {
-      alert("Lỗi khi hủy đơn");
+      toast.error("Lỗi khi hủy đơn");
+    }
+  }
+
+  const handleResend = async () => {
+    try {
+      if (window.confirm("Bạn có chắc chắn muốn gửi lại đơn đặt vé này không?")) {
+        const updated = await bookingService.resend(booking.id);
+        onUpdateBooking(updated)
+        toast.success("Gửi thành công")
+      } 
+    } catch (error) {
+      toast.error("Lỗi khi hủy đơn");
+    }
+  }
+
+    const handleUpdateAmount = async (newAmount: number) => {
+    try {
+      if (window.confirm("Bạn có chắc chắn muốn cập nhật đơn đặt vé này không?")) {
+        const updated = await bookingService.update(booking.id, newAmount);
+        onUpdateBooking(updated)
+        toast.success("Cập nhật đơn hàng thành công!");
+      } 
+    } catch (error) {
+      toast.error("Lỗi khi cập nhật");
     }
   }
 
@@ -74,7 +99,7 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
         {/* Header */}
         <div className="flex justify-between items-center p-4 border-b">
           <h3 className="text-lg font-semibold text-gray-900">
-            Chi tiết đặt vé {booking.id}
+            Chi tiết đặt vé {booking.id.slice(0, 8)}
           </h3>
           <div className="flex items-center space-x-3">
             <span
@@ -99,10 +124,8 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
             <UpdatePaymentSection
               booking={booking}
               onSave={(newTotalAmount) => {
-                onUpdateBooking({
-                  ...booking,
-                  totalAmount: newTotalAmount,
-                });
+                handleUpdateAmount(newTotalAmount)
+
                 setIsEditing(false);
               }}
               onCancel={() => setIsEditing(false)}
@@ -189,7 +212,7 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
           <div className="flex justify-between items-center p-4 border-t bg-white rounded-b-lg">
             <div className="flex items-center space-x-2">
               <button
-                onClick={() => alert("Resend ticket")}
+                onClick={handleResend}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-100 transition"
               >
                 <Send className="w-4 h-4" strokeWidth={1.5} />

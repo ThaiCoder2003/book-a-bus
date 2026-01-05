@@ -57,13 +57,17 @@ const AuthPage: FC = () => {
             if (e) e.preventDefault()
 
             const res = await authService.login({ email, password })
-
+            const user = res.data.user
             if (res && res?.data?.token) {
                 const tokens = res.data.token
 
                 authAction.setToken(tokens.accessToken, tokens.refreshToken)
                 toast.success('Đăng nhập thành công')
-                navigate(from, { replace: true })
+                if (user?.role === 'ADMIN') {
+                    navigate('/admin', { replace: true })
+                } else {
+                    navigate(from, { replace: true })
+                }
             }
         } catch (error: any) {
             const message = error.response?.data?.message

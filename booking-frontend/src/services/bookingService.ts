@@ -38,6 +38,16 @@ const bookingService = {
     cancel: async(bookingId: string): Promise<Booking> => {
         const response = await axiosClient.put(`/bookings/cancel/${bookingId}`)
         return response.data.updated
+    },
+
+    resend: async(bookingId: string): Promise<Booking> => {
+        const response = await axiosClient.put(`/bookings/resend/${bookingId}`)
+        return response.data.updated
+    },
+
+    update: async(bookingId: string, newAmount: number): Promise<Booking> => {
+        const response = await axiosClient.put(`/bookings/update/${bookingId}`, { newAmount })
+        return response.data.updated
     }
 }
 

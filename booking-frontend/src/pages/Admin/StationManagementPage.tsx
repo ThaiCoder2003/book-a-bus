@@ -8,6 +8,7 @@ import { StationList } from "@/components/Admin/stations/StationList";
 import { useEffect, useState } from "react";
 
 import stationService from "@/services/stationService";
+import { toast } from "react-toastify";
 
 export default function StationManagementPage() {
   const [stations, setStations] = useState<Station[]>([]);
@@ -46,12 +47,12 @@ export default function StationManagementPage() {
       // await fetchStations();
 
       setMode(null); // Đóng form
-      alert("Tạo điểm dừng thành công!");
+      toast.success("Tạo điểm dừng thành công!");
     } catch (error) {
     // 3. Xử lý khi có lỗi (ví dụ: trùng tên, mất mạng)
         console.error(error);
         const errorMessage = error instanceof Error ? error.message : "Không thể tạo điểm dừng";
-        alert("Có lỗi xảy ra: " + errorMessage);
+        toast.error("Có lỗi xảy ra: " + errorMessage);
       }
     setMode(null);
   };
@@ -70,9 +71,9 @@ export default function StationManagementPage() {
       
       setEditing(null);
       setMode(null);
-      alert("Cập nhật thành công!");
+      toast.success("Cập nhật thành công!");
     } catch (error: any) {
-      alert("Lỗi cập nhật: " + (error.response?.data?.message || "Thất bại"));
+      toast.error("Lỗi cập nhật: " + (error.response?.data?.message || "Thất bại"));
     } finally {
       setLoading(false);
     }
@@ -90,9 +91,9 @@ export default function StationManagementPage() {
       
       setEditing(null);
       setMode(null);
-      alert("Cập nhật thành công!");
+      toast.success("Cập nhật thành công!");
     } catch (error: any) {
-      alert("Lỗi cập nhật: " + (error.response?.data?.message || "Thất bại"));
+      toast.error("Lỗi cập nhật: " + (error.response?.data?.message || "Thất bại"));
     } finally {
       setLoading(false);
     }

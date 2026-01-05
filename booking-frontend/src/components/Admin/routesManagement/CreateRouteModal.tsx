@@ -5,6 +5,7 @@ import { X, Plus, Trash2 } from "lucide-react";
 import type { Station } from "@/types/station.type";
 import type { RouteStationForm } from "@/types/routeStationForm.type";
 import routeService from "@/services/routeService";
+import { toast } from "react-toastify";
 
 
 export default function CreateRouteModal({
@@ -97,9 +98,9 @@ export default function CreateRouteModal({
   };
 
   const handleSubmit = async () => {
-    if (!routeName.trim()) return alert("Vui lòng nhập tên tuyến!")
-    if (stops.length < 2) return alert("Tuyến đường phải có ít nhất 2 trạm");
-    if (stops.some(s => !s.stationId)) return alert("Vui lòng chọn đầy đủ trạm dừng");
+    if (!routeName.trim()) return toast.error("Vui lòng nhập tên tuyến!")
+    if (stops.length < 2) return toast.error("Tuyến đường phải có ít nhất 2 trạm");
+    if (stops.some(s => !s.stationId)) return toast.error("Vui lòng chọn đầy đủ trạm dừng");
 
     try {
       const payload = {
@@ -116,12 +117,12 @@ export default function CreateRouteModal({
 
       await routeService.create(payload)
 
-      alert("Tạo tuyến đường thành công!");
+      toast.success("Tạo tuyến đường thành công!");
       if (onSuccess) onSuccess(); 
       
       handleCloseAndReset();
     } catch (error: any) {
-      alert(error.response?.data?.message || "Lỗi khi tạo tuyến đường");
+      toast.error(error.response?.data?.message || "Lỗi khi tạo tuyến đường");
     }
   }
 
