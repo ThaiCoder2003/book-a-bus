@@ -357,11 +357,15 @@ const bookingService = {
         const exists = await prisma.booking.findUnique({ where: { id: bookingId } })
 
         if (!exists) {
-            throw new Error('Booking không tồn tại!', 400)
+            const error = new Error('Booking không tồn tại!')
+            error.status = 404 // Gán thủ công
+            throw error
         }
 
-        if (exists.status != BookingStatus.CANCELLED) {
-            throw new Error('Không thể gửi lại đơn không bị hủy!', 400)
+        if (exists.status == BookingStatus.CANCELLED) {
+            const error = new Error('Không thể update đơn bị hủy!')
+            error.status = 400 
+            throw error
         }
 
         const updatedBooking = await prisma.booking.update({
