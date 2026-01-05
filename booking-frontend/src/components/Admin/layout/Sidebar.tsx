@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Map,
@@ -41,15 +41,15 @@ const getLucideIcon = (name: string) => {
       return <Bell className="h-5 w-5" />;
     case "Trợ lý ảo (AI Assistant)":
       return <Bot className="h-5 w-5" />;
-    case "Cài đặt Hệ thống":
-      return <Settings className="h-5 w-5" />;
+    case "Đăng xuất":
+      return <Settings className="h-5 w-5 text-red-500" />;
     default:
       return null;
   }
 };
 
 // -----------------------------------------------------------
-// 2. MENU (Hoàn chỉnh theo scope dự án 5 tuần)
+// 2. MENU
 // -----------------------------------------------------------
 const AdminMenus = [
   {
@@ -81,24 +81,27 @@ const AdminMenus = [
     title: "Phân tích & Hệ thống",
     items: [
       { name: "Trợ lý ảo (AI Assistant)", path: "/admin/assistant" },
-      { name: "Cài đặt Hệ thống", path: "/admin/settings" },
+      { name: "Đăng xuất", path: "/admin/logout" },
     ],
   },
 ];
 
 // -----------------------------------------------------------
-// 3. COMPONENT: Sidebar
+// 3. COMPONENT
 // -----------------------------------------------------------
 export default function Sidebar() {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("user");
+
+    navigate("/auth");
+  };
+
   return (
-    <aside
-      className=" w-64
-  bg-white
-  border-r
-  p-5
-  space-y-4
-  shadow-lg"
-    >
+    <aside className="w-64 bg-white border-r p-5 space-y-4 shadow-lg">
       <h1 className="text-xl font-bold text-blue-600 flex items-center space-x-2 pb-4 border-b">
         <Bus className="h-6 w-6" />
         <span>BusAdmin Panel</span>
@@ -111,23 +114,35 @@ export default function Sidebar() {
               {section.title}
             </h3>
 
-            {section.items.map((m) => (
-              <NavLink
-                key={m.path}
-                to={m.path}
-                end={m.name === "Tổng quan"}
-                className={({ isActive }) =>
-                  `px-3 py-2 rounded-lg hover:bg-blue-50 flex items-center space-x-3 transition-colors text-sm ${
-                    isActive
-                      ? "bg-blue-100 text-blue-700 font-semibold"
-                      : "text-gray-600"
-                  }`
-                }
-              >
-                {getLucideIcon(m.name)}
-                <span>{m.name}</span>
-              </NavLink>
-            ))}
+            {section.items.map((m) =>
+              m.name === "Đăng xuất" ? (
+                <button
+                  key={m.name}
+                  onClick={handleLogout}
+                  className="w-full px-3 py-2 rounded-lg flex items-center space-x-3
+                             text-sm text-red-600 hover:bg-red-50 transition-colors"
+                >
+                  {getLucideIcon(m.name)}
+                  <span>{m.name}</span>
+                </button>
+              ) : (
+                <NavLink
+                  key={m.path}
+                  to={m.path}
+                  end={m.name === "Tổng quan"}
+                  className={({ isActive }) =>
+                    `px-3 py-2 rounded-lg hover:bg-blue-50 flex items-center space-x-3 transition-colors text-sm ${
+                      isActive
+                        ? "bg-blue-100 text-blue-700 font-semibold"
+                        : "text-gray-600"
+                    }`
+                  }
+                >
+                  {getLucideIcon(m.name)}
+                  <span>{m.name}</span>
+                </NavLink>
+              ),
+            )}
 
             {sectionIndex < AdminMenus.length - 1 && (
               <hr className="my-2 border-gray-100" />
